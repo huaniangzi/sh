@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash   
 
 # 获取用户输入，用于替换 docker-compose.yml 文件中的占位符
 read -p "请输入 数据库ROOT密码：" dbrootpasswd 
