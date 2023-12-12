@@ -259,7 +259,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.4.2 （支持Ubuntu，Debian，Centos系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.4.3 （支持Ubuntu，Debian，Centos系统）\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
 echo "2. 系统更新"
@@ -770,9 +770,10 @@ case $choice in
         echo "2. 站点重定向"
         echo "3. 站点反向代理"
         echo "4. 站点数据管理"
+        echo "5. 卸载LDNMP环境"
         echo "------------------------"
-        echo "5. Docker管理器"
         echo "6. Docker项目"
+        echo "7. Docker管理器"
         echo "------------------------"
         echo "0. 返回上一级菜单"
         echo "------------------------"
@@ -901,19 +902,12 @@ case $choice in
 
                     echo "------------------------"
                     echo ""
-                    echo "数据库信息"
-                    echo "------------------------"
-                    dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
-                    docker exec mysql mysql -u root -p"$dbrootpasswd" -e "SHOW DATABASES;" 2> /dev/null | grep -Ev "Database|information_schema|mysql|performance_schema|sys"
-
-                    echo "------------------------"
-                    echo ""
                     echo "操作"
                     echo "------------------------"
                     echo "1. 申请/更新域名证书               2. 更换站点域名"
                     echo -e "3. 清理站点缓存                    4. 查看站点分析报告 \033[33mNEW\033[0m"
                     echo "------------------------"
-                    echo "7. 删除指定站点                    8. 删除指定数据库"
+                    echo "7. 删除指定站点"
                     echo "------------------------"
                     echo "0. 返回上一级菜单"
                     echo "------------------------"
@@ -966,11 +960,6 @@ case $choice in
                             rm /home/web/certs/${yuming}_cert.pem
                             docker restart nginx
                             ;;
-                        8)
-                            read -p "请输入数据库名: " shujuku
-                            dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
-                            docker exec mysql mysql -u root -p"$dbrootpasswd" -e "DROP DATABASE $shujuku;" 2> /dev/null
-                            ;;
                         0)
                             break  # 跳出循环，退出菜单
                             ;;
@@ -981,8 +970,156 @@ case $choice in
                 done
 
                   ;;
-
             5)
+                clear
+                read -p "强烈建议先备份全部网站数据，再卸载LDNMP环境。确定删除所有网站数据吗？(Y/N): " choice
+                case "$choice" in
+                  [Yy])
+                    docker rm -f nginx php php74 mysql redis
+                    docker rmi nginx php:fpm php:7.4.33-fpm mysql redis
+                    rm -r /home/web
+                    ;;
+                  [Nn])
+
+                    ;;
+                  *)
+                    echo "无效的选择，请输入 Y 或 N。"
+                    ;;
+                esac
+                ;;
+
+            6)
+                clear
+                while true; do
+                echo -e "\033[33m ▼ \033[0m"
+                echo -e "\033[33mDocker项目\033[0m"
+                echo  "------------------------"
+                echo  "1. 安装简单图床"
+                echo  "------------------------"
+                echo  "0. 返回上一级菜单"
+                echo  "------------------------"
+                read -p "请输入你的选择: " sub_choice
+
+                case $sub_choice in
+                    1)
+                        if docker inspect easyimage &>/dev/null; then
+                            clear
+                            echo "简单图床已安装，访问地址: "
+                            external_ip=$(curl -s ipv4.ip.sb)
+                            echo "http:$external_ip:85"
+                            echo ""
+
+                            echo "应用操作"
+                            echo "------------------------"
+                            echo "1. 更新应用             2. 卸载应用"
+                            echo "0. 返回上一级菜单"
+                            echo "------------------------"
+                            read -p "请输入你的选择: " sub_choice
+
+                            case $sub_choice in
+                                1)
+                                    clear
+                                    install_netstat
+                                    clear
+                                    host_port=$(get_valid_port)
+                                    docker rm -f easyimage
+                                    docker rmi -f ddsderek/easyimage:latest
+                                    install_docker
+                                    docker run -d \
+                                        --name easyimage \
+                                        -p "$host_port":80 \
+                                        -e TZ=Asia/Shanghai \
+                                        -e PUID=1000 \
+                                        -e PGID=1000 \
+                                        -v /home/docker/easyimage/config:/app/web/config \
+                                        -v /home/docker/easyimage/i:/app/web/i \
+                                        --restart unless-stopped \
+                                        ddsderek/easyimage:latest
+
+                                    clear
+                                    echo "简单图床已经安装完成"
+                                    echo "------------------------"
+                                    echo "您可以使用以下地址访问简单图床:"
+                                    external_ip=$(curl -s ipv4.ip.sb)
+                                    echo "http:$external_ip:$host_port"  # 使用用户输入的端口
+                                    echo ""
+                                    ;;
+                                2)
+                                    clear
+                                    docker rm -f easyimage
+                                    docker rmi -f ddsderek/easyimage:latest
+                                    rm -rf /home/docker/easyimage
+                                    echo "应用已卸载"
+                                    ;;
+                                0)
+                                    break  # 跳出循环，退出菜单
+                                    ;;
+                                *)
+                                    break  # 跳出循环，退出菜单
+                                    ;;
+                            esac
+                        else
+                            clear
+                            echo "安装提示"
+                            echo "简单图床是一个简单的图床程序"
+                            echo "官网介绍: https://github.com/icret/EasyImages2.0"
+                            echo ""
+
+                            read -p "确定安装简单图床吗？(Y/N): " choice
+                            case "$choice" in
+                                [Yy])
+                                    clear
+                                    install_netstat
+                                    clear
+                                    host_port=$(get_valid_port)
+
+                                    # 根据用户输入的主机端口运行容器并保持容器内部端口为80
+                                    docker rm -f easyimage
+                                    docker rmi -f ddsderek/easyimage:latest
+                                    install_docker
+                                    docker run -d \
+                                        --name easyimage \
+                                        -p "$host_port":80 \
+                                        -e TZ=Asia/Shanghai \
+                                        -e PUID=1000 \
+                                        -e PGID=1000 \
+                                        -v /home/docker/easyimage/config:/app/web/config \
+                                        -v /home/docker/easyimage/i:/app/web/i \
+                                        --restart unless-stopped \
+                                        ddsderek/easyimage:latest
+
+                                    clear
+                                    echo "简单图床已经安装完成"
+                                    echo "------------------------"
+                                    echo "您可以使用以下地址访问简单图床:"
+                                    external_ip=$(curl -s ipv4.ip.sb)
+                                    echo "http:$external_ip:$host_port"
+                                    echo ""
+                                    ;;
+                                [Nn])
+                                    ;;
+                                *)
+                                    ;;
+                            esac
+                        fi
+                          ;;
+                    0)
+                        # 返回上一级菜单
+                        break  # 使用 break 来跳出当前循环，返回上一级
+                        ;;
+                    *)
+                        echo "无效的输入!"
+                        ;;
+                esac
+                echo -e "\033[0;32m操作完成\033[0m"
+                echo "按任意键继续..."
+                read -n 1 -s -r -p ""
+                echo ""
+                clear
+              done
+              ;;
+
+            7)
                 clear
                 while true; do
                   echo " ▼ "
@@ -1362,137 +1499,6 @@ case $choice in
                 done
 
                 ;;
-
-            6)
-                clear
-                while true; do
-                echo -e "\033[33m ▼ \033[0m"
-                echo -e "\033[33mDocker项目\033[0m"
-                echo  "------------------------"
-                echo  "1. 安装简单图床"
-                echo  "------------------------"
-                echo  "0. 返回上一级菜单"
-                echo  "------------------------"
-                read -p "请输入你的选择: " sub_choice
-
-                case $sub_choice in
-                    1)
-                        if docker inspect easyimage &>/dev/null; then
-                            clear
-                            echo "简单图床已安装，访问地址: "
-                            external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$external_ip:85"
-                            echo ""
-
-                            echo "应用操作"
-                            echo "------------------------"
-                            echo "1. 更新应用             2. 卸载应用"
-                            echo "0. 返回上一级菜单"
-                            echo "------------------------"
-                            read -p "请输入你的选择: " sub_choice
-
-                            case $sub_choice in
-                                1)
-                                    clear
-                                    install_netstat
-                                    clear
-                                    host_port=$(get_valid_port)
-                                    docker rm -f easyimage
-                                    docker rmi -f ddsderek/easyimage:latest
-                                    install_docker
-                                    docker run -d \
-                                        --name easyimage \
-                                        -p "$host_port":80 \
-                                        -e TZ=Asia/Shanghai \
-                                        -e PUID=1000 \
-                                        -e PGID=1000 \
-                                        -v /home/docker/easyimage/config:/app/web/config \
-                                        -v /home/docker/easyimage/i:/app/web/i \
-                                        --restart unless-stopped \
-                                        ddsderek/easyimage:latest
-
-                                    clear
-                                    echo "简单图床已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问简单图床:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:$host_port"  # 使用用户输入的端口
-                                    echo ""
-                                    ;;
-                                2)
-                                    clear
-                                    docker rm -f easyimage
-                                    docker rmi -f ddsderek/easyimage:latest
-                                    rm -rf /home/docker/easyimage
-                                    echo "应用已卸载"
-                                    ;;
-                                0)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                                *)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                            esac
-                        else
-                            clear
-                            echo "安装提示"
-                            echo "简单图床是一个简单的图床程序"
-                            echo "官网介绍: https://github.com/icret/EasyImages2.0"
-                            echo ""
-
-                            read -p "确定安装简单图床吗？(Y/N): " choice
-                            case "$choice" in
-                                [Yy])
-                                    clear
-                                    install_netstat
-                                    clear
-                                    host_port=$(get_valid_port)
-
-                                    # 根据用户输入的主机端口运行容器并保持容器内部端口为80
-                                    docker rm -f easyimage
-                                    docker rmi -f ddsderek/easyimage:latest
-                                    install_docker
-                                    docker run -d \
-                                        --name easyimage \
-                                        -p "$host_port":80 \
-                                        -e TZ=Asia/Shanghai \
-                                        -e PUID=1000 \
-                                        -e PGID=1000 \
-                                        -v /home/docker/easyimage/config:/app/web/config \
-                                        -v /home/docker/easyimage/i:/app/web/i \
-                                        --restart unless-stopped \
-                                        ddsderek/easyimage:latest
-
-                                    clear
-                                    echo "简单图床已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问简单图床:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:$host_port"
-                                    echo ""
-                                    ;;
-                                [Nn])
-                                    ;;
-                                *)
-                                    ;;
-                            esac
-                        fi
-                          ;;
-                    0)
-                        # 返回上一级菜单
-                        break  # 使用 break 来跳出当前循环，返回上一级
-                        ;;
-                    *)
-                        echo "无效的输入!"
-                        ;;
-                esac
-                echo -e "\033[0;32m操作完成\033[0m"
-                echo "按任意键继续..."
-                read -n 1 -s -r -p ""
-                echo ""
-                clear
-              done
-              ;;
 
             0)
                 # 返回上一级菜单
