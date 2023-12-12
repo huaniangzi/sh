@@ -245,9 +245,6 @@ get_valid_port() {
         read -p "请输入你想要映射到容器的主机端口: " host_port
         if check_port_availability "$host_port"; then
             port_available=true
-        else
-            # 端口被占用时，重置为 false，以便继续提示用户输入新的端口
-            port_available=false
         fi
     done
 
@@ -1398,6 +1395,7 @@ case $choice in
                                     clear
                                     install_netstat
                                     clear
+                                    check_port_availability
                                     host_port=$(get_valid_port)
                                     docker rm -f easyimage
                                     docker rmi -f ddsderek/easyimage:latest
@@ -1448,6 +1446,7 @@ case $choice in
                                     clear
                                     install_netstat
                                     clear
+                                    check_port_availability
                                     host_port=$(get_valid_port)
 
                                     # 根据用户输入的主机端口运行容器并保持容器内部端口为80
