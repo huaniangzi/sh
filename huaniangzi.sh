@@ -226,10 +226,17 @@ install_netstat() {
 
 
 # 函数：检查端口是否被占用
+# 变量用于跟踪已经提示过的占用端口号
+already_warned_ports=""
+
 check_port_availability() {
     local port=$1
     if netstat -tuln | grep ":$port" &>/dev/null; then
-        echo "端口 $port 已被占用，请重新输入。"
+        # 检查端口是否已经在已经提示过的列表中
+        if [[ ! $already_warned_ports =~ $port ]]; then
+            echo "端口 $port 已被占用，请重新输入。"
+            already_warned_ports+="$port "  # 将已提示的端口添加到列表中
+        fi
         return 1  # 返回非零表示端口被占用
     else
         return 0  # 返回零表示端口可用
@@ -245,8 +252,6 @@ get_valid_port() {
         read -p "请输入你想要映射到容器的主机端口: " host_port
         if check_port_availability "$host_port"; then
             port_available=true
-        else
-            echo "端口 $host_port 已被占用，请尝试其他端口。"
         fi
     done
 
