@@ -209,6 +209,48 @@ install_lrzsz() {
 
 }
 
+
+# 检查是否安装了netstat
+install_netstat() {
+    if ! command -v netstat &>/dev/null; then
+        if command -v apt &>/dev/null; then
+            apt update -y && apt install -y net-tools
+        elif command -v yum &>/dev/null; then
+            yum -y update && yum -y install net-tools
+        else
+            echo "未知的包管理器!"
+            # 可能需要针对其他包管理器执行相应的安装命令
+        fi
+    fi
+}
+
+
+# 函数：检查端口是否被占用
+check_port_availability() {
+    local port=$1
+    if netstat -tuln | grep ":$port" &>/dev/null; then
+        echo "端口 $port 已被占用，请重新输入。"
+        return 1  # 返回非零表示端口被占用
+    else
+        return 0  # 返回零表示端口可用
+    fi
+}
+
+# 函数：获取用户输入的主机端口，并检查端口是否被占用
+get_valid_port() {
+    local port_available=false
+    local host_port
+
+    while [ "$port_available" = false ]; do
+        read -p "请输入你想要映射到容器的主机端口: " host_port
+        if check_port_availability "$host_port"; then
+            port_available=true
+        fi
+    done
+
+    echo "$host_port"
+}
+
 while true; do
 clear
 
@@ -223,7 +265,7 @@ echo "2. 系统更新"
 echo "3. 系统清理"
 echo "4. 常用工具 ▶"
 echo "5. 测试脚本合集 ▶ "
-echo "6. Docker管理 ▶ "
+echo "6. Docker建站 ▶ "
 echo -e "\033[33m7. LDNMP建站 ▶ \033[0m"
 echo "8. 常用面板工具 ▶ "
 echo "9. 外面的世界 ▶ "
@@ -410,7 +452,7 @@ case $choice in
         echo "2. BBR管理 ▶"
         echo "3. WARP管理 ▶ 解锁ChatGPT Netflix"
         echo "------------------------"
-        echo "0. 返回上一级选单"
+        echo "0. 返回上一级菜单"
         echo "------------------------"
         read -p "请输入你的选择: " sub_choice
 
@@ -720,107 +762,580 @@ case $choice in
   6)
     clear
     while true; do
-      echo " ▼ "
-      echo "Docker管理器"
-      echo "------------------------"
-      echo "1. 安装更新Docker环境"
-      echo "------------------------"
-      echo "2. 查看Dcoker全局状态"
-      echo "------------------------"
-      echo "3. Dcoker容器管理 ▶"
-      echo "4. Dcoker镜像管理 ▶"
-      echo "5. Dcoker网络管理 ▶"
-      echo "6. Dcoker卷管理 ▶"
-      echo "------------------------"
-      echo "7. 清理无用的docker容器和镜像网络数据卷"
-      echo "------------------------"
-      echo "8. 卸载Dcoker环境"
-      echo "------------------------"
-      echo "0. 返回主菜单"
-      echo "------------------------"
-      read -p "请输入你的选择: " sub_choice
+        echo " ▼ "
+        echo "Docker建站"
+        echo "------------------------"
+        echo "1. 仅安装nginx"
+        echo "2. 站点重定向"
+        echo "3. 站点反向代理"
+        echo "4. 站点数据管理"
+        echo "------------------------"
+        echo "5. Docker管理器"
+        echo "6. Docker项目"
+        echo "------------------------"
+        echo "0. 返回上一级菜单"
+        echo "------------------------"
+        read -p "请输入你的选择: " sub_choice
 
-      case $sub_choice in
-          1)
+        case $sub_choice in
+            1)
               clear
-              curl -fsSL https://get.docker.com | sh && ln -s /usr/libexec/docker/cli-plugins/docker-compose /usr/local/bin
-              systemctl start docker
-              systemctl enable docker
-              ;;
-          2)
-              clear
-              echo "Dcoker版本"
-              docker --version
-              docker-compose --version
-              echo ""
-              echo "Dcoker镜像列表"
-              docker image ls
-              echo ""
-              echo "Dcoker容器列表"
-              docker ps -a
-              echo ""
-              echo "Dcoker卷列表"
-              docker volume ls
-              echo ""
-              echo "Dcoker网络列表"
-              docker network ls
-              echo ""
+              if command -v apt &>/dev/null; then
+                  apt update -y
+                  apt install -y curl wget sudo socat unzip tar htop
+              elif command -v yum &>/dev/null; then
+                  yum -y update
+                  yum -y install curl
+                  yum -y install wget
+                  yum -y install sudo
+                  yum -y install socat
+                  yum -y install unzip
+                  yum -y install tar
+                  yum -y install htop
+              else
+                  echo "未知的包管理器!"
+              fi
 
-              ;;
-          3)
-              while true; do
-                  clear
-                  echo "Docker容器列表"
-                  docker ps -a
-                  echo ""
-                  echo "容器操作"
+              install_docker
+              install_certbot
+
+              cd /home && mkdir -p web/html web/mysql web/certs web/conf.d web/redis web/log/nginx && touch web/docker-compose.yml
+
+              wget -O /home/web/nginx.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/nginx10.conf
+              wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/default10.conf
+              localhostIP=$(curl -s ipv4.ip.sb)
+              sed -i "s/localhost/$localhostIP/g" /home/web/conf.d/default.conf
+
+              docker rm -f nginx >/dev/null 2>&1
+              docker rmi nginx >/dev/null 2>&1
+              docker run -d --name nginx --restart always -p 80:80 -p 443:443 -v /home/web/nginx.conf:/etc/nginx/nginx.conf -v /home/web/conf.d:/etc/nginx/conf.d -v /home/web/certs:/etc/nginx/certs -v /home/web/html:/var/www/html -v /home/web/log/nginx:/var/log/nginx nginx
+
+              clear
+              nginx_version=$(docker exec nginx nginx -v 2>&1)
+              nginx_version=$(echo "$nginx_version" | grep -oP "nginx/\K[0-9]+\.[0-9]+\.[0-9]+")
+              echo "nginx已安装完成"
+              echo "当前版本: v$nginx_version"
+              echo ""
+                ;;
+
+            2)
+              clear
+              external_ip=$(curl -s ipv4.ip.sb)
+              echo -e "先将域名解析到本机IP: \033[33m$external_ip\033[0m"
+              read -p "请输入你的域名: " yuming
+              read -p "请输入跳转域名: " reverseproxy
+
+              install_ssltls
+
+              wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/rewrite.conf
+              sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
+              sed -i "s/baidu.com/$reverseproxy/g" /home/web/conf.d/$yuming.conf
+
+              docker restart nginx
+
+              clear
+              echo "您的重定向网站做好了！"
+              echo "https://$yuming"
+              nginx_status
+
+                ;;
+
+            3)
+              clear
+              external_ip=$(curl -s ipv4.ip.sb)
+              echo -e "先将域名解析到本机IP: \033[33m$external_ip\033[0m"
+              read -p "请输入你的域名: " yuming
+              read -p "请输入你的反代IP: " reverseproxy
+              read -p "请输入你的反代端口: " port
+
+              install_ssltls
+
+              wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/reverse-proxy.conf
+              sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
+              sed -i "s/0.0.0.0/$reverseproxy/g" /home/web/conf.d/$yuming.conf
+              sed -i "s/0000/$port/g" /home/web/conf.d/$yuming.conf
+
+              docker restart nginx
+
+              clear
+              echo "您的反向代理网站做好了！"
+              echo "https://$yuming"
+              nginx_status
+                ;;
+
+            4)
+                while true; do
+                    clear
+                    echo "LDNMP环境"
+                    echo "------------------------"
+                    # 获取nginx版本
+                    nginx_version=$(docker exec nginx nginx -v 2>&1)
+                    nginx_version=$(echo "$nginx_version" | grep -oP "nginx/\K[0-9]+\.[0-9]+\.[0-9]+")
+                    echo -n "nginx : v$nginx_version"
+                    # 获取mysql版本
+                    dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
+                    mysql_version=$(docker exec mysql mysql -u root -p"$dbrootpasswd" -e "SELECT VERSION();" 2>/dev/null | tail -n 1)
+                    echo -n "            mysql : v$mysql_version"
+                    # 获取php版本
+                    php_version=$(docker exec php php -v 2>/dev/null | grep -oP "PHP \K[0-9]+\.[0-9]+\.[0-9]+")
+                    echo -n "            php : v$php_version"
+                    # 获取redis版本
+                    redis_version=$(docker exec redis redis-server -v 2>&1 | grep -oP "v=+\K[0-9]+\.[0-9]+")
+                    echo "            redis : v$redis_version"
+                    echo "------------------------"
+                    echo ""
+
+
+                    # ls -t /home/web/conf.d | sed 's/\.[^.]*$//'
+                    echo "站点信息                      证书到期时间"
+                    echo "------------------------"
+                    for cert_file in /home/web/certs/*_cert.pem; do
+                      domain=$(basename "$cert_file" | sed 's/_cert.pem//')
+                      if [ -n "$domain" ]; then
+                        expire_date=$(openssl x509 -noout -enddate -in "$cert_file" | awk -F'=' '{print $2}')
+                        formatted_date=$(date -d "$expire_date" '+%Y-%m-%d')
+                        printf "%-30s%s\n" "$domain" "$formatted_date"
+                      fi
+                    done
+
+                    echo "------------------------"
+                    echo ""
+                    echo "数据库信息"
+                    echo "------------------------"
+                    dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
+                    docker exec mysql mysql -u root -p"$dbrootpasswd" -e "SHOW DATABASES;" 2> /dev/null | grep -Ev "Database|information_schema|mysql|performance_schema|sys"
+
+                    echo "------------------------"
+                    echo ""
+                    echo "操作"
+                    echo "------------------------"
+                    echo "1. 申请/更新域名证书               2. 更换站点域名"
+                    echo -e "3. 清理站点缓存                    4. 查看站点分析报告 \033[33mNEW\033[0m"
+                    echo "------------------------"
+                    echo "7. 删除指定站点                    8. 删除指定数据库"
+                    echo "------------------------"
+                    echo "0. 返回上一级菜单"
+                    echo "------------------------"
+                    read -p "请输入你的选择: " sub_choice
+                    case $sub_choice in
+                        1)
+                            read -p "请输入你的域名: " yuming
+                            install_ssltls
+
+                            ;;
+
+                        2)
+                            read -p "请输入旧域名: " oddyuming
+                            read -p "请输入新域名: " newyuming
+                            mv /home/web/conf.d/$oddyuming.conf /home/web/conf.d/$newyuming.conf
+                            sed -i "s/$oddyuming/$newyuming/g" /home/web/conf.d/$newyuming.conf
+                            mv /home/web/html/$oddyuming /home/web/html/$newyuming
+
+                            rm /home/web/certs/${oddyuming}_key.pem
+                            rm /home/web/certs/${oddyuming}_cert.pem
+                            install_ssltls
+
+                            ;;
+
+
+                        3)
+                            docker exec -it nginx rm -rf /var/cache/nginx
+                            docker restart nginx
+                            ;;
+                        4)
+                            if ! command -v goaccess &>/dev/null; then
+                                if command -v apt &>/dev/null; then
+                                    apt update -y && apt install -y goaccess
+                                elif command -v yum &>/dev/null; then
+                                    yum -y update && yum -y install goaccess
+                                else
+                                    echo "未知的包管理器!"
+                                    break
+                                fi
+                            fi
+                            goaccess --log-format=COMBINED /home/web/log/nginx/access.log
+
+                            ;;
+
+                        7)
+                            read -p "请输入你的域名: " yuming
+                            rm -r /home/web/html/$yuming
+                            rm /home/web/conf.d/$yuming.conf
+                            rm /home/web/certs/${yuming}_key.pem
+                            rm /home/web/certs/${yuming}_cert.pem
+                            docker restart nginx
+                            ;;
+                        8)
+                            read -p "请输入数据库名: " shujuku
+                            dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
+                            docker exec mysql mysql -u root -p"$dbrootpasswd" -e "DROP DATABASE $shujuku;" 2> /dev/null
+                            ;;
+                        0)
+                            break  # 跳出循环，退出菜单
+                            ;;
+                        *)
+                            break  # 跳出循环，退出菜单
+                            ;;
+                    esac
+                done
+
+                  ;;
+
+            5)
+                clear
+                while true; do
+                  echo " ▼ "
+                  echo "Docker管理器"
                   echo "------------------------"
-                  echo "1. 创建新的容器"
+                  echo "1. 安装更新Docker环境"
                   echo "------------------------"
-                  echo "2. 启动指定容器             6. 启动所有容器"
-                  echo "3. 停止指定容器             7. 暂停所有容器"
-                  echo "4. 删除指定容器             8. 删除所有容器"
-                  echo "5. 重启指定容器             9. 重启所有容器"
+                  echo "2. 查看Dcoker全局状态"
                   echo "------------------------"
-                  echo "11. 进入指定容器           12. 查看容器日志           13. 查看容器网络"
+                  echo "3. Dcoker容器管理 ▶"
+                  echo "4. Dcoker镜像管理 ▶"
+                  echo "5. Dcoker网络管理 ▶"
+                  echo "6. Dcoker卷管理 ▶"
                   echo "------------------------"
-                  echo "0. 返回上一级选单"
+                  echo "7. 清理无用的docker容器和镜像网络数据卷"
+                  echo "------------------------"
+                  echo "8. 卸载Dcoker环境"
+                  echo "------------------------"
+                  echo "0. 返回上一级菜单"
                   echo "------------------------"
                   read -p "请输入你的选择: " sub_choice
 
                   case $sub_choice in
                       1)
-                          read -p "请输入创建命令: " dockername
-                          $dockername
+                          clear
+                          curl -fsSL https://get.docker.com | sh && ln -s /usr/libexec/docker/cli-plugins/docker-compose /usr/local/bin
+                          systemctl start docker
+                          systemctl enable docker
                           ;;
-
                       2)
-                          read -p "请输入容器名: " dockername
-                          docker start $dockername
+                          clear
+                          echo "Dcoker版本"
+                          docker --version
+                          docker-compose --version
+                          echo ""
+                          echo "Dcoker镜像列表"
+                          docker image ls
+                          echo ""
+                          echo "Dcoker容器列表"
+                          docker ps -a
+                          echo ""
+                          echo "Dcoker卷列表"
+                          docker volume ls
+                          echo ""
+                          echo "Dcoker网络列表"
+                          docker network ls
+                          echo ""
+
                           ;;
                       3)
-                          read -p "请输入容器名: " dockername
-                          docker stop $dockername
+                          while true; do
+                              clear
+                              echo "Docker容器列表"
+                              docker ps -a
+                              echo ""
+                              echo "容器操作"
+                              echo "------------------------"
+                              echo "1. 创建新的容器"
+                              echo "------------------------"
+                              echo "2. 启动指定容器             6. 启动所有容器"
+                              echo "3. 停止指定容器             7. 暂停所有容器"
+                              echo "4. 删除指定容器             8. 删除所有容器"
+                              echo "5. 重启指定容器             9. 重启所有容器"
+                              echo "------------------------"
+                              echo "11. 进入指定容器           12. 查看容器日志           13. 查看容器网络"
+                              echo "------------------------"
+                              echo "0. 返回上一级菜单"
+                              echo "------------------------"
+                              read -p "请输入你的选择: " sub_choice
+
+                              case $sub_choice in
+                                  1)
+                                      read -p "请输入创建命令: " dockername
+                                      $dockername
+                                      ;;
+
+                                  2)
+                                      read -p "请输入容器名: " dockername
+                                      docker start $dockername
+                                      ;;
+                                  3)
+                                      read -p "请输入容器名: " dockername
+                                      docker stop $dockername
+                                      ;;
+                                  4)
+                                      read -p "请输入容器名: " dockername
+                                      docker rm -f $dockername
+                                      ;;
+                                  5)
+                                      read -p "请输入容器名: " dockername
+                                      docker restart $dockername
+                                      ;;
+                                  6)
+                                      docker start $(docker ps -a -q)
+                                      ;;
+                                  7)
+                                      docker stop $(docker ps -q)
+                                      ;;
+                                  8)
+                                      read -p "确定删除所有容器吗？(Y/N): " choice
+                                      case "$choice" in
+                                        [Yy])
+                                          docker rm -f $(docker ps -a -q)
+                                          ;;
+                                        [Nn])
+                                          ;;
+                                        *)
+                                          echo "无效的选择，请输入 Y 或 N。"
+                                          ;;
+                                      esac
+                                      ;;
+                                  9)
+                                      docker restart $(docker ps -q)
+                                      ;;
+                                  11)
+                                      read -p "请输入容器名: " dockername
+                                      docker exec -it $dockername /bin/bash
+                                      echo -e "\033[0;32m操作完成\033[0m"
+                                      echo "按任意键继续..."
+                                      read -n 1 -s -r -p ""
+                                      echo ""
+                                      clear
+                                      ;;
+                                  12)
+                                      read -p "请输入容器名: " dockername
+                                      docker logs $dockername
+                                      echo -e "\033[0;32m操作完成\033[0m"
+                                      echo "按任意键继续..."
+                                      read -n 1 -s -r -p ""
+                                      echo ""
+                                      clear
+                                      ;;
+                                  13)
+                                      echo ""
+                                      container_ids=$(docker ps -q)
+
+                                      echo "------------------------------------------------------------"
+                                      printf "%-25s %-25s %-25s\n" "容器名称" "网络名称" "IP地址"
+
+                                      for container_id in $container_ids; do
+                                          container_info=$(docker inspect --format '{{ .Name }}{{ range $network, $config := .NetworkSettings.Networks }} {{ $network }} {{ $config.IPAddress }}{{ end }}' "$container_id")
+
+                                          container_name=$(echo "$container_info" | awk '{print $1}')
+                                          network_info=$(echo "$container_info" | cut -d' ' -f2-)
+
+                                          while IFS= read -r line; do
+                                              network_name=$(echo "$line" | awk '{print $1}')
+                                              ip_address=$(echo "$line" | awk '{print $2}')
+
+                                              printf "%-20s %-20s %-15s\n" "$container_name" "$network_name" "$ip_address"
+                                          done <<< "$network_info"
+                                      done
+
+                                      echo -e "\033[0;32m操作完成\033[0m"
+                                      echo "按任意键继续..."
+                                      read -n 1 -s -r -p ""
+                                      echo ""
+                                      clear
+                                      ;;
+
+                                  0)
+                                      break  # 跳出循环，退出菜单
+                                      ;;
+
+                                  *)
+                                      break  # 跳出循环，退出菜单
+                                      ;;
+                              esac
+                          done
                           ;;
                       4)
-                          read -p "请输入容器名: " dockername
-                          docker rm -f $dockername
+                          while true; do
+                              clear
+                              echo "Docker镜像列表"
+                              docker image ls
+                              echo ""
+                              echo "镜像操作"
+                              echo "------------------------"
+                              echo "1. 获取指定镜像             3. 删除指定镜像"
+                              echo "2. 更新指定镜像             4. 删除所有镜像"
+                              echo "------------------------"
+                              echo "0. 返回上一级菜单"
+                              echo "------------------------"
+                              read -p "请输入你的选择: " sub_choice
+
+                              case $sub_choice in
+                                  1)
+                                      read -p "请输入镜像名: " dockername
+                                      docker pull $dockername
+                                      ;;
+                                  2)
+                                      read -p "请输入镜像名: " dockername
+                                      docker pull $dockername
+                                      ;;
+                                  3)
+                                      read -p "请输入镜像名: " dockername
+                                      docker rmi -f $dockername
+                                      ;;
+                                  4)
+                                      read -p "确定删除所有镜像吗？(Y/N): " choice
+                                      case "$choice" in
+                                        [Yy])
+                                          docker rmi -f $(docker images -q)
+                                          ;;
+                                        [Nn])
+
+                                          ;;
+                                        *)
+                                          echo "无效的选择，请输入 Y 或 N。"
+                                          ;;
+                                      esac
+                                      ;;
+                                  0)
+                                      break  # 跳出循环，退出菜单
+                                      ;;
+
+                                  *)
+                                      break  # 跳出循环，退出菜单
+                                      ;;
+                              esac
+                          done
                           ;;
+
                       5)
-                          read -p "请输入容器名: " dockername
-                          docker restart $dockername
+                          while true; do
+                              clear
+                              echo "Docker网络列表"
+                              echo "------------------------------------------------------------"
+                              docker network ls
+                              echo ""
+
+                              echo "------------------------------------------------------------"
+                              container_ids=$(docker ps -q)
+                              printf "%-25s %-25s %-25s\n" "容器名称" "网络名称" "IP地址"
+
+                              for container_id in $container_ids; do
+                                  container_info=$(docker inspect --format '{{ .Name }}{{ range $network, $config := .NetworkSettings.Networks }} {{ $network }} {{ $config.IPAddress }}{{ end }}' "$container_id")
+
+                                  container_name=$(echo "$container_info" | awk '{print $1}')
+                                  network_info=$(echo "$container_info" | cut -d' ' -f2-)
+
+                                  while IFS= read -r line; do
+                                      network_name=$(echo "$line" | awk '{print $1}')
+                                      ip_address=$(echo "$line" | awk '{print $2}')
+
+                                      printf "%-20s %-20s %-15s\n" "$container_name" "$network_name" "$ip_address"
+                                  done <<< "$network_info"
+                              done
+
+                              echo ""
+                              echo "网络操作"
+                              echo "------------------------"
+                              echo "1. 创建网络"
+                              echo "2. 加入网络"
+                              echo "3. 退出网络"
+                              echo "4. 删除网络"
+                              echo "------------------------"
+                              echo "0. 返回上一级菜单"
+                              echo "------------------------"
+                              read -p "请输入你的选择: " sub_choice
+
+                              case $sub_choice in
+                                  1)
+                                      read -p "设置新网络名: " dockernetwork
+                                      docker network create $dockernetwork
+                                      ;;
+                                  2)
+                                      read -p "加入网络名: " dockernetwork
+                                      read -p "那些容器加入该网络: " dockername
+                                      docker network connect $dockernetwork $dockername
+                                      echo ""
+                                      ;;
+                                  3)
+                                      read -p "退出网络名: " dockernetwork
+                                      read -p "那些容器退出该网络: " dockername
+                                      docker network disconnect $dockernetwork $dockername
+                                      echo ""
+                                      ;;
+
+                                  4)
+                                      read -p "请输入要删除的网络名: " dockernetwork
+                                      docker network rm $dockernetwork
+                                      ;;
+                                  0)
+                                      break  # 跳出循环，退出菜单
+                                      ;;
+
+                                  *)
+                                      break  # 跳出循环，退出菜单
+                                      ;;
+                              esac
+                          done
                           ;;
+
                       6)
-                          docker start $(docker ps -a -q)
+                          while true; do
+                              clear
+                              echo "Docker卷列表"
+                              docker volume ls
+                              echo ""
+                              echo "卷操作"
+                              echo "------------------------"
+                              echo "1. 创建新卷"
+                              echo "2. 删除卷"
+                              echo "------------------------"
+                              echo "0. 返回上一级菜单"
+                              echo "------------------------"
+                              read -p "请输入你的选择: " sub_choice
+
+                              case $sub_choice in
+                                  1)
+                                      read -p "设置新卷名: " dockerjuan
+                                      docker volume create $dockerjuan
+
+                                      ;;
+                                  2)
+                                      read -p "输入删除卷名: " dockerjuan
+                                      docker volume rm $dockerjuan
+
+                                      ;;
+                                  0)
+                                      break  # 跳出循环，退出菜单
+                                      ;;
+
+                                  *)
+                                      break  # 跳出循环，退出菜单
+                                      ;;
+                              esac
+                          done
                           ;;
                       7)
-                          docker stop $(docker ps -q)
+                          clear
+                          read -p "确定清理无用的镜像容器网络吗？(Y/N): " choice
+                          case "$choice" in
+                            [Yy])
+                              docker system prune -af --volumes
+                              ;;
+                            [Nn])
+                              ;;
+                            *)
+                              echo "无效的选择，请输入 Y 或 N。"
+                              ;;
+                          esac
                           ;;
                       8)
-                          read -p "确定删除所有容器吗？(Y/N): " choice
+                          clear
+                          read -p "确定卸载docker环境吗？(Y/N): " choice
                           case "$choice" in
                             [Yy])
-                              docker rm -f $(docker ps -a -q)
+                              docker rm $(docker ps -a -q) && docker rmi $(docker images -q) && docker network prune
+                              apt-get remove docker -y
+                              apt-get remove docker-ce -y
+                              apt-get purge docker-ce -y
+                              rm -rf /var/lib/docker
                               ;;
                             [Nn])
                               ;;
@@ -829,274 +1344,174 @@ case $choice in
                               ;;
                           esac
                           ;;
-                      9)
-                          docker restart $(docker ps -q)
-                          ;;
-                      11)
-                          read -p "请输入容器名: " dockername
-                          docker exec -it $dockername /bin/bash
-                          echo -e "\033[0;32m操作完成\033[0m"
-                          echo "按任意键继续..."
-                          read -n 1 -s -r -p ""
-                          echo ""
-                          clear
-                          ;;
-                      12)
-                          read -p "请输入容器名: " dockername
-                          docker logs $dockername
-                          echo -e "\033[0;32m操作完成\033[0m"
-                          echo "按任意键继续..."
-                          read -n 1 -s -r -p ""
-                          echo ""
-                          clear
-                          ;;
-                      13)
-                          echo ""
-                          container_ids=$(docker ps -q)
-
-                          echo "------------------------------------------------------------"
-                          printf "%-25s %-25s %-25s\n" "容器名称" "网络名称" "IP地址"
-
-                          for container_id in $container_ids; do
-                              container_info=$(docker inspect --format '{{ .Name }}{{ range $network, $config := .NetworkSettings.Networks }} {{ $network }} {{ $config.IPAddress }}{{ end }}' "$container_id")
-
-                              container_name=$(echo "$container_info" | awk '{print $1}')
-                              network_info=$(echo "$container_info" | cut -d' ' -f2-)
-
-                              while IFS= read -r line; do
-                                  network_name=$(echo "$line" | awk '{print $1}')
-                                  ip_address=$(echo "$line" | awk '{print $2}')
-
-                                  printf "%-20s %-20s %-15s\n" "$container_name" "$network_name" "$ip_address"
-                              done <<< "$network_info"
-                          done
-
-                          echo -e "\033[0;32m操作完成\033[0m"
-                          echo "按任意键继续..."
-                          read -n 1 -s -r -p ""
-                          echo ""
-                          clear
-                          ;;
-
                       0)
-                          break  # 跳出循环，退出菜单
+                          # 返回上一级菜单
+                          break  # 使用 break 来跳出当前循环，返回上一级
                           ;;
-
                       *)
-                          break  # 跳出循环，退出菜单
+                          echo "无效的输入!"
                           ;;
                   esac
-              done
-              ;;
-          4)
-              while true; do
+                  echo -e "\033[0;32m操作完成\033[0m"
+                  echo "按任意键继续..."
+                  read -n 1 -s -r -p ""
+                  echo ""
                   clear
-                  echo "Docker镜像列表"
-                  docker image ls
-                  echo ""
-                  echo "镜像操作"
-                  echo "------------------------"
-                  echo "1. 获取指定镜像             3. 删除指定镜像"
-                  echo "2. 更新指定镜像             4. 删除所有镜像"
-                  echo "------------------------"
-                  echo "0. 返回上一级选单"
-                  echo "------------------------"
-                  read -p "请输入你的选择: " sub_choice
 
-                  case $sub_choice in
-                      1)
-                          read -p "请输入镜像名: " dockername
-                          docker pull $dockername
-                          ;;
-                      2)
-                          read -p "请输入镜像名: " dockername
-                          docker pull $dockername
-                          ;;
-                      3)
-                          read -p "请输入镜像名: " dockername
-                          docker rmi -f $dockername
-                          ;;
-                      4)
-                          read -p "确定删除所有镜像吗？(Y/N): " choice
-                          case "$choice" in
-                            [Yy])
-                              docker rmi -f $(docker images -q)
-                              ;;
-                            [Nn])
+                done
 
-                              ;;
-                            *)
-                              echo "无效的选择，请输入 Y 或 N。"
-                              ;;
-                          esac
-                          ;;
-                      0)
-                          break  # 跳出循环，退出菜单
-                          ;;
+                ;;
 
-                      *)
-                          break  # 跳出循环，退出菜单
+            6)
+                clear
+                while true; do
+                echo -e "\033[33m ▼ \033[0m"
+                echo -e "\033[33mDocker项目\033[0m"
+                echo  "------------------------"
+                echo  "1. 安装简单图床"
+                echo  "------------------------"
+                echo  "0. 返回上一级菜单"
+                echo  "------------------------"
+                read -p "请输入你的选择: " sub_choice
+
+                case $sub_choice in
+                    1)
+                        if docker inspect easyimage &>/dev/null; then
+                            clear
+                            echo "简单图床已安装，访问地址: "
+                            external_ip=$(curl -s ipv4.ip.sb)
+                            echo "http:$external_ip:85"
+                            echo ""
+
+                            echo "应用操作"
+                            echo "------------------------"
+                            echo "1. 更新应用             2. 卸载应用"
+                            echo "0. 返回上一级菜单"
+                            echo "------------------------"
+                            read -p "请输入你的选择: " sub_choice
+
+                            case $sub_choice in
+                                1)
+                                    clear
+                                    install_netstat
+                                    host_port=$(get_valid_port)
+                                    docker rm -f easyimage
+                                    docker rmi -f ddsderek/easyimage:latest
+                                    install_docker
+                                    docker run -d \
+                                        --name easyimage \
+                                        -p "$host_port":80 \
+                                        -e TZ=Asia/Shanghai \
+                                        -e PUID=1000 \
+                                        -e PGID=1000 \
+                                        -v /home/docker/easyimage/config:/app/web/config \
+                                        -v /home/docker/easyimage/i:/app/web/i \
+                                        --restart unless-stopped \
+                                        ddsderek/easyimage:latest
+
+                                    clear
+                                    echo "简单图床已经安装完成"
+                                    echo "------------------------"
+                                    echo "您可以使用以下地址访问简单图床:"
+                                    external_ip=$(curl -s ipv4.ip.sb)
+                                    echo "http:$external_ip:$host_port"  # 使用用户输入的端口
+                                    echo ""
+                                    ;;
+                                2)
+                                    clear
+                                    docker rm -f easyimage
+                                    docker rmi -f ddsderek/easyimage:latest
+                                    rm -rf /home/docker/easyimage
+                                    echo "应用已卸载"
+                                    ;;
+                                0)
+                                    break  # 跳出循环，退出菜单
+                                    ;;
+                                *)
+                                    break  # 跳出循环，退出菜单
+                                    ;;
+                            esac
+                        else
+                            clear
+                            echo "安装提示"
+                            echo "简单图床是一个简单的图床程序"
+                            echo "官网介绍: https://github.com/icret/EasyImages2.0"
+                            echo ""
+
+                            read -p "确定安装简单图床吗？(Y/N): " choice
+                            case "$choice" in
+                                [Yy])
+                                    clear
+                                    install_netstat
+                                    host_port=$(get_valid_port)
+
+                                    # 根据用户输入的主机端口运行容器并保持容器内部端口为80
+                                    docker rm -f easyimage
+                                    docker rmi -f ddsderek/easyimage:latest
+                                    install_docker
+                                    docker run -d \
+                                        --name easyimage \
+                                        -p "$host_port":80 \
+                                        -e TZ=Asia/Shanghai \
+                                        -e PUID=1000 \
+                                        -e PGID=1000 \
+                                        -v /home/docker/easyimage/config:/app/web/config \
+                                        -v /home/docker/easyimage/i:/app/web/i \
+                                        --restart unless-stopped \
+                                        ddsderek/easyimage:latest
+
+                                    clear
+                                    echo "简单图床已经安装完成"
+                                    echo "------------------------"
+                                    echo "您可以使用以下地址访问简单图床:"
+                                    external_ip=$(curl -s ipv4.ip.sb)
+                                    echo "http:$external_ip:$host_port"
+                                    echo ""
+                                    ;;
+                                [Nn])
+                                    ;;
+                                *)
+                                    ;;
+                            esac
+                        fi
                           ;;
-                  esac
+                    0)
+                        # 返回上一级菜单
+                        break  # 使用 break 来跳出当前循环，返回上一级
+                        ;;
+                    *)
+                        echo "无效的输入!"
+                        ;;
+                esac
+                echo -e "\033[0;32m操作完成\033[0m"
+                echo "按任意键继续..."
+                read -n 1 -s -r -p ""
+                echo ""
+                clear
               done
               ;;
 
-          5)
-              while true; do
-                  clear
-                  echo "Docker网络列表"
-                  echo "------------------------------------------------------------"
-                  docker network ls
-                  echo ""
+            0)
+                # 返回上一级菜单
+                break  # 使用 break 来跳出当前循环，返回上一级
+                ;;
+            00)
+                # 返回主菜单
+                cd ~
+                ./huaniangzi.sh
+                exit
+                ;;
+            *)
+                echo "无效的输入!"
+                ;;
+        esac
 
-                  echo "------------------------------------------------------------"
-                  container_ids=$(docker ps -q)
-                  printf "%-25s %-25s %-25s\n" "容器名称" "网络名称" "IP地址"
-
-                  for container_id in $container_ids; do
-                      container_info=$(docker inspect --format '{{ .Name }}{{ range $network, $config := .NetworkSettings.Networks }} {{ $network }} {{ $config.IPAddress }}{{ end }}' "$container_id")
-
-                      container_name=$(echo "$container_info" | awk '{print $1}')
-                      network_info=$(echo "$container_info" | cut -d' ' -f2-)
-
-                      while IFS= read -r line; do
-                          network_name=$(echo "$line" | awk '{print $1}')
-                          ip_address=$(echo "$line" | awk '{print $2}')
-
-                          printf "%-20s %-20s %-15s\n" "$container_name" "$network_name" "$ip_address"
-                      done <<< "$network_info"
-                  done
-
-                  echo ""
-                  echo "网络操作"
-                  echo "------------------------"
-                  echo "1. 创建网络"
-                  echo "2. 加入网络"
-                  echo "3. 退出网络"
-                  echo "4. 删除网络"
-                  echo "------------------------"
-                  echo "0. 返回上一级选单"
-                  echo "------------------------"
-                  read -p "请输入你的选择: " sub_choice
-
-                  case $sub_choice in
-                      1)
-                          read -p "设置新网络名: " dockernetwork
-                          docker network create $dockernetwork
-                          ;;
-                      2)
-                          read -p "加入网络名: " dockernetwork
-                          read -p "那些容器加入该网络: " dockername
-                          docker network connect $dockernetwork $dockername
-                          echo ""
-                          ;;
-                      3)
-                          read -p "退出网络名: " dockernetwork
-                          read -p "那些容器退出该网络: " dockername
-                          docker network disconnect $dockernetwork $dockername
-                          echo ""
-                          ;;
-
-                      4)
-                          read -p "请输入要删除的网络名: " dockernetwork
-                          docker network rm $dockernetwork
-                          ;;
-                      0)
-                          break  # 跳出循环，退出菜单
-                          ;;
-
-                      *)
-                          break  # 跳出循环，退出菜单
-                          ;;
-                  esac
-              done
-              ;;
-
-          6)
-              while true; do
-                  clear
-                  echo "Docker卷列表"
-                  docker volume ls
-                  echo ""
-                  echo "卷操作"
-                  echo "------------------------"
-                  echo "1. 创建新卷"
-                  echo "2. 删除卷"
-                  echo "------------------------"
-                  echo "0. 返回上一级选单"
-                  echo "------------------------"
-                  read -p "请输入你的选择: " sub_choice
-
-                  case $sub_choice in
-                      1)
-                          read -p "设置新卷名: " dockerjuan
-                          docker volume create $dockerjuan
-
-                          ;;
-                      2)
-                          read -p "输入删除卷名: " dockerjuan
-                          docker volume rm $dockerjuan
-
-                          ;;
-                      0)
-                          break  # 跳出循环，退出菜单
-                          ;;
-
-                      *)
-                          break  # 跳出循环，退出菜单
-                          ;;
-                  esac
-              done
-              ;;
-          7)
-              clear
-              read -p "确定清理无用的镜像容器网络吗？(Y/N): " choice
-              case "$choice" in
-                [Yy])
-                  docker system prune -af --volumes
-                  ;;
-                [Nn])
-                  ;;
-                *)
-                  echo "无效的选择，请输入 Y 或 N。"
-                  ;;
-              esac
-              ;;
-          8)
-              clear
-              read -p "确定卸载docker环境吗？(Y/N): " choice
-              case "$choice" in
-                [Yy])
-                  docker rm $(docker ps -a -q) && docker rmi $(docker images -q) && docker network prune
-                  apt-get remove docker -y
-                  apt-get remove docker-ce -y
-                  apt-get purge docker-ce -y
-                  rm -rf /var/lib/docker
-                  ;;
-                [Nn])
-                  ;;
-                *)
-                  echo "无效的选择，请输入 Y 或 N。"
-                  ;;
-              esac
-              ;;
-          0)
-              cd ~
-              ./huaniangzi.sh
-              exit
-              ;;
-          *)
-              echo "无效的输入!"
-              ;;
-      esac
-      echo -e "\033[0;32m操作完成\033[0m"
-      echo "按任意键继续..."
-      read -n 1 -s -r -p ""
-      echo ""
-      clear
-
+        echo -e "\033[0;32m操作完成\033[0m"
+        echo "按任意键继续..."
+        read -n 1 -s -r -p ""
+        echo ""
+        clear
     done
-
     ;;
 
   7)
@@ -1786,7 +2201,7 @@ case $choice in
         echo "------------------------"
         echo "7. 删除指定站点                    8. 删除指定数据库"
         echo "------------------------"
-        echo "0. 返回上一级选单"
+        echo "0. 返回上一级菜单"
         echo "------------------------"
         read -p "请输入你的选择: " sub_choice
         case $sub_choice in
@@ -2260,7 +2675,7 @@ case $choice in
                   echo "------------------------"
                   echo "1. 管理宝塔面板           2. 卸载宝塔面板"
                   echo "------------------------"
-                  echo "0. 返回上一级选单"
+                  echo "0. 返回上一级菜单"
                   echo "------------------------"
                   read -p "请输入你的选择: " sub_choice
 
@@ -2353,7 +2768,7 @@ case $choice in
                   echo "------------------------"
                   echo "1. 管理aaPanel           2. 卸载aaPanel"
                   echo "------------------------"
-                  echo "0. 返回上一级选单"
+                  echo "0. 返回上一级菜单"
                   echo "------------------------"
                   read -p "请输入你的选择: " sub_choice
 
@@ -2497,7 +2912,7 @@ case $choice in
                       echo "------------------------"
                       echo "1. 更新应用             2. 卸载应用"
                       echo "------------------------"
-                      echo "0. 返回上一级选单"
+                      echo "0. 返回上一级菜单"
                       echo "------------------------"
                       read -p "请输入你的选择: " sub_choice
 
@@ -2596,7 +3011,7 @@ case $choice in
                       echo "------------------------"
                       echo "1. 更新应用             2. 卸载应用"
                       echo "------------------------"
-                      echo "0. 返回上一级选单"
+                      echo "0. 返回上一级菜单"
                       echo "------------------------"
                       read -p "请输入你的选择: " sub_choice
 
@@ -2698,7 +3113,7 @@ case $choice in
                       echo "------------------------"
                       echo "1. 更新应用             2. 卸载应用"
                       echo "------------------------"
-                      echo "0. 返回上一级选单"
+                      echo "0. 返回上一级菜单"
                       echo "------------------------"
                       read -p "请输入你的选择: " sub_choice
 
@@ -2804,7 +3219,7 @@ case $choice in
                       echo "------------------------"
                       echo "1. 更新应用             2. 卸载应用"
                       echo "------------------------"
-                      echo "0. 返回上一级选单"
+                      echo "0. 返回上一级菜单"
                       echo "------------------------"
                       read -p "请输入你的选择: " sub_choice
 
@@ -2916,7 +3331,7 @@ case $choice in
                       echo "------------------------"
                       echo "1. 更新应用             2. 卸载应用"
                       echo "------------------------"
-                      echo "0. 返回上一级选单"
+                      echo "0. 返回上一级菜单"
                       echo "------------------------"
                       read -p "请输入你的选择: " sub_choice
 
@@ -3056,7 +3471,7 @@ case $choice in
                       echo "------------------------"
                       echo "1. 更新应用             2. 卸载应用"
                       echo "------------------------"
-                      echo "0. 返回上一级选单"
+                      echo "0. 返回上一级菜单"
                       echo "------------------------"
                       read -p "请输入你的选择: " sub_choice
 
@@ -3149,7 +3564,7 @@ case $choice in
                       echo "------------------------"
                       echo "1. 更新应用             2. 卸载应用"
                       echo "------------------------"
-                      echo "0. 返回上一级选单"
+                      echo "0. 返回上一级菜单"
                       echo "------------------------"
                       read -p "请输入你的选择: " sub_choice
 
@@ -3246,7 +3661,7 @@ case $choice in
                       echo "------------------------"
                       echo "1. 更新应用             2. 卸载应用"
                       echo "------------------------"
-                      echo "0. 返回上一级选单"
+                      echo "0. 返回上一级菜单"
                       echo "------------------------"
                       read -p "请输入你的选择: " sub_choice
 
@@ -3339,7 +3754,7 @@ case $choice in
                       echo "------------------------"
                       echo "1. 更新应用             2. 卸载应用"
                       echo "------------------------"
-                      echo "0. 返回上一级选单"
+                      echo "0. 返回上一级菜单"
                       echo "------------------------"
                       read -p "请输入你的选择: " sub_choice
 
@@ -3433,7 +3848,7 @@ case $choice in
                       echo "------------------------"
                       echo "1. 更新应用             2. 卸载应用"
                       echo "------------------------"
-                      echo "0. 返回上一级选单"
+                      echo "0. 返回上一级菜单"
                       echo "------------------------"
                       read -p "请输入你的选择: " sub_choice
 
@@ -3531,7 +3946,7 @@ case $choice in
                       echo "------------------------"
                       echo "1. 更新应用             2. 卸载应用"
                       echo "------------------------"
-                      echo "0. 返回上一级选单"
+                      echo "0. 返回上一级菜单"
                       echo "------------------------"
                       read -p "请输入你的选择: " sub_choice
 
@@ -3626,7 +4041,7 @@ case $choice in
                       echo "------------------------"
                       echo "1. 更新应用             2. 卸载应用"
                       echo "------------------------"
-                      echo "0. 返回上一级选单"
+                      echo "0. 返回上一级菜单"
                       echo "------------------------"
                       read -p "请输入你的选择: " sub_choice
 
@@ -3705,7 +4120,7 @@ case $choice in
                       echo "------------------------"
                       echo "1. 更新应用             2. 卸载应用"
                       echo "------------------------"
-                      echo "0. 返回上一级选单"
+                      echo "0. 返回上一级菜单"
                       echo "------------------------"
                       read -p "请输入你的选择: " sub_choice
 
@@ -3802,7 +4217,7 @@ case $choice in
                       echo "------------------------"
                       echo "1. 更新应用             2. 卸载应用"
                       echo "------------------------"
-                      echo "0. 返回上一级选单"
+                      echo "0. 返回上一级菜单"
                       echo "------------------------"
                       read -p "请输入你的选择: " sub_choice
 
@@ -3892,7 +4307,7 @@ case $choice in
                       echo "------------------------"
                       echo "1. 更新应用             2. 卸载应用"
                       echo "------------------------"
-                      echo "0. 返回上一级选单"
+                      echo "0. 返回上一级菜单"
                       echo "------------------------"
                       read -p "请输入你的选择: " sub_choice
   
@@ -3987,7 +4402,7 @@ case $choice in
                       echo "------------------------"
                       echo "1. 更新应用             2. 卸载应用"
                       echo "------------------------"
-                      echo "0. 返回上一级选单"
+                      echo "0. 返回上一级菜单"
                       echo "------------------------"
                       read -p "请输入你的选择: " sub_choice
   
@@ -4577,7 +4992,7 @@ case $choice in
                   echo "------------------------"
                   echo "5. 删除账号"
                   echo "------------------------"
-                  echo "0. 返回上一级选单"
+                  echo "0. 返回上一级菜单"
                   echo "------------------------"
                   read -p "请输入你的选择: " sub_choice
 
@@ -4767,7 +5182,7 @@ case $choice in
                   echo "23. 加拿大时间               24. 墨西哥时间"
                   echo "25. 巴西时间                 26. 阿根廷时间"
                   echo "------------------------"
-                  echo "0. 返回上一级选单"
+                  echo "0. 返回上一级菜单"
                   echo "------------------------"
                   read -p "请输入你的选择: " sub_choice
 
@@ -4858,7 +5273,7 @@ case $choice in
                   echo "------------------------"
                   echo "1. 更新BBRv3内核              2. 卸载BBRv3内核"
                   echo "------------------------"
-                  echo "0. 返回上一级选单"
+                  echo "0. 返回上一级菜单"
                   echo "------------------------"
                   read -p "请输入你的选择: " sub_choice
 
@@ -4992,7 +5407,7 @@ EOF
                   echo "------------------------"
                   echo "9. 卸载防火墙"
                   echo "------------------------"
-                  echo "0. 返回上一级选单"
+                  echo "0. 返回上一级菜单"
                   echo "------------------------"
                   read -p "请输入你的选择: " sub_choice
 
