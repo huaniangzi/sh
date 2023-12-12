@@ -240,16 +240,26 @@ check_port_availability() {
 get_valid_port() {
     local port_available=false
     local host_port
+    local already_warned_ports=()
 
     while [ "$port_available" = false ]; do
         read -p "请输入你想要映射到容器的主机端口: " host_port
-        if check_port_availability "$host_port"; then
+
+        if [[ " ${already_warned_ports[@]} " =~ " $host_port " ]]; then
+            echo "端口 $host_port 已被占用，请重新输入。"
+        elif check_port_availability "$host_port"; then
             port_available=true
+        else
+            already_warned_ports+=("$host_port")
         fi
     done
 
     echo "$host_port"
 }
+
+clear
+host_port=$(get_valid_port)
+echo "使用了端口号：$host_port"
 
 while true; do
 clear
@@ -1395,7 +1405,6 @@ case $choice in
                                     clear
                                     install_netstat
                                     clear
-                                    check_port_availability
                                     host_port=$(get_valid_port)
                                     docker rm -f easyimage
                                     docker rmi -f ddsderek/easyimage:latest
@@ -1446,7 +1455,6 @@ case $choice in
                                     clear
                                     install_netstat
                                     clear
-                                    check_port_availability
                                     host_port=$(get_valid_port)
 
                                     # 根据用户输入的主机端口运行容器并保持容器内部端口为80
