@@ -259,7 +259,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.4.3 （支持Ubuntu，Debian，Centos系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.4.4 （支持Ubuntu，Debian，Centos系统）\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
 echo "2. 系统更新"
@@ -4808,14 +4808,22 @@ case $choice in
           case "$choice" in
             [Yy])
               while true; do
-                read -p "请选择要重装的系统:  1. Debian12 | 2. Ubuntu20.04 : " sys_choice
+                read -p "请选择要重装的系统:  1. Debian10 丨 2. Debian11 | 3. Debian12 丨 4. Ubuntu20.04: " sys_choice
 
                 case "$sys_choice" in
                   1)
-                    xitong="-d 12"
+                    xitong="-d 10"
                     break  # 结束循环
                     ;;
                   2)
+                    xitong="-d 11"
+                    break  # 结束循环
+                    ;;
+                  3)
+                    xitong="-d 12"
+                    break  # 结束循环
+                    ;;
+                  4)
                     xitong="-u 20.04"
                     break  # 结束循环
                     ;;
