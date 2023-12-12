@@ -205,3 +205,8 @@ clear
     echo "docker建站中添加ldnmp反向代理"
     echo "优化代码细节"
     echo "------------------------"
+    echo "2024-01-01   v1.4.4"
+    echo "docker建站中添加ldnmp重定向"
+    echo "docker建站中添加卸载LDNMP环境"
+    echo "系统工具中更新一键重装系统"
+    echo "------------------------"
