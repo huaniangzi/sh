@@ -210,3 +210,11 @@ clear
     echo "docker建站中添加卸载LDNMP环境"
     echo "系统工具中更新一键重装系统"
     echo "------------------------"
+    echo "2024-01-01   v1.4.5"
+    echo "docker建站中添加npm反向代理"
+    echo "docker建站中添加Alsit"
+    echo "docker建站中添加简单图床"
+    echo "docker建站中添加碎片化知识卡片"
+    echo "docker建站中添加onenav导航"
+    echo "------------------------"
+
