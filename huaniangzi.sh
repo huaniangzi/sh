@@ -244,22 +244,14 @@ get_valid_port() {
 
     while [ "$port_available" = false ]; do
         read -p "请输入你想要映射到容器的主机端口: " host_port
-
-        if [[ " ${already_warned_ports[@]} " =~ " $host_port " ]]; then
-            echo "端口 $host_port 已被占用，请重新输入。"
-        elif check_port_availability "$host_port"; then
+        if check_port_availability "$host_port"; then
             port_available=true
-        else
-            already_warned_ports+=("$host_port")
         fi
     done
 
     echo "$host_port"
 }
 
-clear
-host_port=$(get_valid_port)
-echo "使用了端口号：$host_port"
 
 while true; do
 clear
