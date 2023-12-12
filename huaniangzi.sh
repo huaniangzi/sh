@@ -766,7 +766,7 @@ case $choice in
         echo " ▼ "
         echo -e"\033[33mDocker建站 \033[0m"
         echo "------------------------"
-        echo "1. 仅安装nginx"
+        echo -e "\033[33m1. 仅安装nginx \033[0m"
         echo "2. 站点重定向"
         echo "3. 站点反向代理"
         echo "4. 站点数据管理"
