@@ -764,7 +764,7 @@ case $choice in
     clear
     while true; do
         echo " ▼ "
-        echo -e"\033[33mDocker建站 \033[0m"
+        echo -e "\033[31mDocker建站 \033[0m"
         echo "------------------------"
         echo -e "\033[33m1. 仅安装nginx \033[0m"
         echo "2. 站点重定向"
@@ -991,8 +991,8 @@ case $choice in
             6)
                 clear
                 while true; do
-                echo -e "\033[33m ▼ \033[0m"
-                echo -e "\033[33mDocker项目\033[0m"
+                echo -e "\033[31m ▼ \033[0m"
+                echo -e "\033[31mDocker项目\033[0m"
                 echo  "------------------------"
                 echo  "1. 安装npm反向代理"
                 echo  "2. 安装Alsit"
