@@ -259,14 +259,14 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.4.4 （支持Ubuntu，Debian，Centos系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.4.5 （支持Ubuntu，Debian，Centos系统）\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
 echo "2. 系统更新"
 echo "3. 系统清理"
 echo "4. 常用工具 ▶"
 echo "5. 测试脚本合集 ▶ "
-echo "6. Docker建站 ▶ "
+echo -e "\033[33m6. Docker建站 ▶ \033[0m"
 echo -e "\033[33m7. LDNMP建站 ▶ \033[0m"
 echo "8. 常用面板工具 ▶ "
 echo "9. 外面的世界 ▶ "
@@ -764,7 +764,7 @@ case $choice in
     clear
     while true; do
         echo " ▼ "
-        echo "Docker建站"
+        echo -e"\033[33mDocker建站 \033[0m"
         echo "------------------------"
         echo "1. 仅安装nginx"
         echo "2. 站点重定向"
@@ -772,7 +772,7 @@ case $choice in
         echo "4. 站点数据管理"
         echo "5. 卸载LDNMP环境"
         echo "------------------------"
-        echo "6. Docker项目"
+        echo -e "\033[33m6. Docker项目 \033[0m"
         echo "7. Docker管理器"
         echo "------------------------"
         echo "0. 返回上一级菜单"
@@ -994,7 +994,11 @@ case $choice in
                 echo -e "\033[33m ▼ \033[0m"
                 echo -e "\033[33mDocker项目\033[0m"
                 echo  "------------------------"
-                echo  "1. 安装简单图床"
+                echo  "1. 安装npm反向代理"
+                echo  "2. 安装Alsit"
+                echo  "3. 安装简单图床"
+                echo  "4. 安装碎片化知识卡片"
+                echo  "5. onenav导航"
                 echo  "------------------------"
                 echo  "0. 返回上一级菜单"
                 echo  "------------------------"
@@ -1004,9 +1008,191 @@ case $choice in
                     1)
                         if docker inspect easyimage &>/dev/null; then
                             clear
+                            echo "npm反向代理已安装，访问地址: "
+                            external_ip=$(curl -s ipv4.ip.sb)
+                            echo "http:$external_ip:$host_port"
+                            echo ""
+
+                            echo "应用操作"
+                            echo "------------------------"
+                            echo "1. 更新应用             2. 卸载应用"
+                            echo "0. 返回上一级菜单"
+                            echo "------------------------"
+                            read -p "请输入你的选择: " sub_choice
+
+                            case $sub_choice in
+                                1)
+                                    clear
+                                    install_netstat
+                                    clear
+                                    host_port=$(get_valid_port)
+                                    docker rm -f nginx-proxy-manager
+                                    docker rmi -f jc21/nginx-proxy-manager:latest
+                                    install_docker
+                                    docker run -d \
+                                        --name nginx-proxy-manager \
+                                        -p 80:80 \
+                                        -p $host_port:81 \
+                                        -p 443:443 \
+                                        -v /home/docker/npm/data:/data \
+                                        -v /home/docker/npm/letsencrypt:/etc/letsencrypt \
+                                        --restart unless-stopped \
+                                        jc21/nginx-proxy-manager:latest
+
+
+                                    echo "npm反向代理已经安装完成"
+                                    echo "------------------------"
+                                    echo "您可以使用以下地址访问npm反向代理:"
+                                    external_ip=$(curl -s ipv4.ip.sb)
+                                    echo "http:$external_ip:$host_port"  # 使用用户输入的端口
+                                    echo ""
+                                    ;;
+                                2)
+                                    clear
+                                    docker rm -f nginx-proxy-manager
+                                    docker rmi -f jc21/nginx-proxy-manager:latest
+                                    rm -rf /home/docker/npm
+                                    echo "应用已卸载"
+                                    ;;
+                                0)
+                                    break  # 跳出循环，退出菜单
+                                    ;;
+                                *)
+                                    break  # 跳出循环，退出菜单
+                                    ;;
+                            esac
+                        else
+                            clear
+                            echo "安装提示"
+                            echo "npm反向代理和Ldnmp反代只能使用一个"
+                            echo ""
+
+                            read -p "确定安装npm反向代理吗？(Y/N): " choice
+                            case "$choice" in
+                                [Yy])
+                                    clear
+                                    install_netstat
+                                    clear
+                                    host_port=$(get_valid_port)
+
+                                    docker run -d \
+                                        --name nginx-proxy-manager \
+                                        -p 80:80 \
+                                        -p $host_port:81 \
+                                        -p 443:443 \
+                                        -v /home/docker/npm/data:/data \
+                                        -v /home/docker/npm/letsencrypt:/etc/letsencrypt \
+                                        --restart unless-stopped \
+                                        jc21/nginx-proxy-manager:latest
+
+                                    clear
+                                    echo "npm反向代理已经安装完成"
+                                    echo "------------------------"
+                                    echo "您可以使用以下地址访问npm反向代理:"
+                                    external_ip=$(curl -s ipv4.ip.sb)
+                                    echo "http:$external_ip:$host_port"
+                                    echo ""
+                                    ;;
+                                [Nn])
+                                    ;;
+                                *)
+                                    ;;
+                            esac
+                        fi
+                          ;;
+                    2)
+                        if docker inspect easyimage &>/dev/null; then
+                            clear
+                            echo "AList已安装，访问地址: "
+                            external_ip=$(curl -s ipv4.ip.sb)
+                            echo "http:$external_ip:5244"
+                            echo ""
+
+                            echo "应用操作"
+                            echo "------------------------"
+                            echo "1. 更新应用             2. 卸载应用"
+                            echo "0. 返回上一级菜单"
+                            echo "------------------------"
+                            read -p "请输入你的选择: " sub_choice
+
+                            case $sub_choice in
+                                1)
+                                    clear
+                                    docker rm -f alist
+                                    docker rmi -f xhofe/alist:latest
+                                    install_docker
+                                    docker run -d \
+                                        --restart always \
+                                        -v /home/docker/alsit/etc/alist:/opt/alist/data \
+                                        -p 5244:5244 \
+                                        -e PUID=0 \
+                                        -e PGID=0 \
+                                        -e UMASK=022 \
+                                        --name alist \
+                                        xhofe/alist:latest
+
+                                    echo "AList已经安装完成"
+                                    echo "------------------------"
+                                    echo "您可以使用以下地址访问AList:"
+                                    external_ip=$(curl -s ipv4.ip.sb)
+                                    echo "http:$external_ip:5244"  # 使用用户输入的端口
+                                    echo ""
+                                    ;;
+                                2)
+                                    clear
+                                    docker rm -f alist
+                                    docker rmi -f xhofe/alist:latest
+                                    rm -rf /home/docker/alsit
+                                    echo "应用已卸载"
+                                    ;;
+                                0)
+                                    break  # 跳出循环，退出菜单
+                                    ;;
+                                *)
+                                    break  # 跳出循环，退出菜单
+                                    ;;
+                            esac
+                        else
+                            clear
+                            echo "安装提示"
+                            echo "Alsit是一个云盘存储程序"
+                            echo ""
+
+                            read -p "确定安装Alsit吗？(Y/N): " choice
+                            case "$choice" in
+                                [Yy])
+                                    clear
+                                    docker run -d \
+                                        --restart always \
+                                        -v /home/docker/alsit/etc/alist:/opt/alist/data \
+                                        -p 5244:5244 \
+                                        -e PUID=0 \
+                                        -e PGID=0 \
+                                        -e UMASK=022 \
+                                        --name alist \
+                                        xhofe/alist:latest
+
+                                    clear
+                                    echo "Alsit已经安装完成"
+                                    echo "------------------------"
+                                    echo "您可以使用以下地址访问AList:"
+                                    external_ip=$(curl -s ipv4.ip.sb)
+                                    echo "http:$external_ip:5244"
+                                    echo ""
+                                    ;;
+                                [Nn])
+                                    ;;
+                                *)
+                                    ;;
+                            esac
+                        fi
+                          ;;
+                    3)
+                        if docker inspect easyimage &>/dev/null; then
+                            clear
                             echo "简单图床已安装，访问地址: "
                             external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$external_ip:85"
+                            echo "http:$external_ip:$host_port"
                             echo ""
 
                             echo "应用操作"
@@ -1103,6 +1289,188 @@ case $choice in
                             esac
                         fi
                           ;;
+                    4)
+                        if docker inspect easyimage &>/dev/null; then
+                            clear
+                            echo "碎片化知识卡片已安装，访问地址: "
+                            external_ip=$(curl -s ipv4.ip.sb)
+                            echo "http:$external_ip:$host_port"
+                            echo ""
+
+                            echo "应用操作"
+                            echo "------------------------"
+                            echo "1. 更新应用             2. 卸载应用"
+                            echo "0. 返回上一级菜单"
+                            echo "------------------------"
+                            read -p "请输入你的选择: " sub_choice
+
+                            case $sub_choice in
+                                1)
+                                    clear
+                                    install_netstat
+                                    clear
+                                    host_port=$(get_valid_port)
+                                    docker rm -f memeos
+                                    docker rmi -f neosmemo/memos:latest
+                                    install_docker
+                                    docker run -d \
+                                        --name memeos \
+                                        --hostname memeos \
+                                        -p $host_port:5230 \
+                                        -v /home/docker/memos/.memos/:/var/opt/memos \
+                                        --restart always \
+                                        neosmemo/memos:latest
+
+                                    echo "碎片化知识卡片已经安装完成"
+                                    echo "------------------------"
+                                    echo "您可以使用以下地址访问碎片化知识卡片:"
+                                    external_ip=$(curl -s ipv4.ip.sb)
+                                    echo "http:$external_ip:$host_port"  # 使用用户输入的端口
+                                    echo ""
+                                    ;;
+                                2)
+                                    clear
+                                    docker rm -f memeos
+                                    docker rmi -f neosmemo/memos:latest
+                                    rm -rf /home/docker/memos
+                                    echo "应用已卸载"
+                                    ;;
+                                0)
+                                    break  # 跳出循环，退出菜单
+                                    ;;
+                                *)
+                                    break  # 跳出循环，退出菜单
+                                    ;;
+                            esac
+                        else
+                            clear
+                            echo "安装提示"
+                            echo "碎片化知识卡片和一个记事本,备忘录"
+                            echo ""
+
+                            read -p "确定安装碎片化知识卡片吗？(Y/N): " choice
+                            case "$choice" in
+                                [Yy])
+                                    clear
+                                    install_netstat
+                                    clear
+                                    host_port=$(get_valid_port)
+
+                                    docker rm -f easyimage
+                                    docker rmi -f ddsderek/easyimage:latest
+                                    install_docker
+                                    docker run -d \
+                                        --name memeos \
+                                        --hostname memeos \
+                                        -p $host_port:5230 \
+                                        -v /home/docker/memos/.memos/:/var/opt/memos \
+                                        --restart always \
+                                        neosmemo/memos:latest
+
+                                    clear
+                                    echo "碎片化知识卡片已经安装完成"
+                                    echo "------------------------"
+                                    echo "您可以使用以下地址访问碎片化知识卡片:"
+                                    external_ip=$(curl -s ipv4.ip.sb)
+                                    echo "http:$external_ip:$host_port"
+                                    echo ""
+                                    ;;
+                                [Nn])
+                                    ;;
+                                *)
+                                    ;;
+                            esac
+                        fi
+                          ;;
+                    5)
+                        if docker inspect easyimage &>/dev/null; then
+                            clear
+                            echo "onenav导航已安装，访问地址: "
+                            external_ip=$(curl -s ipv4.ip.sb)
+                            echo "http:$external_ip:$host_port"
+                            echo ""
+
+                            echo "应用操作"
+                            echo "------------------------"
+                            echo "1. 更新应用             2. 卸载应用"
+                            echo "0. 返回上一级菜单"
+                            echo "------------------------"
+                            read -p "请输入你的选择: " sub_choice
+
+                            case $sub_choice in
+                                1)
+                                    clear
+                                    install_netstat
+                                    clear
+                                    host_port=$(get_valid_port)
+                                    docker rm -f onenav
+                                    docker rmi -f helloz/onenav:latest
+                                    install_docker
+                                    docker run -d \
+                                        --name onenav \
+                                        -p $host_port:80 \
+                                        -v /home/docker/onenav/data:/data/wwwroot/default/data \
+                                        helloz/onenav:latest \
+                                        --restart always
+
+                                    echo "onenav导航已经安装完成"
+                                    echo "------------------------"
+                                    echo "您可以使用以下地址访问onenav导航:"
+                                    external_ip=$(curl -s ipv4.ip.sb)
+                                    echo "http:$external_ip:$host_port"  # 使用用户输入的端口
+                                    echo ""
+                                    ;;
+                                2)
+                                    clear
+                                    docker rm -f onenav
+                                    docker rmi -f helloz/onenav:latest
+                                    rm -rf /home/docker/onenav
+                                    echo "应用已卸载"
+                                    ;;
+                                0)
+                                    break  # 跳出循环，退出菜单
+                                    ;;
+                                *)
+                                    break  # 跳出循环，退出菜单
+                                    ;;
+                            esac
+                        else
+                            clear
+                            echo "安装提示"
+                            echo "onenav导航是一个导航程序"
+                            echo ""
+
+                            read -p "确定安装onenav导航吗？(Y/N): " choice
+                            case "$choice" in
+                                [Yy])
+                                    clear
+                                    install_netstat
+                                    clear
+                                    host_port=$(get_valid_port)
+
+                                    docker run -d \
+                                        --name onenav \
+                                        -p $host_port:80 \
+                                        -v /home/docker/onenav/data:/data/wwwroot/default/data \
+                                        helloz/onenav:latest \
+                                        --restart always
+
+                                    clear
+                                    echo "onenav导航已经安装完成"
+                                    echo "------------------------"
+                                    echo "您可以使用以下地址访问onenav导航:"
+                                    external_ip=$(curl -s ipv4.ip.sb)
+                                    echo "http:$external_ip:$host_port"
+                                    echo ""
+                                    ;;
+                                [Nn])
+                                    ;;
+                                *)
+                                    ;;
+                            esac
+                        fi
+                          ;;
+
                     0)
                         # 返回上一级菜单
                         break  # 使用 break 来跳出当前循环，返回上一级
