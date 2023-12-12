@@ -258,7 +258,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.4.1 （支持Ubuntu，Debian，Centos系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.4.2 （支持Ubuntu，Debian，Centos系统）\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
 echo "2. 系统更新"
@@ -271,7 +271,7 @@ echo "8. 常用面板工具 ▶ "
 echo "9. 外面的世界 ▶ "
 echo "10. 系统工具 ▶ "
 echo "------------------------"
-echo "00. 脚本更新日志"
+echo "00. 脚本更新"
 echo "0. 退出脚本"
 echo "------------------------"
 read -p "请输入你的选择: " choice
@@ -1394,6 +1394,7 @@ case $choice in
                                 1)
                                     clear
                                     install_netstat
+                                    clear
                                     host_port=$(get_valid_port)
                                     docker rm -f easyimage
                                     docker rmi -f ddsderek/easyimage:latest
@@ -1443,6 +1444,7 @@ case $choice in
                                 [Yy])
                                     clear
                                     install_netstat
+                                    clear
                                     host_port=$(get_valid_port)
 
                                     # 根据用户输入的主机端口运行容器并保持容器内部端口为80
