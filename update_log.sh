@@ -215,6 +215,5 @@ clear
     echo "docker建站中添加Alsit"
     echo "docker建站中添加简单图床"
     echo "docker建站中添加碎片化知识卡片"
-    echo "docker建站中添加onenav导航"
     echo "------------------------"
 
