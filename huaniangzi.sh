@@ -245,6 +245,8 @@ get_valid_port() {
         read -p "请输入你想要映射到容器的主机端口: " host_port
         if check_port_availability "$host_port"; then
             port_available=true
+        else
+            echo "端口 $host_port 已被占用，请尝试其他端口。"
         fi
     done
 
