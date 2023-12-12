@@ -240,7 +240,6 @@ check_port_availability() {
 get_valid_port() {
     local port_available=false
     local host_port
-    local already_warned_ports=()
 
     while [ "$port_available" = false ]; do
         read -p "请输入你想要映射到容器的主机端口: " host_port
