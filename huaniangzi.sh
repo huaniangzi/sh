@@ -4348,7 +4348,7 @@ case $choice in
       echo "16. 开启BBR3加速"
       echo "17. 防火墙高级管理器"
       echo "18. 修改主机名"
-      echo -e "19. 切换系统更新源 \033[36mBeta\033[0m"
+      echo "19. 切换系统更新源"
       echo -e "20. 定时任务管理 \033[33mNEW\033[0m"
       echo "------------------------"
       echo "99. 重启服务器"
@@ -5405,7 +5405,7 @@ EOF
               ;;
 
           19)
-          clear
+
           # 获取系统信息
           source /etc/os-release
 
