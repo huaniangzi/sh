@@ -374,6 +374,7 @@ case $choice in
     echo ""
     echo "系统信息查询"
     echo "------------------------"
+    echo "------------------------"
     echo "主机名: $hostname"
     echo "运营商: $isp_info"
     echo "------------------------"
@@ -4348,6 +4349,7 @@ case $choice in
       echo "17. 防火墙高级管理器"
       echo "18. 修改主机名"
       echo -e "19. 切换系统更新源 \033[36mBeta\033[0m"
+      echo -e "20. 定时任务管理 \033[33mNEW\033[0m"
       echo "------------------------"
       echo "99. 重启服务器"
       echo "------------------------"
@@ -5611,6 +5613,57 @@ EOF
 
               ;;
 
+          20)
+          while true; do
+              clear
+              echo "定时任务列表"
+              crontab -l
+              echo ""
+              echo "操作"
+              echo "------------------------"
+              echo "1. 添加定时任务              2. 删除定时任务"
+              echo "------------------------"
+              echo "0. 返回上一级选单"
+              echo "------------------------"
+              read -p "请输入你的选择: " sub_choic
+              case $sub_choice in
+
+                  1)
+                      read -p "请输入新任务的执行命令: " newquest
+                      echo "------------------------"
+                      echo "1. 每周备份                 2. 每天备份"
+                      read -p "请输入你的选择: " dingsh
+
+                      case $dingshi in
+                          1)
+                              read -p "选择每周备份的星期几 (0-6，0代表星期日): " weekday
+                              (crontab -l ; echo "0 0 * * $weekday $newquest") | crontab - > /dev/null 2>&1
+                              ;;
+                          2)
+                              read -p "选择每天备份的时间（小时，0-23）: " hour
+                              (crontab -l ; echo "0 $hour * * * $newquest") | crontab - > /dev/null 2>&1
+                              ;;
+                          *)
+                              break  # 跳出
+                              ;;
+                      esac
+                      ;;
+
+                  2)
+                      read -p "请输入需要删除任务的关键字: " kquest
+                      crontab -l | grep -v "$kquest" | crontab -
+                      ;;
+
+                  0)
+                      break  # 跳出循环，退出菜单
+                      ;;
+                  *)
+                      break  # 跳出循环，退出菜单
+                      ;;
+              esac
+          done
+              ;;
+
           99)
           clear
           echo "正在重启服务器，即将断开SSH连接"
@@ -5648,7 +5701,7 @@ EOF
     exit
     ;;
 
-  0)
+1  0)
     clear
     exit
     ;;
