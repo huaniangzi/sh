@@ -1,31 +1,19 @@
 #!/bin/bash
 
-install_wget() {
-    if ! command -v wget &>/dev/null; then
+install() {
+    local package=$1
+    if ! command -v $package &>/dev/null; then
         if command -v apt &>/dev/null; then
-            apt update -y && apt install -y wget
+            apt update -y && apt install -y $package
         elif command -v yum &>/dev/null; then
-            yum -y update && yum -y install wget
+            yum -y update && yum -y install $package
         else
             echo "未知的包管理器!"
-            break
+            return 1
         fi
     fi
+    return 0
 }
-
-install_sshpass() {
-    if ! command -v sshpass &>/dev/null; then
-        if command -v apt &>/dev/null; then
-            apt update -y && apt install -y sshpass
-        elif command -v yum &>/dev/null; then
-            yum -y update && yum -y install sshpass
-        else
-            echo "未知的包管理器!"
-            break
-        fi
-    fi
-}
-
 
 # 定义安装 Docker 的函数
 install_docker() {
@@ -75,6 +63,15 @@ install_ldnmp() {
           "docker exec php74 sh -c 'echo \"memory_limit=256M\" > /usr/local/etc/php/conf.d/memory.ini' > /dev/null 2>&1"
           "docker exec php74 sh -c 'echo \"max_execution_time=1200\" > /usr/local/etc/php/conf.d/max_execution_time.ini' > /dev/null 2>&1"
           "docker exec php74 sh -c 'echo \"max_input_time=600\" > /usr/local/etc/php/conf.d/max_input_time.ini' > /dev/null 2>&1"
+
+          "docker exec nginx chmod -R 777 /var/www/html"
+          "docker exec php chmod -R 777 /var/www/html"
+          "docker exec php74 chmod -R 777 /var/www/html"
+        #   "docker restart mysql > /dev/null 2>&1"
+        #   "docker restart redis > /dev/null 2>&1"
+          "docker restart php > /dev/null 2>&1"
+          "docker restart php74 > /dev/null 2>&1"
+          "docker restart nginx > /dev/null 2>&1"
 
       )
 
@@ -126,25 +123,18 @@ install_ldnmp() {
 
       echo "------------------------"
       echo ""
+
+
 }
 
 install_certbot() {
-    if ! command -v certbot &>/dev/null; then
-        if command -v apt &>/dev/null; then
-            apt update -y && apt install -y certbot
-        elif command -v yum &>/dev/null; then
-            yum -y update && yum -y install certbot
-        else
-            echo "未知的包管理器!"
-            break
-        fi
-    fi
+    install certbot
 
     # 切换到一个一致的目录（例如，家目录）
     cd ~ || exit
 
     # 下载并使脚本可执行
-    curl -O https://raw.githubusercontent.com/huaniangzi/sh/main/auto_cert_renewal.sh
+    curl -O https://raw.githubusercontent.com/kejilion/sh/main/auto_cert_renewal.sh
     chmod +x auto_cert_renewal.sh
 
     # 安排每日午夜运行脚本
@@ -475,6 +465,12 @@ case $choice in
                     echo "8. tar GZ压缩解压工具"
                     echo "9. tmux 多路后台运行工具"
                     echo "10. ffmpeg 视频编码直播推流工具"
+                    echo -e "11. btop 现代化监控工具 \033[33mNEW\033[0m"
+                    echo -e "12. ranger 文件管理工具 \033[33mNEW\033[0m"
+                    echo -e "13. gdu 磁盘占用查看工具 \033[33mNEW\033[0m"
+                    echo -e "14. fzf 全局搜索工具 \033[33mNEW\033[0m"
+                    echo "------------------------"
+                    echo -e "21. cmatrix 黑客帝国屏保 \033[33mNEW\033[0m"
                     echo "------------------------"
                     echo "31. 全部安装"
                     echo "32. 全部卸载"
@@ -485,114 +481,112 @@ case $choice in
 
                     case $sub_choice in
                         1)
-                            clear
-                            if command -v apt &>/dev/null; then
-                                apt update -y && apt install -y curl
-                            elif command -v yum &>/dev/null; then
-                                yum -y update && yum -y install curl
-                            else
-                                echo "未知的包管理器!"
-                            fi
-
-                            ;;
+                          clear
+                          install curl
+                          clear
+                          echo "工具已安装，使用方法如下："
+                          curl --help
+                          ;;
                         2)
-                            clear
-                            if command -v apt &>/dev/null; then
-                                apt update -y && apt install -y wget
-                            elif command -v yum &>/dev/null; then
-                                yum -y update && yum -y install wget
-                            else
-                                echo "未知的包管理器!"
-                            fi
-                            ;;
+                          clear
+                          install wget
+                          clear
+                          echo "工具已安装，使用方法如下："
+                          wget --help
+                          ;;
                         3)
                           clear
-                          if command -v apt &>/dev/null; then
-                              apt update -y && apt install -y sudo
-                          elif command -v yum &>/dev/null; then
-                              yum -y update && yum -y install sudo
-                          else
-                              echo "未知的包管理器!"
-                          fi
+                          install sudo
+                          clear
+                          echo "工具已安装，使用方法如下："
+                          sudo --help
                           ;;
                         4)
                           clear
-                          if command -v apt &>/dev/null; then
-                              apt update -y && apt install -y socat
-                          elif command -v yum &>/dev/null; then
-                              yum -y update && yum -y install socat
-                          else
-                              echo "未知的包管理器!"
-                          fi
+                          install socat
+                          clear
+                          echo "工具已安装，使用方法如下："
+                          socat -h
                           ;;
                         5)
                           clear
-                          if command -v apt &>/dev/null; then
-                              apt update -y && apt install -y htop
-                          elif command -v yum &>/dev/null; then
-                              yum -y update && yum -y install htop
-                          else
-                              echo "未知的包管理器!"
-                          fi
+                          install htop
+                          htop
                           ;;
                         6)
                           clear
-                          if command -v apt &>/dev/null; then
-                              apt update -y && apt install -y iftop
-                          elif command -v yum &>/dev/null; then
-                              yum -y update && yum -y install iftop
-                          else
-                              echo "未知的包管理器!"
-                          fi
+                          install iftop
+                          iftop
                           ;;
                         7)
                           clear
-                          if command -v apt &>/dev/null; then
-                              apt update -y && apt install -y unzip
-                          elif command -v yum &>/dev/null; then
-                              yum -y update && yum -y install unzip
-                          else
-                              echo "未知的包管理器!"
-                          fi
+                          install unzip
+                          clear
+                          echo "工具已安装，使用方法如下："
+                          unzip
                           ;;
                         8)
                           clear
-                          if command -v apt &>/dev/null; then
-                              apt update -y && apt install -y tar
-                          elif command -v yum &>/dev/null; then
-                              yum -y update && yum -y install tar
-                          else
-                              echo "未知的包管理器!"
-                          fi
+                          install tar
+                          clear
+                          echo "工具已安装，使用方法如下："
+                          tar --help
                           ;;
                         9)
                           clear
-                          if command -v apt &>/dev/null; then
-                              apt update -y && apt install -y tmux
-                          elif command -v yum &>/dev/null; then
-                              yum -y update && yum -y install tmux
-                          else
-                              echo "未知的包管理器!"
-                          fi
+                          install tmux
+                          clear
+                          echo "工具已安装，使用方法如下："
+                          tmux --help
                           ;;
                         10)
                           clear
-                          if command -v apt &>/dev/null; then
-                              apt update -y && apt install -y ffmpeg
-                          elif command -v yum &>/dev/null; then
-                              yum -y update && yum -y install ffmpeg
-                          else
-                              echo "未知的包管理器!"
-                          fi
+                          install ffmpeg
+                          clear
+                          echo "工具已安装，使用方法如下："
+                          ffmpeg --help
+                          ;;
+
+                        11)
+                          clear
+                          install btop
+                          btop
+                          ;;
+                        12)
+                          clear
+                          install ranger
+                          cd /
+                          ranger
+                          cd ~
+                          ;;
+                        13)
+                          clear
+                          install gdu
+                          cd /
+                          gdu
+                          cd ~
+                          ;;
+                        14)
+                          clear
+                          install fzf
+                          cd /
+                          fzf
+                          cd ~
+                          ;;
+
+                        21)
+                          clear
+                          install cmatrix
+                          cmatrix
                           ;;
 
 
                         31)
                             clear
                             if command -v apt &>/dev/null; then
-                                apt update -y && apt install -y curl wget sudo socat htop iftop unzip tar tmux ffmpeg
+                                apt update -y && apt install -y curl wget sudo socat htop iftop unzip tar tmux ffmpeg btop ranger gdu fzf cmatrix
                             elif command -v yum &>/dev/null; then
-                                yum -y update && yum -y install curl wget sudo socat htop iftop unzip tar tmux ffmpeg
+                                yum -y update && yum -y install curl wget sudo socat htop iftop unzip tar tmux ffmpeg btop ranger gdu fzf cmatrix
                             else
                                 echo "未知的包管理器!"
                             fi
@@ -601,9 +595,9 @@ case $choice in
                         32)
                             clear
                             if command -v apt &>/dev/null; then
-                                apt remove -y htop iftop unzip tmux ffmpeg
+                                apt purge -y htop iftop unzip tmux ffmpeg btop ranger gdu fzf cmatrix
                             elif command -v yum &>/dev/null; then
-                                yum -y remove htop iftop unzip tmux ffmpeg
+                                yum -y remove htop iftop unzip tmux ffmpeg btop ranger gdu fzf cmatrix
                             else
                                 echo "未知的包管理器!"
                             fi
@@ -628,17 +622,7 @@ case $choice in
 
             2)
                 clear
-                # 检查并安装 wget（如果需要）
-                if ! command -v wget &>/dev/null; then
-                    if command -v apt &>/dev/null; then
-                        apt update -y && apt install -y wget
-                    elif command -v yum &>/dev/null; then
-                        yum -y update && yum -y install wget
-                    else
-                        echo "未知的包管理器!"
-                        exit 1
-                    fi
-                fi
+                install wget
                 wget --no-check-certificate -O tcpx.sh https://raw.githubusercontent.com/ylx2016/Linux-NetSpeed/master/tcpx.sh
                 chmod +x tcpx.sh
                 ./tcpx.sh
