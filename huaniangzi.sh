@@ -185,6 +185,21 @@ nginx_status() {
 }
 
 
+# 检查是否安装了netstat
+install_netstat() {
+    if ! command -v netstat &>/dev/null; then
+        if command -v apt &>/dev/null; then
+            apt update -y && apt install -y net-tools
+        elif command -v yum &>/dev/null; then
+            yum -y update && yum -y install net-tools
+        else
+            echo "未知的包管理器!"
+            # 可能需要针对其他包管理器执行相应的安装命令
+        fi
+    fi
+}
+
+
 # 函数：检查端口是否被占用
 check_port_availability() {
     local port=$1
@@ -979,7 +994,7 @@ case $choice in
                             case $sub_choice in
                                 1)
                                     clear
-                                    install netstat
+                                    install_netstat
                                     clear
                                     host_port=$(get_valid_port)
                                     docker rm -f nginx-proxy-manager
@@ -1027,7 +1042,7 @@ case $choice in
                             case "$choice" in
                                 [Yy])
                                     clear
-                                    install netstat
+                                    install_netstat
                                     clear
                                     host_port=$(get_valid_port)
 
@@ -1161,7 +1176,7 @@ case $choice in
                             case $sub_choice in
                                 1)
                                     clear
-                                    install netstat
+                                    install_netstat
                                     clear
                                     host_port=$(get_valid_port)
                                     docker rm -f easyimage
@@ -1211,7 +1226,7 @@ case $choice in
                             case "$choice" in
                                 [Yy])
                                     clear
-                                    install netstat
+                                    install_netstat
                                     clear
                                     host_port=$(get_valid_port)
 
@@ -1263,7 +1278,7 @@ case $choice in
                             case $sub_choice in
                                 1)
                                     clear
-                                    install netstat
+                                    install_netstat
                                     clear
                                     host_port=$(get_valid_port)
                                     docker rm -f memeos
@@ -1308,7 +1323,7 @@ case $choice in
                             case "$choice" in
                                 [Yy])
                                     clear
-                                    install netstat
+                                    install_netstat
                                     clear
                                     host_port=$(get_valid_port)
 
@@ -1466,7 +1481,7 @@ case $choice in
                             case $sub_choice in
                                 1)
                                     clear
-                                    install netstat
+                                    install_netstat
                                     clear
                                     host_port=$(get_valid_port)
                                     docker rm -f vaultwarden
@@ -1519,7 +1534,7 @@ case $choice in
                             case "$choice" in
                                 [Yy])
                                     clear
-                                    install netstat
+                                    install_netstat
                                     clear
                                     host_port=$(get_valid_port)
 
