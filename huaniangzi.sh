@@ -185,21 +185,6 @@ nginx_status() {
 }
 
 
-install_lrzsz() {
-    if ! command -v lrzsz &>/dev/null; then
-        if command -v apt &>/dev/null; then
-            apt update -y && apt install -y lrzsz
-        elif command -v yum &>/dev/null; then
-            yum -y update && yum -y install lrzsz
-        else
-            echo "未知的包管理器!"
-            break
-        fi
-    fi
-
-}
-
-
 # 检查是否安装了netstat
 install_netstat() {
     if ! command -v netstat &>/dev/null; then
@@ -2410,7 +2395,7 @@ case $choice in
         mkdir $yuming
         cd $yuming
 
-        install_lrzsz
+        install lrzsz
         clear
         echo -e "目前只允许上传\033[33mindex.html\033[0m文件，请提前准备好，按任意键继续..."
         read -n 1 -s -r -p ""
