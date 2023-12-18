@@ -1,18 +1,30 @@
 #!/bin/bash
 
 install() {
-    local package=$1
-    if ! command -v $package &>/dev/null; then
-        if command -v apt &>/dev/null; then
-            apt update -y && apt install -y $package
-        elif command -v yum &>/dev/null; then
-            yum -y update && yum -y install $package
-        else
-            echo "未知的包管理器!"
-            return 1
-        fi
+    if [ $# -eq 0 ]; then
+        echo "未提供软件包参数!"
+        return 1
     fi
+
+    for package in "$@"; do
+        if ! command -v "$package" &>/dev/null; then
+            if command -v apt &>/dev/null; then
+                apt update -y && apt install -y "$package"
+            elif command -v yum &>/dev/null; then
+                yum -y update && yum -y install "$package"
+            else
+                echo "未知的包管理器!"
+                return 1
+            fi
+        fi
+    done
+
     return 0
+}
+
+install_dependency() {
+      clear
+      install wget sudo socat unzip btop
 }
 
 # 定义安装 Docker 的函数
@@ -234,7 +246,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.4.8 （支持Ubuntu，Debian，Centos系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.4.9 （支持Ubuntu，Debian，Centos系统）\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
 echo "2. 系统更新"
@@ -752,22 +764,8 @@ case $choice in
         case $sub_choice in
             1)
               clear
-              if command -v apt &>/dev/null; then
-                  apt update -y
-                  apt install -y curl wget sudo socat unzip tar htop
-              elif command -v yum &>/dev/null; then
-                  yum -y update
-                  yum -y install curl
-                  yum -y install wget
-                  yum -y install sudo
-                  yum -y install socat
-                  yum -y install unzip
-                  yum -y install tar
-                  yum -y install htop
-              else
-                  echo "未知的包管理器!"
-              fi
 
+              install_dependency
               install_docker
               install_certbot
 
@@ -2021,23 +2019,8 @@ case $choice in
     case $sub_choice in
         1)
         clear
-        # 更新并安装必要的软件包
-        if command -v apt &>/dev/null; then
-            apt update -y
-            apt install -y curl wget sudo socat unzip tar htop
-        elif command -v yum &>/dev/null; then
-            yum -y update
-            yum -y install curl
-            yum -y install wget
-            yum -y install sudo
-            yum -y install socat
-            yum -y install unzip
-            yum -y install tar
-            yum -y install htop
-        else
-            echo "未知的包管理器!"
-        fi
 
+        nstall_dependency
         install_docker
         install_certbot
 
@@ -2297,22 +2280,8 @@ case $choice in
 
         21)
         clear
-        if command -v apt &>/dev/null; then
-            apt update -y
-            apt install -y curl wget sudo socat unzip tar htop
-        elif command -v yum &>/dev/null; then
-            yum -y update
-            yum -y install curl
-            yum -y install wget
-            yum -y install sudo
-            yum -y install socat
-            yum -y install unzip
-            yum -y install tar
-            yum -y install htop
-        else
-            echo "未知的包管理器!"
-        fi
 
+        install_dependency
         install_docker
         install_certbot
 
@@ -2598,24 +2567,8 @@ case $choice in
 
       34)
         clear
-        cd /home/ && ls -t /home/*.tar.gz | head -1 | xargs -I {} tar -xzf {}
 
-        if command -v apt &>/dev/null; then
-            apt update -y
-            apt install -y curl wget sudo socat unzip tar htop
-        elif command -v yum &>/dev/null; then
-            yum -y update
-            yum -y install curl
-            yum -y install wget
-            yum -y install sudo
-            yum -y install socat
-            yum -y install unzip
-            yum -y install tar
-            yum -y install htop
-        else
-            echo "未知的包管理器!"
-        fi
-
+        install_dependency
         install_docker
         install_certbot
         install_ldnmp
@@ -2851,19 +2804,10 @@ case $choice in
         docker rm -f nginx php php74 mysql redis
         docker rmi nginx php:fpm php:7.4.33-fpm mysql redis
 
-        if command -v apt &>/dev/null; then
-            apt update -y
-            apt upgrade -y
-        elif command -v yum &>/dev/null; then
-            yum -y update
-        else
-            echo "未知的包管理器!"
-        fi
-
+        install_dependency
         install_docker
         install_certbot
         install_ldnmp
-
         ;;
 
 
