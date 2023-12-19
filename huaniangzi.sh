@@ -489,7 +489,7 @@ case $choice in
   4)
     clear
     while true; do
-        echo -e "\033[33m▶ 常用工具\033[0m"
+        echo -e "\033[31m▶ 常用工具\033[0m"
         echo "------------------------"
         echo "1. 命令行工具和软件"
         echo "2. BBR管理 ▶"
@@ -503,7 +503,7 @@ case $choice in
             1)
                 while true; do
                     clear
-                    echo -e "\033[33m▶ 安装常用工具\033[0m"
+                    echo -e "\033[31m▶ 安装常用工具\033[0m"
                     echo "------------------------"
                     echo "1. curl 下载工具"
                     echo "2. wget 下载工具"
@@ -730,7 +730,7 @@ case $choice in
   5)
     while true; do
       clear
-      echo -e "\033[33m▶ 测试脚本合集\033[0m"
+      echo -e "\033[31m▶ 测试脚本合集\033[0m"
       echo "------------------------"
       echo "1. ChatGPT解锁状态检测"
       echo "2. Region流媒体解锁测试"
@@ -1021,7 +1021,7 @@ case $choice in
             6)
                 clear
                 while true; do
-                echo -e "\033[33m▶ Docker项目\033[0m"
+                echo -e "\033[31m▶ Docker项目\033[0m"
                 echo  "------------------------"
                 echo  "1. 安装npm反向代理"
                 echo  "2. 安装Alsit"
@@ -1651,7 +1651,7 @@ case $choice in
             7)
                 clear
                 while true; do
-                  echo -e "\033[33m▶ Docker管理器\033[0m"
+                  echo -e "\033[31m▶ Docker管理器\033[0m"
                   echo "------------------------"
                   echo "1. 安装更新Docker环境"
                   echo "------------------------"
@@ -2052,7 +2052,7 @@ case $choice in
   7)
     clear
     while true; do
-    echo -e "\033[33m▶ LDNMP建站\033[0m"
+    echo -e "\033[31m▶ LDNMP建站\033[0m"
     echo  "------------------------"
     echo  "1. 安装LDNMP环境"
     echo  "------------------------"
@@ -2832,7 +2832,7 @@ case $choice in
   8)
     clear
       while true; do
-        echo -e "\033[33m▶ 常用面板工具\033[0m"
+        echo -e "\033[31m▶ 常用面板工具\033[0m"
         echo "------------------------"
         echo "1. 宝塔面板官方版                       2. aaPanel宝塔国际版"
         echo "3. 1Panel新一代管理面板                 4. Ubuntu远程桌面网页版"
@@ -4169,7 +4169,7 @@ case $choice in
   9)
     clear
       while true; do
-        echo -e "\033[33m▶ 外面的世界\033[0m"
+        echo -e "\033[31m▶ 外面的世界\033[0m"
         echo "------------------------"
         echo "1. x-ui面板             2. ArgoX"
         echo "3. Hysteria1            4. Hysteria2"
@@ -4215,7 +4215,7 @@ case $choice in
   10)
   clear
     while true; do
-      echo -e "\033[33m▶ 系统工具\033[0m"
+      echo -e "\033[31m▶ 系统工具\033[0m"
       echo "------------------------"
       echo "1. 设置脚本启动快捷键"
       echo "------------------------"
