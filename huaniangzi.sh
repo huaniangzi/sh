@@ -24,7 +24,27 @@ install() {
 
 install_dependency() {
       clear
-      install wget sudo socat unzip btop
+      install wget socat unzip tar
+}
+
+remove() {
+    if [ $# -eq 0 ]; then
+        echo "未提供软件包参数!"
+        return 1
+    fi
+
+    for package in "$@"; do
+        if command -v apt &>/dev/null; then
+            apt purge -y "$package"
+        elif command -v yum &>/dev/null; then
+            yum remove -y "$package"
+        else
+            echo "未知的包管理器!"
+            return 1
+        fi
+    done
+
+    return 0
 }
 
 # 定义安装 Docker 的函数
@@ -146,7 +166,7 @@ install_certbot() {
     cd ~ || exit
 
     # 下载并使脚本可执行
-    curl -O https://raw.githubusercontent.com/kejilion/sh/main/auto_cert_renewal.sh
+    curl -O https://raw.githubusercontent.com/huaniangzi/sh/main/auto_cert_renewal.sh
     chmod +x auto_cert_renewal.sh
 
     # 安排每日午夜运行脚本
@@ -154,23 +174,14 @@ install_certbot() {
 }
 
 install_ssltls() {
-    #   docker stop nginx
-    #   iptables_open
-    #   cd ~
-    #   curl https://get.acme.sh | sh
-    #   ~/.acme.sh/acme.sh --register-account -m xxxx@gmail.com --issue -d $yuming --standalone --key-file /home/web/certs/${yuming}_key.pem --cert-file /home/web/certs/${yuming}_cert.pem --force
-    #   docker start nginx
-
-      docker stop nginx
+      docker stop nginx > /dev/null 2>&1
       iptables_open
       cd ~
       certbot certonly --standalone -d $yuming --email your@email.com --agree-tos --no-eff-email --force-renewal
       cp /etc/letsencrypt/live/$yuming/cert.pem /home/web/certs/${yuming}_cert.pem
       cp /etc/letsencrypt/live/$yuming/privkey.pem /home/web/certs/${yuming}_key.pem
-      docker start nginx
-
+      docker start nginx > /dev/null 2>&1
 }
-
 
 nginx_status() {
 
@@ -194,6 +205,42 @@ nginx_status() {
         echo -e "\e[1;31m检测到域名证书申请失败，请检测域名是否正确解析或更换域名重新尝试！\e[0m"
     fi
 
+}
+
+add_yuming() {
+      external_ip=$(curl -s ipv4.ip.sb)
+      echo -e "先将域名解析到本机IP: \033[33m$external_ip\033[0m"
+      read -p "请输入你解析的域名: " yuming
+}
+
+
+add_db() {
+      dbname=$(echo "$yuming" | sed -e 's/[^A-Za-z0-9]/_/g')
+      dbname="${dbname}"
+
+      dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
+      dbuse=$(grep -oP 'MYSQL_USER:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
+      dbusepasswd=$(grep -oP 'MYSQL_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
+      docker exec mysql mysql -u root -p"$dbrootpasswd" -e "CREATE DATABASE $dbname; GRANT ALL PRIVILEGES ON $dbname.* TO \"$dbuse\"@\"%\";"
+}
+
+reverse_proxy() {
+      external_ip=$(curl -s ipv4.ip.sb)
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/reverse-proxy.conf
+      sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
+      sed -i "s/0.0.0.0/$external_ip/g" /home/web/conf.d/$yuming.conf
+      sed -i "s/0000/3099/g" /home/web/conf.d/$yuming.conf
+      docker restart nginx
+}
+
+restart_ldnmp() {
+      docker exec nginx chmod -R 777 /var/www/html
+      docker exec php chmod -R 777 /var/www/html
+      docker exec php74 chmod -R 777 /var/www/html
+
+      docker restart php
+      docker restart php74
+      docker restart nginx
 }
 
 
@@ -361,7 +408,6 @@ case $choice in
     echo ""
     echo "系统信息查询"
     echo "------------------------"
-    echo "------------------------"
     echo "主机名: $hostname"
     echo "运营商: $isp_info"
     echo "------------------------"
@@ -409,9 +455,7 @@ case $choice in
 
   3)
     clear
-
-    if [ -f "/etc/debian_version" ]; then
-        # Debian-based systems
+    clean_debian() {
         apt autoremove --purge -y
         apt clean -y
         apt autoclean -y
@@ -420,16 +464,27 @@ case $choice in
         journalctl --vacuum-time=1s
         journalctl --vacuum-size=50M
         apt remove --purge $(dpkg -l | awk '/^ii linux-(image|headers)-[^ ]+/{print $2}' | grep -v $(uname -r | sed 's/-.*//') | xargs) -y
-    elif [ -f "/etc/redhat-release" ]; then
-        # Red Hat-based systems
+    }
+
+    clean_redhat() {
         yum autoremove -y
         yum clean all
         journalctl --rotate
         journalctl --vacuum-time=1s
         journalctl --vacuum-size=50M
         yum remove $(rpm -q kernel | grep -v $(uname -r)) -y
+    }
+
+    # Main script
+    if [ -f "/etc/debian_version" ]; then
+        # Debian-based systems
+        clean_debian
+    elif [ -f "/etc/redhat-release" ]; then
+        # Red Hat-based systems
+        clean_redhat
     fi
-      ;;
+
+    ;;
 
   4)
     clear
@@ -447,10 +502,9 @@ case $choice in
 
         case $sub_choice in
             1)
-                clear
                 while true; do
-                    echo " ▼ "
-                    echo "安装常用工具"
+                    clear
+                    echo "▶ 安装常用工具"
                     echo "------------------------"
                     echo "1. curl 下载工具"
                     echo "2. wget 下载工具"
@@ -458,164 +512,174 @@ case $choice in
                     echo "4. socat 通信连接工具 （申请域名证书必备）"
                     echo "5. htop 系统监控工具"
                     echo "6. iftop 网络流量监控工具"
-                    echo "7. unzip ZIP压缩解压工具z"
+                    echo "7. unzip ZIP压缩解压工具"
                     echo "8. tar GZ压缩解压工具"
                     echo "9. tmux 多路后台运行工具"
                     echo "10. ffmpeg 视频编码直播推流工具"
-                    echo -e "11. btop 现代化监控工具 \033[33mNEW\033[0m"
-                    echo -e "12. ranger 文件管理工具 \033[33mNEW\033[0m"
-                    echo -e "13. gdu 磁盘占用查看工具 \033[33mNEW\033[0m"
-                    echo -e "14. fzf 全局搜索工具 \033[33mNEW\033[0m"
+                    echo "11. btop 现代化监控工具"
+                    echo "12. ranger 文件管理工具"
+                    echo "13. gdu 磁盘占用查看工具"
+                    echo "14. fzf 全局搜索工具"
                     echo "------------------------"
-                    echo -e "21. cmatrix 黑客帝国屏保 \033[33mNEW\033[0m"
+                    echo "21. cmatrix 黑客帝国屏保"
                     echo "------------------------"
                     echo "31. 全部安装"
                     echo "32. 全部卸载"
                     echo "------------------------"
-                    echo "0. 返回上一级"
+                    echo -e "41. 安装指定工具 \033[33mNEW\033[0m"
+                    echo -e "42. 卸载指定工具 \033[33mNEW\033[0m"
+                    echo "------------------------"
+                    echo "0. 返回主菜单"
                     echo "------------------------"
                     read -p "请输入你的选择: " sub_choice
 
                     case $sub_choice in
                         1)
-                          clear
-                          install curl
-                          clear
-                          echo "工具已安装，使用方法如下："
-                          curl --help
-                          ;;
+                            clear
+                            install curl
+                            clear
+                            echo "工具已安装，使用方法如下："
+                            curl --help
+                            ;;
                         2)
-                          clear
-                          install wget
-                          clear
-                          echo "工具已安装，使用方法如下："
-                          wget --help
-                          ;;
-                        3)
-                          clear
-                          install sudo
-                          clear
-                          echo "工具已安装，使用方法如下："
-                          sudo --help
-                          ;;
-                        4)
-                          clear
-                          install socat
-                          clear
-                          echo "工具已安装，使用方法如下："
-                          socat -h
-                          ;;
-                        5)
-                          clear
-                          install htop
-                          htop
-                          ;;
-                        6)
-                          clear
-                          install iftop
-                          iftop
-                          ;;
-                        7)
-                          clear
-                          install unzip
-                          clear
-                          echo "工具已安装，使用方法如下："
-                          unzip
-                          ;;
-                        8)
-                          clear
-                          install tar
-                          clear
-                          echo "工具已安装，使用方法如下："
-                          tar --help
-                          ;;
-                        9)
-                          clear
-                          install tmux
-                          clear
-                          echo "工具已安装，使用方法如下："
-                          tmux --help
-                          ;;
-                        10)
-                          clear
-                          install ffmpeg
-                          clear
-                          echo "工具已安装，使用方法如下："
-                          ffmpeg --help
-                          ;;
+                            clear
+                            install wget
+                            clear
+                            echo "工具已安装，使用方法如下："
+                            wget --help
+                            ;;
+                          3)
+                            clear
+                            install sudo
+                            clear
+                            echo "工具已安装，使用方法如下："
+                            sudo --help
+                            ;;
+                          4)
+                            clear
+                            install socat
+                            clear
+                            echo "工具已安装，使用方法如下："
+                            socat -h
+                            ;;
+                          5)
+                            clear
+                            install htop
+                            clear
+                            htop
+                            ;;
+                          6)
+                            clear
+                            install iftop
+                            clear
+                            iftop
+                            ;;
+                          7)
+                            clear
+                            install unzip
+                            clear
+                            echo "工具已安装，使用方法如下："
+                            unzip
+                            ;;
+                          8)
+                            clear
+                            install tar
+                            clear
+                            echo "工具已安装，使用方法如下："
+                            tar --help
+                            ;;
+                          9)
+                            clear
+                            install tmux
+                            clear
+                            echo "工具已安装，使用方法如下："
+                            tmux --help
+                            ;;
+                          10)
+                            clear
+                            install ffmpeg
+                            clear
+                            echo "工具已安装，使用方法如下："
+                            ffmpeg --help
+                            ;;
 
-                        11)
-                          clear
-                          install btop
-                          btop
-                          ;;
-                        12)
-                          clear
-                          install ranger
-                          cd /
-                          ranger
-                          cd ~
-                          ;;
-                        13)
-                          clear
-                          install gdu
-                          cd /
-                          gdu
-                          cd ~
-                          ;;
-                        14)
-                          clear
-                          install fzf
-                          cd /
-                          fzf
-                          cd ~
-                          ;;
+                          11)
+                            clear
+                            install btop
+                            clear
+                            btop
+                            ;;
+                          12)
+                            clear
+                            install ranger
+                            cd /
+                            clear
+                            ranger
+                            cd ~
+                            ;;
+                          13)
+                            clear
+                            install gdu
+                            cd /
+                            clear
+                            gdu
+                            cd ~
+                            ;;
+                          14)
+                            clear
+                            install fzf
+                            cd /
+                            clear
+                            fzf
+                            cd ~
+                            ;;
 
-                        21)
-                          clear
-                          install cmatrix
-                          cmatrix
-                          ;;
-
+                          21)
+                            clear
+                            install cmatrix
+                            clear
+                            cmatrix
+                            ;;
 
                         31)
                             clear
-                            if command -v apt &>/dev/null; then
-                                apt update -y && apt install -y curl wget sudo socat htop iftop unzip tar tmux ffmpeg btop ranger gdu fzf cmatrix
-                            elif command -v yum &>/dev/null; then
-                                yum -y update && yum -y install curl wget sudo socat htop iftop unzip tar tmux ffmpeg btop ranger gdu fzf cmatrix
-                            else
-                                echo "未知的包管理器!"
-                            fi
+                            install curl wget sudo socat htop iftop unzip tar tmux ffmpeg btop ranger gdu fzf cmatrix
                             ;;
 
                         32)
                             clear
-                            if command -v apt &>/dev/null; then
-                                apt purge -y htop iftop unzip tmux ffmpeg btop ranger gdu fzf cmatrix
-                            elif command -v yum &>/dev/null; then
-                                yum -y remove htop iftop unzip tmux ffmpeg btop ranger gdu fzf cmatrix
-                            else
-                                echo "未知的包管理器!"
-                            fi
+                            remove htop iftop unzip tmux ffmpeg btop ranger gdu fzf cmatrix
+                            ;;
+
+                        41)
+                            clear
+                            read -p "请输入安装的工具名（wget curl sudo htop）: " installname
+                            install $installname
+                            ;;
+                        42)
+                            clear
+                            read -p "请输入卸载的工具名（htop ufw tmux cmatrix）: " removename
+                            remove $removename
                             ;;
 
                         0)
-                            break  # 返回上一级菜单
+                            cd ~
+                            ./huaniangzi.sh
+                            exit
                             ;;
-                        # ... （其他子菜单选项）
+
                         *)
                             echo "无效的输入!"
                             ;;
                     esac
-
                     echo -e "\033[0;32m操作完成\033[0m"
                     echo "按任意键继续..."
                     read -n 1 -s -r -p ""
                     echo ""
                     clear
                 done
-                ;;
+
+                  ;;
 
             2)
                 clear
@@ -665,82 +729,82 @@ case $choice in
     ;;
 
   5)
-    clear
-      while true; do
+    while true; do
+      clear
+      echo "▶ 测试脚本合集"
+      echo "------------------------"
+      echo "1. ChatGPT解锁状态检测"
+      echo "2. Region流媒体解锁测试"
+      echo "3. yeahwu流媒体解锁检测"
+      echo "4. besttrace三网回程延迟路由测试"
+      echo "5. mtr_trace三网回程线路测试"
+      echo "6. Superspeed三网测速"
+      echo "7. yabs性能带宽测试"
+      echo "8. bench性能测试"
+      echo "------------------------"
+      echo -e "9. spiritysdx融合怪测评 \033[33mNEW\033[0m"
+      echo "------------------------"
+      echo "0. 返回主菜单"
+      echo "------------------------"
+      read -p "请输入你的选择: " sub_choice
 
-        echo " ▼ "
-        echo "测试脚本合集"
-        echo "------------------------"
-        echo "1. ChatGPT解锁状态检测"
-        echo "2. Region流媒体解锁测试"
-        echo "3. yeahwu流媒体解锁检测"
-        echo "4. besttrace三网回程延迟路由测试"
-        echo "5. mtr_trace三网回程线路测试"
-        echo "6. Superspeed三网测速"
-        echo "7. yabs性能带宽测试"
-        echo "8. bench性能测试"
-        echo "------------------------"
-        echo -e "9. spiritysdx融合怪测评 \033[33mNEW\033[0m"
-        echo "------------------------"
-        echo "0. 返回主菜单"
-        echo "------------------------"
-        read -p "请输入你的选择: " sub_choice
-
-        case $sub_choice in
-            1)
-                clear
-                bash <(curl -Ls https://cdn.jsdelivr.net/gh/missuo/OpenAI-Checker/openai.sh)
-                ;;
-            2)
-                clear
-                bash <(curl -L -s check.unlock.media)
-                ;;
-            3)
-                clear
-                wget -qO- https://github.com/yeahwu/check/raw/main/check.sh | bash
-                ;;
-            4)
-                clear
-                wget -qO- git.io/besttrace | bash
-                ;;
-            5)
-                clear
-                curl https://raw.githubusercontent.com/zhucaidan/mtr_trace/main/mtr_trace.sh | bash
-                ;;
-            6)
-                clear
-                bash <(curl -Lso- https://git.io/superspeed_uxh)
-                ;;
-            7)
-                clear
-                curl -sL yabs.sh | bash -s -- -i -5
-                ;;
-            8)
-                clear
-                curl -Lso- bench.sh | bash
-                echo "按任意键继续..."
-                read -n 1 -s -r -p ""
-                ;;
-            9)
-                clear
-                curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
-                ;;
-            0)
-                cd ~
-                ./huaniangzi.sh
-                exit
-                ;;
-            *)
-                echo "无效的输入!"
-                ;;
-        esac
-        echo -e "\033[0;32m操作完成\033[0m"
-        echo "按任意键继续..."
-        read -n 1 -s -r -p ""
-        echo ""
-        clear
-      done
-      ;;
+      case $sub_choice in
+          1)
+              clear
+              bash <(curl -Ls https://cdn.jsdelivr.net/gh/missuo/OpenAI-Checker/openai.sh)
+              ;;
+          2)
+              clear
+              bash <(curl -L -s check.unlock.media)
+              ;;
+          3)
+              clear
+              install wget
+              wget -qO- https://github.com/yeahwu/check/raw/main/check.sh | bash
+              ;;
+          4)
+              clear
+              install wget
+              wget -qO- git.io/besttrace | bash
+              ;;
+          5)
+              clear
+              curl https://raw.githubusercontent.com/zhucaidan/mtr_trace/main/mtr_trace.sh | bash
+              ;;
+          6)
+              clear
+              bash <(curl -Lso- https://git.io/superspeed_uxh)
+              ;;
+          7)
+              clear
+              curl -sL yabs.sh | bash -s -- -i -5
+              ;;
+          8)
+              clear
+              curl -Lso- bench.sh | bash
+              echo "按任意键继续..."
+              read -n 1 -s -r -p ""
+              ;;
+          9)
+              clear
+              curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
+              ;;
+          0)
+              cd ~
+              ./huaniangzi.sh
+              exit
+              ;;
+          *)
+              echo "无效的输入!"
+              ;;
+      esac
+      echo -e "\033[0;32m操作完成\033[0m"
+      echo "按任意键继续..."
+      read -n 1 -s -r -p ""
+      echo ""
+      clear
+    done
+    ;;
 
   6)
     clear
@@ -1938,9 +2002,7 @@ case $choice in
                           case "$choice" in
                             [Yy])
                               docker rm $(docker ps -a -q) && docker rmi $(docker images -q) && docker network prune
-                              apt-get remove docker -y
-                              apt-get remove docker-ce -y
-                              apt-get purge docker-ce -y
+                              remove docker docker-ce > /dev/null 2>&1
                               rm -rf /var/lib/docker
                               ;;
                             [Nn])
@@ -1994,8 +2056,7 @@ case $choice in
   7)
     clear
     while true; do
-    echo -e "\033[33m ▼ \033[0m"
-    echo -e "\033[33mLDNMP建站\033[0m"
+    echo -e "\033[33m▶ LDNMP建站\033[0m"
     echo  "------------------------"
     echo  "1. 安装LDNMP环境"
     echo  "------------------------"
@@ -2049,39 +2110,24 @@ case $choice in
         2)
         clear
         # wordpress
-        external_ip=$(curl -s ipv4.ip.sb)
-        echo -e "先将域名解析到本机IP: \033[33m$external_ip\033[0m"
-        read -p "请输入你解析的域名: " yuming
-        dbname=$(echo "$yuming" | sed -e 's/[^A-Za-z0-9]/_/g')
-        dbname="${dbname}"
-
+        add_yuming
         install_ssltls
-
+        add_db
+  
         wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/wordpress.com.conf
         sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
-
+  
         cd /home/web/html
         mkdir $yuming
         cd $yuming
         wget -O latest.zip https://cn.wordpress.org/latest-zh_CN.zip
         unzip latest.zip
         rm latest.zip
-
+  
         echo "define('FS_METHOD', 'direct'); define('WP_REDIS_HOST', 'redis'); define('WP_REDIS_PORT', '6379');" >> /home/web/html/$yuming/wordpress/wp-config-sample.php
-
-        docker exec nginx chmod -R 777 /var/www/html
-        docker exec php chmod -R 777 /var/www/html
-        docker exec php74 chmod -R 777 /var/www/html
-
-        dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
-        dbuse=$(grep -oP 'MYSQL_USER:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
-        dbusepasswd=$(grep -oP 'MYSQL_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
-        docker exec mysql mysql -u root -p"$dbrootpasswd" -e "CREATE DATABASE $dbname; GRANT ALL PRIVILEGES ON $dbname.* TO \"$dbuse\"@\"%\";"
-
-        docker restart php
-        docker restart php74
-        docker restart nginx
-
+  
+        restart_ldnmp
+  
         clear
         echo "您的WordPress搭建好了！"
         echo "https://$yuming"
@@ -2098,38 +2144,23 @@ case $choice in
         3)
         clear
         # typecho
-        external_ip=$(curl -s ipv4.ip.sb)
-        echo -e "先将域名解析到本机IP: \033[33m$external_ip\033[0m"
-        read -p "请输入你解析的域名: " yuming
-        dbname=$(echo "$yuming" | sed -e 's/[^A-Za-z0-9]/_/g')
-        dbname="${dbname}"
-
+        add_yuming
         install_ssltls
-
+        add_db
+  
         wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/typecho.com.conf
         sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
-
+  
         cd /home/web/html
         mkdir $yuming
         cd $yuming
         wget -O latest.zip https://github.com/typecho/typecho/releases/latest/download/typecho.zip
         unzip latest.zip
         rm latest.zip
-
-        docker exec nginx chmod -R 777 /var/www/html
-        docker exec php chmod -R 777 /var/www/html
-        docker exec php74 chmod -R 777 /var/www/html
-
-        dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
-        dbuse=$(grep -oP 'MYSQL_USER:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
-        dbusepasswd=$(grep -oP 'MYSQL_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
-        docker exec mysql mysql -u root -p"$dbrootpasswd" -e "CREATE DATABASE $dbname; GRANT ALL PRIVILEGES ON $dbname.* TO \"$dbuse\"@\"%\";"
-
-        docker restart php
-        docker restart php74
-        docker restart nginx
-
-
+  
+        restart_ldnmp
+  
+  
         clear
         echo "您的typecho搭建好了！"
         echo "https://$yuming"
@@ -2145,23 +2176,14 @@ case $choice in
 
         4)
         clear
-        # Halo
-        read -p "请输入你解析的域名: " yuming
-
+        # halo
+        add_yuming
         install_ssltls
-
+  
         docker run -d --name halo --restart always --network web_default -p 8010:8090 -v /home/web/html/$yuming/.halo2:/root/.halo2 halohub/halo:2.9
-
-        # Get external IP address
-        external_ip=$(curl -s ipv4.ip.sb)
-
-        wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/reverse-proxy.conf
-        sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
-        sed -i "s/0.0.0.0/$external_ip/g" /home/web/conf.d/$yuming.conf
-        sed -i "s/0000/8010/g" /home/web/conf.d/$yuming.conf
-
-        docker restart nginx
-
+  
+        reverse_proxy
+  
         clear
         echo "您的Halo网站搭建好了！"
         echo "https://$yuming"
@@ -2171,37 +2193,22 @@ case $choice in
         5)
         clear
         # 独脚数卡
-        external_ip=$(curl -s ipv4.ip.sb)
-        echo -e "先将域名解析到本机IP: \033[33m$external_ip\033[0m"
-        read -p "请输入你解析的域名: " yuming
-        dbname=$(echo "$yuming" | sed -e 's/[^A-Za-z0-9]/_/g')
-        dbname="${dbname}"
-
+        add_yuming
         install_ssltls
-
+        add_db
+  
         wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/dujiaoka.com.conf
-
+  
         sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
-
+  
         cd /home/web/html
         mkdir $yuming
         cd $yuming
         wget https://github.com/assimon/dujiaoka/releases/download/2.0.6/2.0.6-antibody.tar.gz && tar -zxvf 2.0.6-antibody.tar.gz && rm 2.0.6-antibody.tar.gz
-
-        docker exec nginx chmod -R 777 /var/www/html
-        docker exec php chmod -R 777 /var/www/html
-        docker exec php74 chmod -R 777 /var/www/html
-
-        dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
-        dbuse=$(grep -oP 'MYSQL_USER:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
-        dbusepasswd=$(grep -oP 'MYSQL_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
-        docker exec mysql mysql -u root -p"$dbrootpasswd" -e "CREATE DATABASE $dbname; GRANT ALL PRIVILEGES ON $dbname.* TO \"$dbuse\"@\"%\";"
-
-        docker restart php
-        docker restart php74
-        docker restart nginx
-
-
+  
+        restart_ldnmp
+  
+  
         clear
         echo "您的独角数卡网站搭建好了！"
         echo "https://$yuming"
@@ -2232,38 +2239,24 @@ case $choice in
         6)
         clear
         # Discuz论坛
-        external_ip=$(curl -s ipv4.ip.sb)
-        echo -e "先将域名解析到本机IP: \033[33m$external_ip\033[0m"
-        read -p "请输入你解析的域名: " yuming
-        dbname=$(echo "$yuming" | sed -e 's/[^A-Za-z0-9]/_/g')
-        dbname="${dbname}"
+        add_yuming
         install_ssltls
-
+        add_db
+  
         wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/discuz.com.conf
-
+  
         sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
-
+  
         cd /home/web/html
         mkdir $yuming
         cd $yuming
         wget https://github.com/huaniangzi/Website_source_code/raw/main/Discuz_X3.5_SC_UTF8_20230520.zip
         unzip -o Discuz_X3.5_SC_UTF8_20230520.zip
         rm Discuz_X3.5_SC_UTF8_20230520.zip
-
-        docker exec nginx chmod -R 777 /var/www/html
-        docker exec php chmod -R 777 /var/www/html
-        docker exec php74 chmod -R 777 /var/www/html
-
-        dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
-        dbuse=$(grep -oP 'MYSQL_USER:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
-        dbusepasswd=$(grep -oP 'MYSQL_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
-        docker exec mysql mysql -u root -p"$dbrootpasswd" -e "CREATE DATABASE $dbname; GRANT ALL PRIVILEGES ON $dbname.* TO \"$dbuse\"@\"%\";"
-
-        docker restart php
-        docker restart php74
-        docker restart nginx
-
-
+  
+        restart_ldnmp
+  
+  
         clear
         echo "您的Discuz论坛搭建好了！"
         echo "https://$yuming"
@@ -2275,7 +2268,7 @@ case $choice in
         echo "密码: $dbusepasswd"
         echo "表前缀: discuz_"
         nginx_status
-
+  
           ;;
 
         21)
@@ -2644,17 +2637,9 @@ case $choice in
 
                         ;;
                     9)
-                        systemctl disable fail2ban
-                        systemctl stop fail2ban
-                        apt remove -y --purge fail2ban
-                        if [ $? -eq 0 ]; then
-                            echo "Fail2ban已卸载"
-                        else
-                            echo "卸载失败"
-                        fi
-                        rm -rf /etc/fail2ban
-                        break
-                        ;;
+                        remove fail2ban
+                      break
+                      ;;
                     0)
                         break
                         ;;
@@ -4392,12 +4377,7 @@ case $choice in
           5)
               clear
               iptables_open
-
-              apt purge -y iptables-persistent > /dev/null 2>&1
-              apt purge -y ufw > /dev/null 2>&1
-              yum remove -y firewalld > /dev/null 2>&1
-              yum remove -y iptables-services > /dev/null 2>&1
-
+              remove iptables-persistent ufw firewalld iptables-services > /dev/null 2>&1
               echo "端口已全部开放"
 
               ;;
@@ -4432,11 +4412,7 @@ case $choice in
 
               clear
               iptables_open
-
-              apt purge -y iptables-persistent > /dev/null 2>&1
-              apt purge -y ufw > /dev/null 2>&1
-              yum remove -y firewalld > /dev/null 2>&1
-              yum remove -y iptables-services > /dev/null 2>&1
+              remove iptables-persistent ufw firewalld iptables-services > /dev/null 2>&1
 
               ;;
 
@@ -5186,8 +5162,7 @@ EOF
                           ;;
 
                       9)
-                      apt remove -y iptables-persistent
-                      apt purge -y iptables-persistent
+                      remove iptables-persistent
                       rm /etc/iptables/rules.v4
                       break
                       # echo "防火墙已卸载，重启生效"
@@ -5226,11 +5201,7 @@ EOF
 
           clear
           iptables_open
-
-          apt remove -y iptables-persistent
-          apt purge -y iptables-persistent
-          apt remove -y ufw
-          apt purge -y ufw
+          remove iptables-persistent ufw
           rm /etc/iptables/rules.v4
 
           apt update -y && apt install -y iptables-persistent
