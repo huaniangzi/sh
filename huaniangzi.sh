@@ -364,10 +364,16 @@ fi
 
 docker_hua_app() {
 if docker inspect "$docker_hua_name" &>/dev/null; then
-    clear
-    echo "$docker_hua_name 已安装，访问地址: "
-    external_ip=$(curl -s ipv4.ip.sb)
-    echo "http:$external_ip:$docker_hua_port"
+        clear
+        install_netstat
+        echo "$docker_hua_name 已安装，访问地址: "
+        external_ip=$(curl -s ipv4.ip.sb)
+        existing_port=$(docker inspect -f '{{(index (index .NetworkSettings.Ports "80/tcp") 0).HostPort}}' "$docker_hua_name" 2>/dev/null)
+        if [ -n "$existing_port" ]; then
+            echo "http:$external_ip:$existing_port"
+        else
+            echo "端口号未知，请执行更新或重新安装操作获取端口号。"
+        fi
     echo ""
     echo "应用操作"
     echo "------------------------"
@@ -384,7 +390,6 @@ if docker inspect "$docker_hua_name" &>/dev/null; then
             docker rmi -f "$docker_hua_img"
             # 安装 Docker（请确保有 install_docker 函数）
             install_docker
-            install_netstat
             docker_hua_port=$(get_valid_port)
             $docker_hua_rum
             clear
@@ -425,7 +430,6 @@ else
             clear
             # 安装 Docker（请确保有 install_docker 函数）
             install_docker
-            install_netstat
             docker_hua_port=$(get_valid_port)
             $docker_hua_rum
             clear
