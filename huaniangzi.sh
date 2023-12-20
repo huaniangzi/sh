@@ -386,7 +386,7 @@ if docker inspect "$docker_hua_name" &>/dev/null; then
             docker rmi -f "$docker_hua_img"
             # 安装 Docker（请确保有 install_docker 函数）
             install_docker
-            $docker_rum
+            $docker_hua_rum
             clear
             echo "$docker_hua_name 已经安装完成"
             echo "------------------------"
@@ -427,7 +427,7 @@ else
             docker_hua_port=$(get_valid_port)
             # 安装 Docker（请确保有 install_docker 函数）
             install_docker
-            $docker_rum
+            $docker_hua_rum
             clear
             echo "$docker_hua_name 已经安装完成"
             echo "------------------------"
