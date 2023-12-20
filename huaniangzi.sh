@@ -399,10 +399,8 @@ if docker inspect "$host_name" &>/dev/null; then
             ;;
         2)
             clear
-            install_netstat
-            host_port=$(get_valid_port)
-            docker rm -f "$docker_name"
-            docker rmi -f "$docker_img"
+            docker rm -f "$host_name"
+            docker rmi -f "$host_img"
             rm -rf "/home/docker/$host_name"
             echo "应用已卸载"
             ;;
@@ -425,6 +423,8 @@ else
     case "$choice" in
         [Yy])
             clear
+            install_netstat
+            host_port=$(get_valid_port)
             # 安装 Docker（请确保有 install_docker 函数）
             install_docker
             $docker_rum
