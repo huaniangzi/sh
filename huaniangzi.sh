@@ -1246,7 +1246,7 @@ case $choice in
                                     docker_url=""
                                     docker_use=""
                                     docker_passwd=""
-                                    docker_app
+                                    docker_app1
 
                                       ;;
                     2)
@@ -1267,7 +1267,7 @@ case $choice in
                                     docker_url=""
                                     docker_use="docker exec -it alist ./alist admin random"
                                     docker_passwd=""
-                                    docker_app
+                                    docker_app1
 
                                       ;;
                     3)
@@ -1289,7 +1289,7 @@ case $choice in
                                     docker_url=""
                                     docker_use=""
                                     docker_passwd=""
-                                    docker_app
+                                    docker_app1
 
                                       ;;
                     4)
@@ -1308,7 +1308,7 @@ case $choice in
                                     docker_url=""
                                     docker_use=""
                                     docker_passwd=""
-                                    docker_app
+                                    docker_app1
 
                                       ;;
                     5)
@@ -1333,7 +1333,7 @@ case $choice in
                                     docker_url="官网介绍: https://hub.docker.com/r/linuxserver/qbittorrent"
                                     docker_use="admin"
                                     docker_passwd="adminadmin"
-                                    docker_app
+                                    docker_app1
 
                                       ;;
                     6)
@@ -1360,7 +1360,7 @@ case $choice in
                                     docker_url=""
                                     docker_use=""
                                     docker_passwd=""
-                                    docker_app
+                                    docker_app1
 
                                       ;;
 
