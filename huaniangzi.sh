@@ -380,12 +380,12 @@ if docker inspect "$docker_hua_name" &>/dev/null; then
     case $sub_choice in
         1)
             clear
-            install_netstat
-            docker_hua_port=$(get_valid_port)
             docker rm -f "$docker_hua_name"
             docker rmi -f "$docker_hua_img"
             # 安装 Docker（请确保有 install_docker 函数）
             install_docker
+            install_netstat
+            docker_hua_port=$(get_valid_port)
             $docker_hua_rum
             clear
             echo "$docker_hua_name 已经安装完成"
@@ -423,10 +423,10 @@ else
     case "$choice" in
         [Yy])
             clear
-            install_netstat
-            docker_hua_port=$(get_valid_port)
             # 安装 Docker（请确保有 install_docker 函数）
             install_docker
+            install_netstat
+            docker_hua_port=$(get_valid_port)
             $docker_hua_rum
             clear
             echo "$docker_hua_name 已经安装完成"
