@@ -363,11 +363,11 @@ fi
 }
 
 docker_app1() {
-if docker inspect "$docker_name" &>/dev/null; then
+if docker inspect "$host_name" &>/dev/null; then
     clear
-    echo "$docker_name 已安装，访问地址: "
+    echo "$host_name 已安装，访问地址: "
     external_ip=$(curl -s ipv4.ip.sb)
-    echo "http:$external_ip:$docker_port"
+    echo "http:$external_ip:$host_port"
     echo ""
     echo "应用操作"
     echo "------------------------"
@@ -382,28 +382,28 @@ if docker inspect "$docker_name" &>/dev/null; then
             clear
             install_netstat
             docker_port=$(get_valid_port)
-            docker rm -f "$docker_name"
-            docker rmi -f "$docker_img"
+            docker rm -f "$host_name"
+            docker rmi -f "$host_img"
             # 安装 Docker（请确保有 install_docker 函数）
             install_docker
             $docker_rum
             clear
-            echo "$docker_name 已经安装完成"
+            echo "$host_name 已经安装完成"
             echo "------------------------"
             # 获取外部 IP 地址
             external_ip=$(curl -s ipv4.ip.sb)
             echo "您可以使用以下地址访问:"
-            echo "http:$external_ip:$docker_port"
-            $docker_use
-            $docker_passwd
+            echo "http:$external_ip:$host_port"
+            $host_use
+            $host_passwd
             ;;
         2)
             clear
             install_netstat
-            docker_port=$(get_valid_port)
+            host_port=$(get_valid_port)
             docker rm -f "$docker_name"
             docker rmi -f "$docker_img"
-            rm -rf "/home/docker/$docker_name"
+            rm -rf "/home/docker/$host_name"
             echo "应用已卸载"
             ;;
         0)
@@ -416,8 +416,8 @@ if docker inspect "$docker_name" &>/dev/null; then
 else
     clear
     echo "安装提示"
-    echo "$docker_describe"
-    echo "$docker_url"
+    echo "$host_describe"
+    echo "$host_url"
     echo ""
 
     # 提示用户确认安装
@@ -429,14 +429,14 @@ else
             install_docker
             $docker_rum
             clear
-            echo "$docker_name 已经安装完成"
+            echo "$host_name 已经安装完成"
             echo "------------------------"
             # 获取外部 IP 地址
             external_ip=$(curl -s ipv4.ip.sb)
             echo "您可以使用以下地址访问:"
-            echo "http:$external_ip:$docker_port"
-            $docker_use
-            $docker_passwd
+            echo "http:$external_ip:$host_port"
+            $host_use
+            $host_passwd
             ;;
         [Nn])
             # 用户选择不安装
@@ -1230,10 +1230,10 @@ case $choice in
                 case $sub_choice in
                     1)
                         clear
-                        docker_name="nginx-proxy-manager"
-                                    docker_img="jc21/nginx-proxy-manager:latest"
-                                    docker_port=$(get_valid_port)
-                                    docker_rum="docker run -d \
+                        host_name="nginx-proxy-manager"
+                                    host_img="jc21/nginx-proxy-manager:latest"
+                                    host_port=$(get_valid_port)
+                                    host_rum="docker run -d \
                                             --name nginx-proxy-manager \
                                             -p 80:80 \
                                             -p $host_port:81 \
@@ -1242,19 +1242,19 @@ case $choice in
                                             -v /home/docker/npm/letsencrypt:/etc/letsencrypt \
                                             --restart unless-stopped \
                                             jc21/nginx-proxy-manager:latest"
-                                    docker_describe="npm反向代理和Ldnmp反代只能使用一个"
-                                    docker_url=""
-                                    docker_use=""
-                                    docker_passwd=""
+                                    host_describe="npm反向代理和Ldnmp反代只能使用一个"
+                                    host_url=""
+                                    host_use=""
+                                    host_passwd=""
                                     docker_app1
 
                                       ;;
                     2)
                         clear
-                        docker_name="alist"
-                                    docker_img="xhofe/alist:latest"
-                                    docker_port=5244
-                                    docker_rum="docker run -d \
+                        host_name="alist"
+                                    host_img="xhofe/alist:latest"
+                                    host_port=5244
+                                    host_rum="docker run -d \
                                             --restart always \
                                             -v /home/docker/alsit/etc/alist:/opt/alist/data \
                                             -p 5244:5244 \
@@ -1263,21 +1263,21 @@ case $choice in
                                             -e UMASK=022 \
                                             --name alist \
                                             xhofe/alist:latest"
-                                    docker_describe="Alsit是一个云盘存储程序"
-                                    docker_url=""
-                                    docker_use="docker exec -it alist ./alist admin random"
-                                    docker_passwd=""
+                                    host_describe="Alsit是一个云盘存储程序"
+                                    host_url=""
+                                    host_use="docker exec -it alist ./alist admin random"
+                                    host_passwd=""
                                     docker_app1
 
                                       ;;
                     3)
                         clear
-                        docker_name="easyimage"
-                                    docker_img="xhofe/alist:latest"
-                                    docker_port=$(get_valid_port)
-                                    docker_rum="docker run -d \
+                        host_name="easyimage"
+                                    host_img="xhofe/alist:latest"
+                                    host_port=$(get_valid_port)
+                                    host_rum="docker run -d \
                                             --name easyimage \
-                                            -p "$docker_port":80 \
+                                            -p "$host_port":80 \
                                             -e TZ=Asia/Shanghai \
                                             -e PUID=1000 \
                                             -e PGID=1000 \
@@ -1285,38 +1285,38 @@ case $choice in
                                             -v /home/docker/easyimage/i:/app/web/i \
                                             --restart unless-stopped \
                                             ddsderek/easyimage:latest"
-                                    docker_describe="easyimage是一个简单图床系统"
-                                    docker_url=""
-                                    docker_use=""
-                                    docker_passwd=""
+                                    host_describe="easyimage是一个简单图床系统"
+                                    host_url=""
+                                    host_use=""
+                                    host_passwd=""
                                     docker_app1
 
                                       ;;
                     4)
                         clear
                         docker_name="memeos"
-                                    docker_img="neosmemo/memos:latest"
-                                    docker_port=$(get_valid_port)
-                                    docker_rum="docker run -d \
+                                    host_img="neosmemo/memos:latest"
+                                    host_port=$(get_valid_port)
+                                    host_rum="docker run -d \
                                             --name memeos \
                                             --hostname memeos \
                                             -p $host_port:5230 \
                                             -v /home/docker/memos/.memos/:/var/opt/memos \
                                             --restart always \
                                             neosmemo/memos:latest"
-                                    docker_describe="碎片化知识卡片和一个记事本,备忘录"
-                                    docker_url=""
-                                    docker_use=""
-                                    docker_passwd=""
-                                    docker_app1
+                                    host_describe="碎片化知识卡片和一个记事本,备忘录"
+                                    host_url=""
+                                    host_use=""
+                                    host_passwd=""
+                                    host_app1
 
                                       ;;
                     5)
                         clear
-                        docker_name="qbittorrent"
-                                    docker_img="lscr.io/linuxserver/qbittorrent:4.5.5"
-                                    docker_port=$(get_valid_port)
-                                    docker_rum="docker run -d \
+                        host_name="qbittorrent"
+                                    host_img="lscr.io/linuxserver/qbittorrent:4.5.5"
+                                    host_port=$(get_valid_port)
+                                    host_rum="docker run -d \
                                             --name=qbittorrent \
                                             -e PUID=1000 \
                                             -e PGID=1000 \
@@ -1329,19 +1329,19 @@ case $choice in
                                             -v /home/docker/qbittorrent/downloads:/downloads \
                                             --restart unless-stopped \
                                             lscr.io/linuxserver/qbittorrent:4.5.5"
-                                    docker_describe="qbittorrent离线BT磁力下载服务"
-                                    docker_url="官网介绍: https://hub.docker.com/r/linuxserver/qbittorrent"
-                                    docker_use="admin"
-                                    docker_passwd="adminadmin"
+                                    host_describe="qbittorrent离线BT磁力下载服务"
+                                    host_url="官网介绍: https://hub.docker.com/r/linuxserver/qbittorrent"
+                                    host_use="admin"
+                                    host_passwd="adminadmin"
                                     docker_app1
 
                                       ;;
                     6)
                         clear
-                        docker_name="vaultwarden"
-                                    docker_img="vaultwarden/server:latest"
-                                    docker_port=$(get_valid_port)
-                                    docker_rum="docker run -d \
+                        host_name="vaultwarden"
+                                    host_img="vaultwarden/server:latest"
+                                    host_port=$(get_valid_port)
+                                    host_rum="docker run -d \
                                             --name vaultwarden \
                                             -p $host_port:80 \
                                             -v /home/docker/vaultwarden/data:/data \
@@ -1356,10 +1356,10 @@ case $choice in
                                             -e WEB_VAULT_ENABLED=true \
                                             -e SIGNUPS_ALLOWED=true \
                                             vaultwarden/server:latest"
-                                    docker_describe="vaultwarden密码管理平台，存放账号密码"
-                                    docker_url=""
-                                    docker_use=""
-                                    docker_passwd=""
+                                    host_describe="vaultwarden密码管理平台，存放账号密码"
+                                    host_url=""
+                                    host_use=""
+                                    host_passwd=""
                                     docker_app1
 
                                       ;;
