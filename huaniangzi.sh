@@ -47,6 +47,42 @@ remove() {
     return 0
 }
 
+break_end() {
+      echo -e "\033[0;32m操作完成\033[0m"
+      echo "按任意键继续..."
+      read -n 1 -s -r -p ""
+      echo ""
+      clear
+}
+
+check_port() {
+    # 定义要检测的端口
+    PORT=80
+
+    # 检查端口占用情况
+    result=$(ss -tulpn | grep ":$PORT")
+
+    # 判断结果并输出相应信息
+    if [ -n "$result" ]; then
+        is_nginx_container=$(docker ps --format '{{.Names}}' | grep 'nginx')
+
+        # 判断是否是Nginx容器占用端口
+        if [ -n "$is_nginx_container" ]; then
+            echo ""
+        else
+            clear
+            echo -e "\e[1;31m端口 $PORT 已被占用，无法安装环境，卸载以下程序后重试！\e[0m"
+            echo "$result"
+            break_end
+            cd ~
+            ./huaniangzi.sh
+            exit
+        fi
+    else
+        echo ""
+    fi
+}
+
 # 定义安装 Docker 的函数
 install_docker() {
     if ! command -v docker &>/dev/null; then
@@ -243,6 +279,89 @@ restart_ldnmp() {
       docker restart nginx
 }
 
+docker_app() {
+if docker inspect "$docker_name" &>/dev/null; then
+    clear
+    echo "$docker_name 已安装，访问地址: "
+    external_ip=$(curl -s ipv4.ip.sb)
+    echo "http:$external_ip:$docker_port"
+    echo ""
+    echo "应用操作"
+    echo "------------------------"
+    echo "1. 更新应用             2. 卸载应用"
+    echo "------------------------"
+    echo "0. 返回上一级选单"
+    echo "------------------------"
+    read -p "请输入你的选择: " sub_choice
+
+    case $sub_choice in
+        1)
+            clear
+            docker rm -f "$docker_name"
+            docker rmi -f "$docker_img"
+            # 安装 Docker（请确保有 install_docker 函数）
+            install_docker
+            $docker_rum
+            clear
+            echo "$docker_name 已经安装完成"
+            echo "------------------------"
+            # 获取外部 IP 地址
+            external_ip=$(curl -s ipv4.ip.sb)
+            echo "您可以使用以下地址访问:"
+            echo "http:$external_ip:$docker_port"
+            $docker_use
+            $docker_passwd
+            ;;
+        2)
+            clear
+            docker rm -f "$docker_name"
+            docker rmi -f "$docker_img"
+            rm -rf "/home/docker/$docker_name"
+            echo "应用已卸载"
+            ;;
+        0)
+            # 跳出循环，退出菜单
+            ;;
+        *)
+            # 跳出循环，退出菜单
+            ;;
+    esac
+else
+    clear
+    echo "安装提示"
+    echo "$docker_describe"
+    echo "$docker_url"
+    echo ""
+
+    # 提示用户确认安装
+    read -p "确定安装吗？(Y/N): " choice
+    case "$choice" in
+        [Yy])
+            clear
+            # 安装 Docker（请确保有 install_docker 函数）
+            install_docker
+            $docker_rum
+            clear
+            echo "$docker_name 已经安装完成"
+            echo "------------------------"
+            # 获取外部 IP 地址
+            external_ip=$(curl -s ipv4.ip.sb)
+            echo "您可以使用以下地址访问:"
+            echo "http:$external_ip:$docker_port"
+            $docker_use
+            $docker_passwd
+            ;;
+        [Nn])
+            # 用户选择不安装
+            ;;
+        *)
+            # 无效输入
+            ;;
+    esac
+fi
+
+}
+
 
 # 检查是否安装了netstat
 install_netstat() {
@@ -293,7 +412,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.5.0 （支持Ubuntu，Debian，Centos系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.5.1 （支持Ubuntu，Debian，Centos系统）\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
 echo "2. 系统更新"
@@ -671,11 +790,7 @@ case $choice in
                             echo "无效的输入!"
                             ;;
                     esac
-                    echo -e "\033[0;32m操作完成\033[0m"
-                    echo "按任意键继续..."
-                    read -n 1 -s -r -p ""
-                    echo ""
-                    clear
+                    break_end
                 done
 
                   ;;
@@ -718,12 +833,7 @@ case $choice in
                 echo "无效的输入!"
                 ;;
         esac
-
-        echo -e "\033[0;32m操作完成\033[0m"
-        echo "按任意键继续..."
-        read -n 1 -s -r -p ""
-        echo ""
-        clear
+        break_end
     done
     ;;
 
@@ -797,11 +907,7 @@ case $choice in
               echo "无效的输入!"
               ;;
       esac
-      echo -e "\033[0;32m操作完成\033[0m"
-      echo "按任意键继续..."
-      read -n 1 -s -r -p ""
-      echo ""
-      clear
+      break_end
     done
     ;;
 
@@ -826,7 +932,7 @@ case $choice in
         case $sub_choice in
             1)
               clear
-
+              check_port
               install_dependency
               install_docker
               install_certbot
@@ -1640,11 +1746,7 @@ case $choice in
                         echo "无效的输入!"
                         ;;
                 esac
-                echo -e "\033[0;32m操作完成\033[0m"
-                echo "按任意键继续..."
-                read -n 1 -s -r -p ""
-                echo ""
-                clear
+                break_end
               done
               ;;
 
@@ -1765,20 +1867,12 @@ case $choice in
                                   11)
                                       read -p "请输入容器名: " dockername
                                       docker exec -it $dockername /bin/bash
-                                      echo -e "\033[0;32m操作完成\033[0m"
-                                      echo "按任意键继续..."
-                                      read -n 1 -s -r -p ""
-                                      echo ""
-                                      clear
+                                      break_end
                                       ;;
                                   12)
                                       read -p "请输入容器名: " dockername
                                       docker logs $dockername
-                                      echo -e "\033[0;32m操作完成\033[0m"
-                                      echo "按任意键继续..."
-                                      read -n 1 -s -r -p ""
-                                      echo ""
-                                      clear
+                                      break_end
                                       ;;
                                   13)
                                       echo ""
@@ -1801,11 +1895,7 @@ case $choice in
                                           done <<< "$network_info"
                                       done
 
-                                      echo -e "\033[0;32m操作完成\033[0m"
-                                      echo "按任意键继续..."
-                                      read -n 1 -s -r -p ""
-                                      echo ""
-                                      clear
+                                      break_end
                                       ;;
 
                                   0)
@@ -2016,12 +2106,7 @@ case $choice in
                           echo "无效的输入!"
                           ;;
                   esac
-                  echo -e "\033[0;32m操作完成\033[0m"
-                  echo "按任意键继续..."
-                  read -n 1 -s -r -p ""
-                  echo ""
-                  clear
-
+                  break_end
                 done
 
                 ;;
@@ -2040,12 +2125,7 @@ case $choice in
                 echo "无效的输入!"
                 ;;
         esac
-
-        echo -e "\033[0;32m操作完成\033[0m"
-        echo "按任意键继续..."
-        read -n 1 -s -r -p ""
-        echo ""
-        clear
+        break_end
     done
     ;;
 
@@ -2556,7 +2636,7 @@ case $choice in
 
       34)
         clear
-
+        check_port
         install_dependency
         install_docker
         install_certbot
@@ -2643,10 +2723,7 @@ case $choice in
                         echo "无效的选择，请重新输入。"
                         ;;
                 esac
-                echo -e "\033[0;32m操作完成\033[0m"
-                echo "按任意键继续..."
-                read -n 1 -s -r -p ""
-                echo ""
+                break_end
             done
         else
             clear
@@ -2772,10 +2849,7 @@ case $choice in
                         echo "无效的选择，请重新输入。"
                         ;;
                 esac
-                echo -e "\033[0;32m操作完成\033[0m"
-                echo "按任意键继续..."
-                read -n 1 -s -r -p ""
-                echo ""
+                break_end
             done
           ;;
 
@@ -2784,6 +2858,7 @@ case $choice in
         clear
         docker rm -f nginx php php74 mysql redis
         docker rmi nginx php:fpm php:7.4.33-fpm mysql redis
+        check_port
 
         install_dependency
         install_docker
@@ -2820,1256 +2895,356 @@ case $choice in
       *)
           echo "无效的输入!"
       esac
-
-      echo -e "\033[0;32m操作完成\033[0m"
-      echo "按任意键继续..."
-      read -n 1 -s -r -p ""
-      echo ""
-      clear
+      break_end
     done
         ;;
 
   8)
-    clear
-      while true; do
-        echo -e "\033[31m▶ 常用面板工具\033[0m"
-        echo "------------------------"
-        echo "1. 宝塔面板官方版                       2. aaPanel宝塔国际版"
-        echo "3. 1Panel新一代管理面板                 4. Ubuntu远程桌面网页版"
-        echo "5. 哪吒探针VPS监控面板                  6. Poste.io邮件服务器程序"
-        echo "7. 青龙面板定时任务管理平台             8. RocketChat多人在线聊天系统"
-        echo "9. Cloudreve网盘系统                    10. emby多媒体管理系统"
-        echo "11. Speedtest测速服务面板               12. AdGuardHome去广告软件"
-        echo "13. onlyoffice在线办公OFFICE            14. portainer容器管理面板"
-        echo "15. VScode网页版"
-        echo "------------------------"
-        echo "0. 返回主菜单"
-        echo "------------------------"
-        read -p "请输入你的选择: " sub_choice
+    while true; do
+      clear
+      echo "▶ 面板工具"
+      echo "------------------------"
+      echo "1. 宝塔面板官方版                       2. aaPanel宝塔国际版"
+      echo "3. 1Panel新一代管理面板                 4. NginxProxyManager可视化面板"
+      echo "5. AList多存储文件列表程序              6. Ubuntu远程桌面网页版"
+      echo "7. 哪吒探针VPS监控面板                  8. QB离线BT磁力下载面板"
+      echo "9. Poste.io邮件服务器程序               10. RocketChat多人在线聊天系统"
+      echo "11. 禅道项目管理软件                    12. 青龙面板定时任务管理平台"
+      echo "13. Cloudreve网盘系统                   14. 简单图床图片管理程序"
+      echo "15. emby多媒体管理系统                  16. Speedtest测速服务面板"
+      echo "17. AdGuardHome去广告软件               18. onlyoffice在线办公OFFICE"
+      echo "19. 雷池WAF防火墙面板                   20. portainer容器管理面板"
+      echo "21. VScode网页版                        22. UptimeKuma监控工具"
+      echo "23. Memos网页备忘录"
+      echo "------------------------"
+      echo "0. 返回主菜单"
+      echo "------------------------"
+      read -p "请输入你的选择: " sub_choice
 
-        case $sub_choice in
-            1)
-              if [ -f "/etc/init.d/bt" ] && [ -d "/www/server/panel" ]; then
-                  clear
-                  echo "宝塔面板已安装，应用操作"
-                  echo ""
-                  echo "------------------------"
-                  echo "1. 管理宝塔面板           2. 卸载宝塔面板"
-                  echo "------------------------"
-                  echo "0. 返回上一级选单"
-                  echo "------------------------"
-                  read -p "请输入你的选择: " sub_choice
+      case $sub_choice in
+          1)
+            if [ -f "/etc/init.d/bt" ] && [ -d "/www/server/panel" ]; then
+                clear
+                echo "宝塔面板已安装，应用操作"
+                echo ""
+                echo "------------------------"
+                echo "1. 管理宝塔面板           2. 卸载宝塔面板"
+                echo "------------------------"
+                echo "0. 返回上一级选单"
+                echo "------------------------"
+                read -p "请输入你的选择: " sub_choice
 
-                  case $sub_choice in
-                      1)
-                          clear
-                          # 更新宝塔面板操作
-                          bt
-                          ;;
-                      2)
-                          clear
-                          curl -o bt-uninstall.sh http://download.bt.cn/install/bt-uninstall.sh > /dev/null 2>&1
-                          chmod +x bt-uninstall.sh
-                          ./bt-uninstall.sh
-                          ;;
-                      0)
-                          break  # 跳出循环，退出菜单
-                          ;;
-                      *)
-                          break  # 跳出循环，退出菜单
-                          ;;
-                  esac
-              else
-                  clear
-                  echo "安装提示"
-                  echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装宝塔面板！"
-                  echo "会根据系统自动安装，支持Debian，Ubuntu，Centos"
-                  echo "官网介绍: https://www.bt.cn/new/index.html"
-                  echo ""
+                case $sub_choice in
+                    1)
+                        clear
+                        # 更新宝塔面板操作
+                        bt
+                        ;;
+                    2)
+                        clear
+                        curl -o bt-uninstall.sh http://download.bt.cn/install/bt-uninstall.sh > /dev/null 2>&1
+                        chmod +x bt-uninstall.sh
+                        ./bt-uninstall.sh
+                        ;;
+                    0)
+                        break  # 跳出循环，退出菜单
+                        ;;
+                    *)
+                        break  # 跳出循环，退出菜单
+                        ;;
+                esac
+            else
+                clear
+                echo "安装提示"
+                echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装宝塔面板！"
+                echo "会根据系统自动安装，支持Debian，Ubuntu，Centos"
+                echo "官网介绍: https://www.bt.cn/new/index.html"
+                echo ""
 
-                  # 获取当前系统类型
-                  get_system_type() {
-                      if [ -f /etc/os-release ]; then
-                          . /etc/os-release
-                          if [ "$ID" == "centos" ]; then
-                              echo "centos"
-                          elif [ "$ID" == "ubuntu" ]; then
-                              echo "ubuntu"
-                          elif [ "$ID" == "debian" ]; then
-                              echo "debian"
-                          else
-                              echo "unknown"
-                          fi
-                      else
-                          echo "unknown"
-                      fi
-                  }
+                # 获取当前系统类型
+                get_system_type() {
+                    if [ -f /etc/os-release ]; then
+                        . /etc/os-release
+                        if [ "$ID" == "centos" ]; then
+                            echo "centos"
+                        elif [ "$ID" == "ubuntu" ]; then
+                            echo "ubuntu"
+                        elif [ "$ID" == "debian" ]; then
+                            echo "debian"
+                        else
+                            echo "unknown"
+                        fi
+                    else
+                        echo "unknown"
+                    fi
+                }
 
-                  system_type=$(get_system_type)
+                system_type=$(get_system_type)
 
-                  if [ "$system_type" == "unknown" ]; then
-                      echo "不支持的操作系统类型"
-                  else
-                      read -p "确定安装宝塔吗？(Y/N): " choice
-                      case "$choice" in
-                          [Yy])
-                              iptables_open
-                              if ! command -v wget &>/dev/null; then
-                                  if command -v apt &>/dev/null; then
-                                      apt update -y && apt install -y wget
-                                  elif command -v yum &>/dev/null; then
-                                      yum -y update && yum -y install wget
-                                  else
-                                      echo "未知的包管理器!"
-                                      exit 1
-                                  fi
-                              fi
-                              if [ "$system_type" == "centos" ]; then
-                                  yum install -y wget && wget -O install.sh https://download.bt.cn/install/install_6.0.sh && sh install.sh ed8484bec
-                              elif [ "$system_type" == "ubuntu" ]; then
-                                  wget -O install.sh https://download.bt.cn/install/install-ubuntu_6.0.sh && bash install.sh ed8484bec
-                              elif [ "$system_type" == "debian" ]; then
-                                  wget -O install.sh https://download.bt.cn/install/install-ubuntu_6.0.sh && bash install.sh ed8484bec
-                              fi
-                              ;;
-                          [Nn])
-                              ;;
-                          *)
-                              ;;
-                      esac
-                  fi
-              fi
+                if [ "$system_type" == "unknown" ]; then
+                    echo "不支持的操作系统类型"
+                else
+                    read -p "确定安装宝塔吗？(Y/N): " choice
+                    case "$choice" in
+                        [Yy])
+                            iptables_open
+                            install wget
+                            if [ "$system_type" == "centos" ]; then
+                                yum install -y wget && wget -O install.sh https://download.bt.cn/install/install_6.0.sh && sh install.sh ed8484bec
+                            elif [ "$system_type" == "ubuntu" ]; then
+                                wget -O install.sh https://download.bt.cn/install/install-ubuntu_6.0.sh && bash install.sh ed8484bec
+                            elif [ "$system_type" == "debian" ]; then
+                                wget -O install.sh https://download.bt.cn/install/install-ubuntu_6.0.sh && bash install.sh ed8484bec
+                            fi
+                            ;;
+                        [Nn])
+                            ;;
+                        *)
+                            ;;
+                    esac
+                fi
+            fi
 
-                ;;
-            2)
-              if [ -f "/etc/init.d/bt" ] && [ -d "/www/server/panel" ]; then
-                  clear
-                  echo "aaPanel已安装，应用操作"
-                  echo ""
-                  echo "------------------------"
-                  echo "1. 管理aaPanel           2. 卸载aaPanel"
-                  echo "------------------------"
-                  echo "0. 返回上一级选单"
-                  echo "------------------------"
-                  read -p "请输入你的选择: " sub_choice
+              ;;
+          2)
+            if [ -f "/etc/init.d/bt" ] && [ -d "/www/server/panel" ]; then
+                clear
+                echo "aaPanel已安装，应用操作"
+                echo ""
+                echo "------------------------"
+                echo "1. 管理aaPanel           2. 卸载aaPanel"
+                echo "------------------------"
+                echo "0. 返回上一级选单"
+                echo "------------------------"
+                read -p "请输入你的选择: " sub_choice
 
-                  case $sub_choice in
-                      1)
-                          clear
-                          # 更新aaPanel操作
-                          bt
-                          ;;
-                      2)
-                          clear
-                          curl -o bt-uninstall.sh http://download.bt.cn/install/bt-uninstall.sh > /dev/null 2>&1
-                          chmod +x bt-uninstall.sh
-                          ./bt-uninstall.sh
-                          ;;
-                      0)
-                          break  # 跳出循环，退出菜单
-                          ;;
-                      *)
-                          break  # 跳出循环，退出菜单
-                          ;;
-                  esac
-              else
-                  clear
-                  echo "安装提示"
-                  echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装aaPanel！"
-                  echo "会根据系统自动安装，支持Debian，Ubuntu，Centos"
-                  echo "官网介绍: https://www.aapanel.com/new/index.html"
-                  echo ""
+                case $sub_choice in
+                    1)
+                        clear
+                        # 更新aaPanel操作
+                        bt
+                        ;;
+                    2)
+                        clear
+                        curl -o bt-uninstall.sh http://download.bt.cn/install/bt-uninstall.sh > /dev/null 2>&1
+                        chmod +x bt-uninstall.sh
+                        ./bt-uninstall.sh
+                        ;;
+                    0)
+                        break  # 跳出循环，退出菜单
+                        ;;
+                    *)
+                        break  # 跳出循环，退出菜单
+                        ;;
+                esac
+            else
+                clear
+                echo "安装提示"
+                echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装aaPanel！"
+                echo "会根据系统自动安装，支持Debian，Ubuntu，Centos"
+                echo "官网介绍: https://www.aapanel.com/new/index.html"
+                echo ""
 
-                  # 获取当前系统类型
-                  get_system_type() {
-                      if [ -f /etc/os-release ]; then
-                          . /etc/os-release
-                          if [ "$ID" == "centos" ]; then
-                              echo "centos"
-                          elif [ "$ID" == "ubuntu" ]; then
-                              echo "ubuntu"
-                          elif [ "$ID" == "debian" ]; then
-                              echo "debian"
-                          else
-                              echo "unknown"
-                          fi
-                      else
-                          echo "unknown"
-                      fi
-                  }
+                # 获取当前系统类型
+                get_system_type() {
+                    if [ -f /etc/os-release ]; then
+                        . /etc/os-release
+                        if [ "$ID" == "centos" ]; then
+                            echo "centos"
+                        elif [ "$ID" == "ubuntu" ]; then
+                            echo "ubuntu"
+                        elif [ "$ID" == "debian" ]; then
+                            echo "debian"
+                        else
+                            echo "unknown"
+                        fi
+                    else
+                        echo "unknown"
+                    fi
+                }
 
-                  system_type=$(get_system_type)
+                system_type=$(get_system_type)
 
-                  if [ "$system_type" == "unknown" ]; then
-                      echo "不支持的操作系统类型"
-                  else
-                      read -p "确定安装aaPanel吗？(Y/N): " choice
-                      case "$choice" in
-                          [Yy])
-                              iptables_open
-                              if ! command -v wget &>/dev/null; then
-                                  if command -v apt &>/dev/null; then
-                                      apt update -y && apt install -y wget
-                                  elif command -v yum &>/dev/null; then
-                                      yum -y update && yum -y install wget
-                                  else
-                                      echo "未知的包管理器!"
-                                      exit 1
-                                  fi
-                              fi
-                              if [ "$system_type" == "centos" ]; then
-                                  yum install -y wget && wget -O install.sh http://www.aapanel.com/script/install_6.0_en.sh && bash install.sh aapanel
-                              elif [ "$system_type" == "ubuntu" ]; then
-                                  wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && bash install.sh aapanel
-                              elif [ "$system_type" == "debian" ]; then
-                                  wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && bash install.sh aapanel
-                              fi
-                              ;;
-                          [Nn])
-                              ;;
-                          *)
-                              ;;
-                      esac
-                  fi
-              fi
-                ;;
-            3)
-              clear
-              echo "安装提示"
-              echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装1Panel！"
-              echo "会根据系统自动安装，支持Debian，Ubuntu，Centos"
-              echo "官网介绍: https://1panel.cn/"
-              echo ""
-              # 获取当前系统类型
-              get_system_type() {
-                if [ -f /etc/os-release ]; then
-                  . /etc/os-release
-                  if [ "$ID" == "centos" ]; then
-                    echo "centos"
-                  elif [ "$ID" == "ubuntu" ]; then
-                    echo "ubuntu"
-                  elif [ "$ID" == "debian" ]; then
-                    echo "debian"
-                  else
-                    echo "unknown"
-                  fi
+                if [ "$system_type" == "unknown" ]; then
+                    echo "不支持的操作系统类型"
+                else
+                    read -p "确定安装aaPanel吗？(Y/N): " choice
+                    case "$choice" in
+                        [Yy])
+                            iptables_open
+                            install wget
+                            if [ "$system_type" == "centos" ]; then
+                                yum install -y wget && wget -O install.sh http://www.aapanel.com/script/install_6.0_en.sh && bash install.sh aapanel
+                            elif [ "$system_type" == "ubuntu" ]; then
+                                wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && bash install.sh aapanel
+                            elif [ "$system_type" == "debian" ]; then
+                                wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && bash install.sh aapanel
+                            fi
+                            ;;
+                        [Nn])
+                            ;;
+                        *)
+                            ;;
+                    esac
+                fi
+            fi
+              ;;
+          3)
+            clear
+            echo "安装提示"
+            echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装1Panel！"
+            echo "会根据系统自动安装，支持Debian，Ubuntu，Centos"
+            echo "官网介绍: https://1panel.cn/"
+            echo ""
+            # 获取当前系统类型
+            get_system_type() {
+              if [ -f /etc/os-release ]; then
+                . /etc/os-release
+                if [ "$ID" == "centos" ]; then
+                  echo "centos"
+                elif [ "$ID" == "ubuntu" ]; then
+                  echo "ubuntu"
+                elif [ "$ID" == "debian" ]; then
+                  echo "debian"
                 else
                   echo "unknown"
                 fi
-              }
-
-              system_type=$(get_system_type)
-
-              if [ "$system_type" == "unknown" ]; then
-                echo "不支持的操作系统类型"
               else
-                read -p "确定安装1Panel吗？(Y/N): " choice
-                case "$choice" in
-                  [Yy])
-                    iptables_open
-                    if [ "$system_type" == "centos" ]; then
-                      curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh -o quick_start.sh && sh quick_start.sh
-                    elif [ "$system_type" == "ubuntu" ]; then
-                      curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh -o quick_start.sh && bash quick_start.sh
-                    elif [ "$system_type" == "debian" ]; then
-                      curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh -o quick_start.sh && bash quick_start.sh
-                    fi
-                    ;;
-                  [Nn])
-                    ;;
-                  *)
-                    ;;
-                esac
+                echo "unknown"
               fi
-                ;;
+            }
 
-            4)
-              if docker inspect ubuntu-novnc &>/dev/null; then
-                      clear
-                      echo "乌班图桌面已安装，访问地址: "
-                      external_ip=$(curl -s ipv4.ip.sb)
-                      echo "http:$external_ip:6080"
-                      echo ""
+            system_type=$(get_system_type)
 
-                      echo "应用操作"
-                      echo "------------------------"
-                      echo "1. 更新应用             2. 卸载应用"
-                      echo "------------------------"
-                      echo "0. 返回上一级选单"
-                      echo "------------------------"
-                      read -p "请输入你的选择: " sub_choice
-
-                      case $sub_choice in
-                          1)
-                              clear
-                              docker rm -f ubuntu-novnc
-                              docker rmi -f fredblgr/ubuntu-novnc:20.04
-                              read -p "请设置一个登录密码: " rootpasswd
-                              install_docker
-                              docker run -d \
-                                  --name ubuntu-novnc \
-                                  -p 6080:80 \
-                                  -v /home/docker/ubuntu:/workspace:rw \
-                                  -e HTTP_PASSWORD=$rootpasswd \
-                                  -e RESOLUTION=1280x720 \
-                                  --restart=always \
-                                  fredblgr/ubuntu-novnc:20.04
-
-                              clear
-                              echo "Ubuntu远程桌面已经安装完成"
-                              echo "------------------------"
-                              # Get external IP address
-                              external_ip=$(curl -s ipv4.ip.sb)
-
-                              echo "您可以使用以下地址访问Ubuntu远程桌面:"
-                              echo "http:$external_ip:6080"
-                              echo "用户名: root"
-                              echo "密码: $rootpasswd"
-                              echo ""
-                              ;;
-                          2)
-                              clear
-                              docker rm -f ubuntu-novnc
-                              docker rmi -f fredblgr/ubuntu-novnc:20.04
-                              rm -rf /home/docker/ubuntu
-                              echo "应用已卸载"
-                              ;;
-                          0)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                          *)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                      esac
-              else
-                  clear
-                  echo "安装提示"
-                  echo "一个网页版Ubuntu远程桌面，挺好用的！"
-                  echo "官网介绍: https://hub.docker.com/r/fredblgr/ubuntu-novnc"
-                  echo ""
-
-                  # 提示用户确认安装
-                  read -p "确定安装Ubuntu远程桌面吗？(Y/N): " choice
-                  case "$choice" in
-                      [Yy])
-                          clear
-                          read -p "请设置一个登录密码: " rootpasswd
-                          install_docker
-                          docker run -d \
-                              --name ubuntu-novnc \
-                              -p 6080:80 \
-                              -v /home/docker/ubuntu:/workspace:rw \
-                              -e HTTP_PASSWORD=$rootpasswd \
-                              -e RESOLUTION=1280x720 \
-                              --restart=always \
-                              fredblgr/ubuntu-novnc:20.04
-
-                          clear
-                          echo "Ubuntu远程桌面已经安装完成"
-                          echo "------------------------"
-                          # Get external IP address
-                          external_ip=$(curl -s ipv4.ip.sb)
-
-                          echo "您可以使用以下地址访问Ubuntu远程桌面:"
-                          echo "http:$external_ip:6080"
-                          echo "用户名: root"
-                          echo "密码: $rootpasswd"
-                          echo ""
-                          ;;
-                      [Nn])
-                          ;;
-                      *)
-                          ;;
-                  esac
-              fi
-                ;;
-
-            5)
-              clear
-              curl -L https://raw.githubusercontent.com/naiba/nezha/master/script/install.sh  -o nezha.sh && chmod +x nezha.sh
-              ./nezha.sh
-                ;;
-
-            6)
-              if docker inspect mailserver &>/dev/null; then
-
-                      clear
-                      echo "poste.io已安装，访问地址: "
-                      yuming=$(cat /home/docker/mail.txt)
-                      echo "https://$yuming"
-                      echo ""
-
-                      echo "应用操作"
-                      echo "------------------------"
-                      echo "1. 更新应用             2. 卸载应用"
-                      echo "------------------------"
-                      echo "0. 返回上一级选单"
-                      echo "------------------------"
-                      read -p "请输入你的选择: " sub_choice
-
-                      case $sub_choice in
-                          1)
-                              clear
-                              docker rm -f mailserver
-                              docker rmi -f analogic/poste.io
-                              install_docker
-                              yuming=$(cat /home/docker/mail.txt)
-                              docker run \
-                                  --net=host \
-                                  -e TZ=Europe/Prague \
-                                  -v /home/docker/mail:/data \
-                                  --name "mailserver" \
-                                  -h "$yuming" \
-                                  --restart=always \
-                                  -d analogic/poste.io
-
-                              clear
-                              echo "poste.io已经安装完成"
-                              echo "------------------------"
-                              echo "您可以使用以下地址访问poste.io:"
-                              echo "https://$yuming"
-                              echo ""
-                              ;;
-                          2)
-                              clear
-                              docker rm -f mailserver
-                              docker rmi -f analogic/poste.io
-                              rm /home/docker/mail.txt
-                              rm -rf /home/docker/mail
-                              echo "应用已卸载"
-                              ;;
-                          0)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                          *)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                      esac
-              else
-                  clear
-                  if ! command -v telnet &>/dev/null; then
-                      if command -v apt &>/dev/null; then
-                          apt update -y && apt install -y telnet
-                      elif command -v yum &>/dev/null; then
-                          yum -y update && yum -y install telnet
-                      else
-                          echo "未知的包管理器!"
-                          exit 1
-                      fi
+            if [ "$system_type" == "unknown" ]; then
+              echo "不支持的操作系统类型"
+            else
+              read -p "确定安装1Panel吗？(Y/N): " choice
+              case "$choice" in
+                [Yy])
+                  iptables_open
+                  if [ "$system_type" == "centos" ]; then
+                    curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh -o quick_start.sh && sh quick_start.sh
+                  elif [ "$system_type" == "ubuntu" ]; then
+                    curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh -o quick_start.sh && bash quick_start.sh
+                  elif [ "$system_type" == "debian" ]; then
+                    curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh -o quick_start.sh && bash quick_start.sh
                   fi
+                  ;;
+                [Nn])
+                  ;;
+                *)
+                  ;;
+              esac
+            fi
+              ;;
+          4)
 
-                  clear
-                  echo ""
-                  echo "端口检测"
-                  port=25
-                  timeout=3
-
-                  if echo "quit" | timeout $timeout telnet smtp.qq.com $port | grep 'Connected'; then
-                    echo -e "\e[32m端口$port当前可用\e[0m"
-                  else
-                    echo -e "\e[31m端口$port当前不可用\e[0m"
-                  fi
-                  echo "------------------------"
-                  echo ""
-
-
-                  echo "安装提示"
-                  echo "poste.io一个邮件服务器，确保80和443端口没被占用，确保25端口开放"
-                  echo "官网介绍: https://hub.docker.com/r/analogic/poste.io"
-                  echo ""
-
-                  # 提示用户确认安装
-                  read -p "确定安装poste.io吗？(Y/N): " choice
-                  case "$choice" in
-                      [Yy])
-                      clear
-
-                      read -p "请设置邮箱域名 例如 mail.yuming.com : " yuming
-                      mkdir -p /home/docker      # 递归创建目录
-                      echo "$yuming" > /home/docker/mail.txt  # 写入文件
-                      echo "------------------------"
-                      external_ip=$(curl -s ipv4.ip.sb)
-                      echo "先解析这些DNS记录"
-                      echo "A           mail            $external_ip"
-                      echo "CNAME       imap            $yuming"
-                      echo "CNAME       pop             $yuming"
-                      echo "CNAME       smtp            $yuming"
-                      echo "MX          @               $yuming"
-                      echo "TXT         @               v=spf1 mx ~all"
-                      echo "TXT         ?               ?"
-                      echo ""
-                      echo "------------------------"
-                      echo "按任意键继续..."
-                      read -n 1 -s -r -p ""
-
-                      install_docker
-
-                      docker run \
-                          --net=host \
-                          -e TZ=Europe/Prague \
-                          -v /home/docker/mail:/data \
-                          --name "mailserver" \
-                          -h "$yuming" \
+            docker_name="npm"
+            docker_img="jc21/nginx-proxy-manager:latest"
+            docker_port=81
+            docker_rum="docker run -d \
+                          --name=$docker_name \
+                          -p 80:80 \
+                          -p 81:$docker_port \
+                          -p 443:443 \
+                          -v /home/docker/npm/data:/data \
+                          -v /home/docker/npm/letsencrypt:/etc/letsencrypt \
                           --restart=always \
-                          -d analogic/poste.io
-
-                      clear
-                      echo "poste.io已经安装完成"
-                      echo "------------------------"
-                      echo "您可以使用以下地址访问poste.io:"
-                      echo "https://$yuming"
-                      echo ""
-
-                          ;;
-                      [Nn])
-                          ;;
-                      *)
-                          ;;
-                  esac
-              fi
-                ;;
-
-            7)
-              if docker inspect qinglong &>/dev/null; then
-                      clear
-                      echo "青龙面板已安装，访问地址: "
-                      external_ip=$(curl -s ipv4.ip.sb)
-                      echo "http:$external_ip:5700"
-                      echo ""
-
-                      echo "应用操作"
-                      echo "------------------------"
-                      echo "1. 更新应用             2. 卸载应用"
-                      echo "------------------------"
-                      echo "0. 返回上一级选单"
-                      echo "------------------------"
-                      read -p "请输入你的选择: " sub_choice
-
-                      case $sub_choice in
-                          1)
-                              clear
-                              docker rm -f qinglong
-                              docker rmi -f whyour/qinglong:latest
-                              install_docker
-                              docker run -d \
-                                -v /home/docker/ql/data:/ql/data \
-                                -p 5700:5700 \
-                                --name qinglong \
-                                --hostname qinglong \
-                                --restart unless-stopped \
-                                whyour/qinglong:latest
-
-
-                              clear
-                              echo "青龙面板已经安装完成"
-                              echo "------------------------"
-                              echo "您可以使用以下地址访问青龙面板:"
-
-                              external_ip=$(curl -s ipv4.ip.sb)
-                              echo "http:$external_ip:5700"
-                              echo ""
-                              ;;
-                          2)
-                              clear
-                              docker rm -f qinglong
-                              docker rmi -f whyour/qinglong:latest
-                              rm -rf /home/docker/ql
-                              echo "应用已卸载"
-                              ;;
-                          0)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                          *)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                      esac
-              else
-                  clear
-                  echo "安装提示"
-                  echo "青龙面板是一个定时任务管理平台"
-                  echo "官网介绍: https://github.com/whyour/qinglong"
-                  echo ""
-
-                  # 提示用户确认安装
-                  read -p "确定安装青龙面板吗？(Y/N): " choice
-                  case "$choice" in
-                      [Yy])
-                      clear
-                      install_docker
-                      docker run -d \
-                        -v /home/docker/ql/data:/ql/data \
-                        -p 5700:5700 \
-                        --name qinglong \
-                        --hostname qinglong \
-                        --restart unless-stopped \
-                        whyour/qinglong:latest
-
-                      clear
-                      echo "青龙面板已经安装完成"
-                      echo "------------------------"
-                      echo "您可以使用以下地址访问青龙面板:"
-                      external_ip=$(curl -s ipv4.ip.sb)
-                      echo "http:$external_ip:5700"
-                      echo ""
-
-                          ;;
-                      [Nn])
-                          ;;
-                      *)
-                          ;;
-                  esac
-              fi
-
-                ;;
-
-            8)
-              if docker inspect qinglong &>/dev/null; then
-                      clear
-                      echo "青龙面板已安装，访问地址: "
-                      external_ip=$(curl -s ipv4.ip.sb)
-                      echo "http:$external_ip:5700"
-                      echo ""
-
-                      echo "应用操作"
-                      echo "------------------------"
-                      echo "1. 更新应用             2. 卸载应用"
-                      echo "------------------------"
-                      echo "0. 返回上一级选单"
-                      echo "------------------------"
-                      read -p "请输入你的选择: " sub_choice
-
-                      case $sub_choice in
-                          1)
-                              clear
-                              docker rm -f qinglong
-                              docker rmi -f whyour/qinglong:latest
-                              install_docker
-                              docker run -d \
-                                -v /home/docker/ql/data:/ql/data \
-                                -p 5700:5700 \
-                                --name qinglong \
-                                --hostname qinglong \
-                                --restart unless-stopped \
-                                whyour/qinglong:latest
-
-
-                              clear
-                              echo "青龙面板已经安装完成"
-                              echo "------------------------"
-                              echo "您可以使用以下地址访问青龙面板:"
-
-                              external_ip=$(curl -s ipv4.ip.sb)
-                              echo "http:$external_ip:5700"
-                              echo ""
-                              ;;
-                          2)
-                              clear
-                              docker rm -f qinglong
-                              docker rmi -f whyour/qinglong:latest
-                              rm -rf /home/docker/ql
-                              echo "应用已卸载"
-                              ;;
-                          0)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                          *)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                      esac
-              else
-                  clear
-                  echo "安装提示"
-                  echo "青龙面板是一个定时任务管理平台"
-                  echo "官网介绍: https://github.com/whyour/qinglong"
-                  echo ""
-
-                  # 提示用户确认安装
-                  read -p "确定安装青龙面板吗？(Y/N): " choice
-                  case "$choice" in
-                      [Yy])
-                      clear
-                      install_docker
-                      docker run -d \
-                        -v /home/docker/ql/data:/ql/data \
-                        -p 5700:5700 \
-                        --name qinglong \
-                        --hostname qinglong \
-                        --restart unless-stopped \
-                        whyour/qinglong:latest
-
-                      clear
-                      echo "青龙面板已经安装完成"
-                      echo "------------------------"
-                      echo "您可以使用以下地址访问青龙面板:"
-                      external_ip=$(curl -s ipv4.ip.sb)
-                      echo "http:$external_ip:5700"
-                      echo ""
-
-                          ;;
-                      [Nn])
-                          ;;
-                      *)
-                          ;;
-                  esac
-              fi
-
-                ;;
-
-            9)
-              if docker inspect cloudreve &>/dev/null; then
-
-                      clear
-                      echo "cloudreve已安装，访问地址: "
-                      external_ip=$(curl -s ipv4.ip.sb)
-                      echo "http:$external_ip:5212"
-                      echo ""
-
-                      echo "应用操作"
-                      echo "------------------------"
-                      echo "1. 更新应用             2. 卸载应用"
-                      echo "------------------------"
-                      echo "0. 返回上一级选单"
-                      echo "------------------------"
-                      read -p "请输入你的选择: " sub_choice
-
-                      case $sub_choice in
-                          1)
-                              clear
-                              docker rm -f cloudreve
-                              docker rmi -f cloudreve/cloudreve:latest
-                              docker rm -f aria2
-                              docker rmi -f p3terx/aria2-pro
-                              install_docker
-                              cd /home/ && mkdir -p docker/cloud && cd docker/cloud && mkdir temp_data && mkdir -vp cloudreve/{uploads,avatar} && touch cloudreve/conf.ini && touch cloudreve/cloudreve.db && mkdir -p aria2/config && mkdir -p data/aria2 && chmod -R 777 data/aria2
-                              curl -o /home/docker/cloud/docker-compose.yml https://raw.githubusercontent.com/huaniangzi/docker/main/cloudreve-docker-compose.yml
-                              cd /home/docker/cloud/ && docker-compose up -d
-
-
-                              clear
-                              echo "cloudreve已经安装完成"
-                              echo "------------------------"
-                              echo "您可以使用以下地址访问cloudreve:"
-                              external_ip=$(curl -s ipv4.ip.sb)
-                              echo "http:$external_ip:5212"
-                              sleep 3
-                              docker logs cloudreve
-                              echo ""
-                              ;;
-                          2)
-                              clear
-                              docker rm -f cloudreve
-                              docker rmi -f cloudreve/cloudreve:latest
-                              docker rm -f aria2
-                              docker rmi -f p3terx/aria2-pro
-                              rm -rf /home/docker/cloud
-                              echo "应用已卸载"
-                              ;;
-                          0)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                          *)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                      esac
-              else
-                  clear
-                  echo "安装提示"
-                  echo "cloudreve是一个支持多家云存储的网盘系统"
-                  echo "官网介绍: https://cloudreve.org/"
-                  echo ""
-
-                  # 提示用户确认安装
-                  read -p "确定安装cloudreve吗？(Y/N): " choice
-                  case "$choice" in
-                      [Yy])
-                      clear
-                      install_docker
-                      cd /home/ && mkdir -p docker/cloud && cd docker/cloud && mkdir temp_data && mkdir -vp cloudreve/{uploads,avatar} && touch cloudreve/conf.ini && touch cloudreve/cloudreve.db && mkdir -p aria2/config && mkdir -p data/aria2 && chmod -R 777 data/aria2
-                      curl -o /home/docker/cloud/docker-compose.yml https://raw.githubusercontent.com/huaniangzi/docker/main/cloudreve-docker-compose.yml
-                      cd /home/docker/cloud/ && docker-compose up -d
-
-
-                      clear
-                      echo "cloudreve已经安装完成"
-                      echo "------------------------"
-                      echo "您可以使用以下地址访问cloudreve:"
-                      external_ip=$(curl -s ipv4.ip.sb)
-                      echo "http:$external_ip:5212"
-                      sleep 3
-                      docker logs cloudreve
-                      echo ""
-
-                          ;;
-                      [Nn])
-                          ;;
-                      *)
-                          ;;
-                  esac
-              fi
-
-                ;;
-
-            10)
-              if docker inspect emby &>/dev/null; then
-
-                      clear
-                      echo "emby已安装，访问地址: "
-                      external_ip=$(curl -s ipv4.ip.sb)
-                      echo "http:$external_ip:8096"
-                      echo ""
-
-                      echo "应用操作"
-                      echo "------------------------"
-                      echo "1. 更新应用             2. 卸载应用"
-                      echo "------------------------"
-                      echo "0. 返回上一级选单"
-                      echo "------------------------"
-                      read -p "请输入你的选择: " sub_choice
-
-                      case $sub_choice in
-                          1)
-                              clear
-                              docker rm -f emby
-                              docker rmi -f linuxserver/emby:latest
-                              install_docker
-                              docker run -d --name=emby --restart=always \
-                                  -v /homeo/docker/emby/config:/config \
-                                  -v /homeo/docker/emby/share1:/mnt/share1 \
-                                  -v /homeo/docker/emby/share2:/mnt/share2 \
-                                  -v /mnt/notify:/mnt/notify \
-                                  -p 8096:8096 -p 8920:8920 \
-                                  -e UID=1000 -e GID=100 -e GIDLIST=100 \
-                                  linuxserver/emby:latest
-
-
-                              clear
-                              echo "emby已经安装完成"
-                              echo "------------------------"
-                              echo "您可以使用以下地址访问emby:"
-                              external_ip=$(curl -s ipv4.ip.sb)
-                              echo "http:$external_ip:8096"
-                              echo ""
-                              ;;
-                          2)
-                              clear
-                              docker rm -f emby
-                              docker rmi -f linuxserver/emby:latest
-                              echo "应用已卸载"
-                              ;;
-                          0)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                          *)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                      esac
-              else
-                  clear
-                  echo "安装提示"
-                  echo "emby是一个主从式架构的媒体服务器软件，可以用来整理服务器上的视频和音频，并将音频和视频流式传输到客户端设备"
-                  echo "官网介绍: https://emby.media/"
-                  echo ""
-
-                  # 提示用户确认安装
-                  read -p "确定安装emby吗？(Y/N): " choice
-                  case "$choice" in
-                      [Yy])
-                      clear
-                      install_docker
-                      docker run -d --name=emby --restart=always \
-                          -v /homeo/docker/emby/config:/config \
-                          -v /homeo/docker/emby/share1:/mnt/share1 \
-                          -v /homeo/docker/emby/share2:/mnt/share2 \
-                          -v /mnt/notify:/mnt/notify \
-                          -p 8096:8096 -p 8920:8920 \
-                          -e UID=1000 -e GID=100 -e GIDLIST=100 \
-                          linuxserver/emby:latest
-
-                      clear
-                      echo "emby已经安装完成"
-                      echo "------------------------"
-                      echo "您可以使用以下地址访问emby:"
-                      external_ip=$(curl -s ipv4.ip.sb)
-                      echo "http:$external_ip:8096"
-                      echo ""
-
-                          ;;
-                      [Nn])
-                          ;;
-                      *)
-                          ;;
-                  esac
-              fi
-
-                ;;
-
-
-            11)
-              if docker inspect looking-glass &>/dev/null; then
-
-                      clear
-                      echo "Speedtest测速面板已安装，访问地址: "
-                      external_ip=$(curl -s ipv4.ip.sb)
-                      echo "http:$external_ip:89"
-                      echo ""
-
-                      echo "应用操作"
-                      echo "------------------------"
-                      echo "1. 更新应用             2. 卸载应用"
-                      echo "------------------------"
-                      echo "0. 返回上一级选单"
-                      echo "------------------------"
-                      read -p "请输入你的选择: " sub_choice
-
-                      case $sub_choice in
-                          1)
-                              clear
-                              docker rm -f looking-glass
-                              docker rmi -f wikihostinc/looking-glass-server
-                              install_docker
-                              docker run -d --name looking-glass --restart always -p 89:80 wikihostinc/looking-glass-server
-
-
-                              clear
-                              echo "Speedtest测速面板已经安装完成"
-                              echo "------------------------"
-                              echo "您可以使用以下地址访问Speedtest测速面板:"
-                              external_ip=$(curl -s ipv4.ip.sb)
-                              echo "http:$external_ip:89"
-                              echo ""
-                              ;;
-                          2)
-                              clear
-                              docker rm -f looking-glass
-                              docker rmi -f wikihostinc/looking-glass-server
-                              echo "应用已卸载"
-                              ;;
-                          0)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                          *)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                      esac
-              else
-                  clear
-                  echo "安装提示"
-                  echo "Speedtest测速面板是一个VPS网速测试工具，多项测试功能，还可以实时监控VPS进出站流量"
-                  echo "官网介绍: https://github.com/wikihost-opensource/als"
-                  echo ""
-
-                  # 提示用户确认安装
-                  read -p "确定安装Speedtest测速面板吗？(Y/N): " choice
-                  case "$choice" in
-                      [Yy])
-                      clear
-                      install_docker
-                      docker run -d --name looking-glass --restart always -p 89:80 wikihostinc/looking-glass-server
-
-                      clear
-                      echo "Speedtest测速面板已经安装完成"
-                      echo "------------------------"
-                      echo "您可以使用以下地址访问Speedtest测速面板:"
-                      external_ip=$(curl -s ipv4.ip.sb)
-                      echo "http:$external_ip:89"
-                      echo ""
-
-                          ;;
-                      [Nn])
-                          ;;
-                      *)
-                          ;;
-                  esac
-              fi
-
-                ;;
-            12)
-              if docker inspect adguardhome &>/dev/null; then
-
-                      clear
-                      echo "AdGuardHome已安装，访问地址: "
-                      external_ip=$(curl -s ipv4.ip.sb)
-                      echo "http:$external_ip:3000"
-                      echo ""
-
-                      echo "应用操作"
-                      echo "------------------------"
-                      echo "1. 更新应用             2. 卸载应用"
-                      echo "------------------------"
-                      echo "0. 返回上一级选单"
-                      echo "------------------------"
-                      read -p "请输入你的选择: " sub_choice
-
-                      case $sub_choice in
-                          1)
-                              clear
-                              docker rm -f adguardhome
-                              docker rmi -f adguard/adguardhome
-                              install_docker
-                              docker run -d \
-                                  --name adguardhome \
-                                  -v /home/docker/adguardhome/work:/opt/adguardhome/work \
-                                  -v /home/docker/adguardhome/conf:/opt/adguardhome/conf \
-                                  -p 53:53/tcp \
-                                  -p 53:53/udp \
-                                  -p 3000:3000/tcp \
-                                  --restart always \
-                                  adguard/adguardhome
-
-                              clear
-                              echo "AdGuardHome已经安装完成"
-                              echo "------------------------"
-                              echo "您可以使用以下地址访问AdGuardHome面板:"
-                              external_ip=$(curl -s ipv4.ip.sb)
-                              echo "http:$external_ip:3000"
-                              echo ""
-                              ;;
-                          2)
-                              clear
-                              docker rm -f adguardhome
-                              docker rmi -f adguard/adguardhome
-                              rm -rf /home/docker/adguardhome
-                              echo "应用已卸载"
-                              ;;
-                          0)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                          *)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                      esac
-              else
-                  clear
-                  echo "安装提示"
-                  echo "AdGuardHome是一款全网广告拦截与反跟踪软件，未来将不止是一个DNS服务器。"
-                  echo "官网介绍: https://hub.docker.com/r/adguard/adguardhome"
-                  echo ""
-
-                  # 提示用户确认安装
-                  read -p "确定安装AdGuardHome吗？(Y/N): " choice
-                  case "$choice" in
-                      [Yy])
-                      clear
-                      install_docker
-                          docker run -d \
-                              --name adguardhome \
-                              -v /home/docker/adguardhome/work:/opt/adguardhome/work \
-                              -v /home/docker/adguardhome/conf:/opt/adguardhome/conf \
-                              -p 53:53/tcp \
-                              -p 53:53/udp \
-                              -p 3000:3000/tcp \
-                              --restart always \
-                              adguard/adguardhome
-
-                      clear
-                      echo "AdGuardHome已经安装完成"
-                      echo "------------------------"
-                      echo "您可以使用以下地址访问AdGuardHome:"
-                      external_ip=$(curl -s ipv4.ip.sb)
-                      echo "http:$external_ip:3000"
-                      echo ""
-
-                          ;;
-                      [Nn])
-                          ;;
-                      *)
-                          ;;
-                  esac
-              fi
-
-                ;;
-            13)
-              if docker inspect onlyoffice &>/dev/null; then
-
-                      clear
-                      echo "onlyoffice 已安装，访问地址: "
-                      external_ip=$(curl -s ipv4.ip.sb)
-                      echo "http:$external_ip:8082"
-                      echo ""
-
-                      echo "应用操作"
-                      echo "------------------------"
-                      echo "1. 更新应用             2. 卸载应用"
-                      echo "------------------------"
-                      echo "0. 返回上一级选单"
-                      echo "------------------------"
-                      read -p "请输入你的选择: " sub_choice
-
-                      case $sub_choice in
-                          1)
-                              clear
-                              docker rm -f onlyoffice
-                              docker rmi -f onlyoffice/documentserver
-                              install_docker
-                              docker run -d -p 8082:80 \
-                                  --restart=always \
-                                  --name onlyoffice \
-                                  -v /home/docker/onlyoffice/DocumentServer/logs:/var/log/onlyoffice  \
-                                  -v /home/docker/onlyoffice/DocumentServer/data:/var/www/onlyoffice/Data  \
-                                   onlyoffice/documentserver
-
-                              clear
-                              echo "onlyoffice已经安装完成"
-                              echo "------------------------"
-                              echo "您可以使用以下地址访问onlyoffice:"
-                              external_ip=$(curl -s ipv4.ip.sb)
-                              echo "http:$external_ip:8082"
-                              echo ""
-                              ;;
-                          2)
-                              clear
-                              docker rm -f onlyoffice
-                              docker rmi -f onlyoffice/documentserver
-                              rm -rf /home/docker/onlyoffice
-                              echo "应用已卸载"
-                              ;;
-                          0)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                          *)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                      esac
-              else
-                  clear
-                  echo "安装提示"
-                  echo "onlyoffice是一款开源的在线office工具，太强大了！"
-                  echo "官网介绍: https://www.onlyoffice.com/"
-                  echo ""
-
-                  # 提示用户确认安装
-                  read -p "确定安装onlyoffice吗？(Y/N): " choice
-                  case "$choice" in
-                      [Yy])
-                      clear
-                      install_docker
-                      docker run -d -p 8082:80 \
-                          --restart=always \
-                          --name onlyoffice \
-                          -v /home/docker/onlyoffice/DocumentServer/logs:/var/log/onlyoffice  \
-                          -v /home/docker/onlyoffice/DocumentServer/data:/var/www/onlyoffice/Data  \
-                           onlyoffice/documentserver
-
-                      clear
-                      echo "onlyoffice已经安装完成"
-                      echo "------------------------"
-                      echo "您可以使用以下地址访问onlyoffice:"
-                      external_ip=$(curl -s ipv4.ip.sb)
-                      echo "http:$external_ip:8082"
-                      echo ""
-
-                          ;;
-                      [Nn])
-                          ;;
-                      *)
-                          ;;
-                  esac
-              fi
-
-                ;;
-            14)
-              if docker inspect portainer &>/dev/null; then
-                      clear
-                      echo "portainer已安装，访问地址: "
-                      external_ip=$(curl -s ipv4.ip.sb)
-                      echo "http:$external_ip:9050"
-                      echo ""
-
-                      echo "应用操作"
-                      echo "------------------------"
-                      echo "1. 更新应用             2. 卸载应用"
-                      echo "------------------------"
-                      echo "0. 返回上一级选单"
-                      echo "------------------------"
-                      read -p "请输入你的选择: " sub_choice
-
-                      case $sub_choice in
-                          1)
-                              clear
-                              docker rm -f portainer
-                              docker rmi -f portainer/portainer
-                              install_docker
-
-                              docker run -d \
-                              --name portainer \
-                              -p 9050:9000 \
-                              -v /var/run/docker.sock:/var/run/docker.sock \
-                              -v /home/docker/portainer:/data \
-                              --restart always \
-                              portainer/portainer
-
-                              clear
-                              echo "portainer已经安装完成"
-                              echo "------------------------"
-                              echo "您可以使用以下地址访问:"
-                              external_ip=$(curl -s ipv4.ip.sb)
-                              echo "http:$external_ip:9050"
-                              echo ""
-                              ;;
-                          2)
-                              clear
-                              docker rm -f portainer
-                              docker rmi -f portainer/portainer
-                              rm -rf /home/docker/portainer
-                              echo "应用已卸载"
-                              ;;
-                          0)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                          *)
-                              break  # 跳出循环，退出菜单
-                              ;;
-                      esac
-
-              else
-                  clear
-                  echo "安装提示"
-                  echo "portainer是一个轻量级的docker容器管理面板"
-                  echo "官网介绍: https://www.portainer.io/"
-                  echo ""
-
-                  # 提示用户确认安装
-                  read -p "确定安装吗？(Y/N): " choice
-                  case "$choice" in
-                      [Yy])
-                      clear
-                      install_docker
-                      docker
-                      run - d - p
-                      8180: 8080 - v / home / docker / code - server: / home / coder /.local / share / code - server - -name
-                      vscode - web - -restart
-                      always
-                      codercom / code - server
-
-                      clear
-                      echo
-                      "portainer已经安装完成"
-                      echo
-                      "------------------------"
-                      echo
-                      "您可以使用以下地址访问:"
-                      external_ip=$(curl -s ipv4.ip.sb)
-                      echo "http:$external_ip:8180"
-                      echo ""
-                      sleep 3
-                      docker exec vscode-web cat /home/coder/.config/code-server/config.yaml \
-
-                          ;;
-                      [Nn])
-                          ;;
-                      * )
-                          ;;
-                  esac
-              fi
-                ;;
-
-            15)
-              if docker inspect vscode-web &>/dev/null; then
+                          $docker_img"
+            docker_describe="如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装npm！"
+            docker_url="官网介绍: https://nginxproxymanager.com/"
+            docker_use="echo \"初始用户名: admin@example.com\""
+            docker_passwd="echo \"初始密码: changeme\""
+
+            docker_app
+
+              ;;
+
+          5)
+
+            docker_name="alist"
+            docker_img="xhofe/alist:latest"
+            docker_port=5244
+            docker_rum="docker run -d \
+                                --restart=always \
+                                -v /home/docker/alist:/opt/alist/data \
+                                -p 5244:5244 \
+                                -e PUID=0 \
+                                -e PGID=0 \
+                                -e UMASK=022 \
+                                --name="alist" \
+                                xhofe/alist:latest"
+            docker_describe="一个支持多种存储，支持网页浏览和 WebDAV 的文件列表程序，由 gin 和 Solidjs 驱动"
+            docker_url="官网介绍: https://alist.nn.ci/zh/"
+            docker_use="docker exec -it alist ./alist admin random"
+            docker_passwd=""
+
+            docker_app
+
+              ;;
+
+          6)
+            docker_name="ubuntu-novnc"
+            docker_img="fredblgr/ubuntu-novnc:20.04"
+            docker_port=6080
+            rootpasswd=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c16)
+            docker_rum="docker run -d \
+                                --name ubuntu-novnc \
+                                -p 6080:80 \
+                                -v /home/docker/ubuntu-novnc:/workspace:rw \
+                                -e HTTP_PASSWORD=$rootpasswd \
+                                -e RESOLUTION=1280x720 \
+                                --restart=always \
+                                fredblgr/ubuntu-novnc:20.04"
+            docker_describe="一个网页版Ubuntu远程桌面，挺好用的！"
+            docker_url="官网介绍: https://hub.docker.com/r/fredblgr/ubuntu-novnc"
+            docker_use="echo \"用户名: root\""
+            docker_passwd="echo \"密码: $rootpasswd\""
+
+            docker_app
+
+              ;;
+          7)
+            clear
+            curl -L https://raw.githubusercontent.com/naiba/nezha/master/script/install.sh  -o nezha.sh && chmod +x nezha.sh
+            ./nezha.sh
+              ;;
+
+          8)
+
+            docker_name="qbittorrent"
+            docker_img="lscr.io/linuxserver/qbittorrent:4.5.5"
+            docker_port=8081
+            docker_rum="docker run -d \
+                                  --name=qbittorrent \
+                                  -e PUID=1000 \
+                                  -e PGID=1000 \
+                                  -e TZ=Etc/UTC \
+                                  -e WEBUI_PORT=8081 \
+                                  -p 8081:8081 \
+                                  -p 6881:6881 \
+                                  -p 6881:6881/udp \
+                                  -v /home/docker/qbittorrent/config:/config \
+                                  -v /home/docker/qbittorrent/downloads:/downloads \
+                                  --restart unless-stopped \
+                                  lscr.io/linuxserver/qbittorrent:4.5.5"
+            docker_describe="qbittorrent离线BT磁力下载服务"
+            docker_url="官网介绍: https://hub.docker.com/r/linuxserver/qbittorrent"
+            docker_use="echo \"用户名: admin\""
+            docker_passwd="echo \"密码: adminadmin\""
+
+            docker_app
+
+              ;;
+
+          9)
+            if docker inspect mailserver &>/dev/null; then
 
                     clear
-                    echo "VScode已安装，访问地址: "
-                    external_ip=$(curl -s ipv4.ip.sb)
-                    echo "http:$external_ip:8180"
+                    echo "poste.io已安装，访问地址: "
+                    yuming=$(cat /home/docker/mail.txt)
+                    echo "https://$yuming"
                     echo ""
 
                     echo "应用操作"
@@ -4083,28 +3258,32 @@ case $choice in
                     case $sub_choice in
                         1)
                             clear
-                            docker rm -f vscode-web
-                            docker rmi -f codercom/code-server
+                            docker rm -f mailserver
+                            docker rmi -f analogic/poste.io
                             install_docker
-
-                            docker run -d -p 8180:8080 -v /home/docker/code-server:/home/coder/.local/share/code-server --name vscode-web --restart always codercom/code-server
+                            yuming=$(cat /home/docker/mail.txt)
+                            docker run \
+                                --net=host \
+                                -e TZ=Europe/Prague \
+                                -v /home/docker/mail:/data \
+                                --name "mailserver" \
+                                -h "$yuming" \
+                                --restart=always \
+                                -d analogic/poste.io
 
                             clear
-                            echo "VScode已经安装完成"
+                            echo "poste.io已经安装完成"
                             echo "------------------------"
-                            echo "您可以使用以下地址访问:"
-                            external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$external_ip:8180"
+                            echo "您可以使用以下地址访问poste.io:"
+                            echo "https://$yuming"
                             echo ""
-                            sleep 3
-                            docker exec vscode-web cat /home/coder/.config/code-server/config.yaml
-
                             ;;
                         2)
                             clear
-                            docker rm -f vscode-web
-                            docker rmi -f codercom/code-server
-                            rm -rf /home/docker/code-server
+                            docker rm -f mailserver
+                            docker rmi -f analogic/poste.io
+                            rm /home/docker/mail.txt
+                            rm -rf /home/docker/mail
                             echo "应用已卸载"
                             ;;
                         0)
@@ -4114,56 +3293,545 @@ case $choice in
                             break  # 跳出循环，退出菜单
                             ;;
                     esac
-              else
+            else
+                clear
+                install telnet
+
+                clear
+                echo ""
+                echo "端口检测"
+                port=25
+                timeout=3
+
+                if echo "quit" | timeout $timeout telnet smtp.qq.com $port | grep 'Connected'; then
+                  echo -e "\e[32m端口$port当前可用\e[0m"
+                else
+                  echo -e "\e[31m端口$port当前不可用\e[0m"
+                fi
+                echo "------------------------"
+                echo ""
+
+
+                echo "安装提示"
+                echo "poste.io一个邮件服务器，确保80和443端口没被占用，确保25端口开放"
+                echo "官网介绍: https://hub.docker.com/r/analogic/poste.io"
+                echo ""
+
+                # 提示用户确认安装
+                read -p "确定安装poste.io吗？(Y/N): " choice
+                case "$choice" in
+                    [Yy])
                     clear
-                    echo "安装提示"
-                    echo "VScode是一款强大的在线代码编写工具"
-                    echo "官网介绍: https://github.com/coder/code-server"
+
+                    read -p "请设置邮箱域名 例如 mail.yuming.com : " yuming
+                    mkdir -p /home/docker      # 递归创建目录
+                    echo "$yuming" > /home/docker/mail.txt  # 写入文件
+                    echo "------------------------"
+                    external_ip=$(curl -s ipv4.ip.sb)
+                    echo "先解析这些DNS记录"
+                    echo "A           mail            $external_ip"
+                    echo "CNAME       imap            $yuming"
+                    echo "CNAME       pop             $yuming"
+                    echo "CNAME       smtp            $yuming"
+                    echo "MX          @               $yuming"
+                    echo "TXT         @               v=spf1 mx ~all"
+                    echo "TXT         ?               ?"
+                    echo ""
+                    echo "------------------------"
+                    echo "按任意键继续..."
+                    read -n 1 -s -r -p ""
+
+                    install_docker
+
+                    docker run \
+                        --net=host \
+                        -e TZ=Europe/Prague \
+                        -v /home/docker/mail:/data \
+                        --name "mailserver" \
+                        -h "$yuming" \
+                        --restart=always \
+                        -d analogic/poste.io
+
+                    clear
+                    echo "poste.io已经安装完成"
+                    echo "------------------------"
+                    echo "您可以使用以下地址访问poste.io:"
+                    echo "https://$yuming"
                     echo ""
 
-                    # 提示用户确认安装
-                    read -p "确定安装吗？(Y/N): " choice
-                    case "$choice" in
-                        [Yy])
-                        clear
-                        install_docker
-                        docker run -d -p 8180:8080 -v /home/docker/code-server:/home/coder/.local/share/code-server --name vscode-web --restart always codercom/code-server
+                        ;;
+                    [Nn])
+                        ;;
+                    *)
+                        ;;
+                esac
+            fi
+              ;;
 
-                        clear
-                        echo "portainer已经安装完成"
-                        echo "------------------------"
-                        echo "您可以使用以下地址访问:"
-                        external_ip=$(curl -s ipv4.ip.sb)
-                        echo "http:$external_ip:8180"
-                        echo ""
-                        sleep 3
-                        docker exec vscode-web cat /home/coder/.config/code-server/config.yaml
+          10)
+            if docker inspect rocketchat &>/dev/null; then
 
+
+                    clear
+                    echo "rocket.chat已安装，访问地址: "
+                    external_ip=$(curl -s ipv4.ip.sb)
+                    echo "http:$external_ip:3897"
+                    echo ""
+
+                    echo "应用操作"
+                    echo "------------------------"
+                    echo "1. 更新应用             2. 卸载应用"
+                    echo "------------------------"
+                    echo "0. 返回上一级选单"
+                    echo "------------------------"
+                    read -p "请输入你的选择: " sub_choice
+
+                    case $sub_choice in
+                        1)
+                            clear
+                            docker rm -f rocketchat
+                            docker rmi -f rocket.chat:6.3
+                            install_docker
+
+                            docker run --name rocketchat --restart=always -p 3897:3000 --link db --env ROOT_URL=http://localhost --env MONGO_OPLOG_URL=mongodb://db:27017/rs5 -d rocket.chat
+
+                            clear
+                            external_ip=$(curl -s ipv4.ip.sb)
+                            echo "rocket.chat已经安装完成"
+                            echo "------------------------"
+                            echo "多等一会，您可以使用以下地址访问rocket.chat:"
+                            echo "http:$external_ip:3897"
+                            echo ""
                             ;;
-                        [Nn])
+                        2)
+                            clear
+                            docker rm -f rocketchat
+                            docker rmi -f rocket.chat
+                            docker rmi -f rocket.chat:6.3
+                            docker rm -f db
+                            docker rmi -f mongo:latest
+                            # docker rmi -f mongo:6
+                            rm -rf /home/docker/mongo
+                            echo "应用已卸载"
+                            ;;
+                        0)
+                            break  # 跳出循环，退出菜单
                             ;;
                         *)
+                            break  # 跳出循环，退出菜单
                             ;;
                     esac
-              fi
-                ;;
+            else
+                clear
+                echo "安装提示"
+                echo "rocket.chat国外知名开源多人聊天系统"
+                echo "官网介绍: https://www.rocket.chat"
+                echo ""
 
-            0)
-                cd ~
-                ./huaniangzi.sh
-                exit
-                ;;
-            *)
-                echo "无效的输入!"
-                ;;
-        esac
-        echo -e "\033[0;32m操作完成\033[0m"
-        echo "按任意键继续..."
-        read -n 1 -s -r -p ""
-        echo ""
-        clear
-      done
-      ;;
+                # 提示用户确认安装
+                read -p "确定安装rocket.chat吗？(Y/N): " choice
+                case "$choice" in
+                    [Yy])
+                    clear
+                    install_docker
+                    docker run --name db -d --restart=always \
+                        -v /home/docker/mongo/dump:/dump \
+                        mongo:latest --replSet rs5 --oplogSize 256
+                    sleep 1
+                    docker exec -it db mongosh --eval "printjson(rs.initiate())"
+                    sleep 5
+                    docker run --name rocketchat --restart=always -p 3897:3000 --link db --env ROOT_URL=http://localhost --env MONGO_OPLOG_URL=mongodb://db:27017/rs5 -d rocket.chat:6.3
+
+                    clear
+
+                    external_ip=$(curl -s ipv4.ip.sb)
+                    echo "rocket.chat已经安装完成"
+                    echo "------------------------"
+                    echo "多等一会，您可以使用以下地址访问rocket.chat:"
+                    echo "http:$external_ip:3897"
+                    echo ""
+
+                        ;;
+                    [Nn])
+                        ;;
+                    *)
+                        ;;
+                esac
+            fi
+              ;;
+
+
+
+          11)
+            docker_name="zentao-server"
+            docker_img="idoop/zentao:latest"
+            docker_port=82
+            docker_rum="docker run -d -p 82:80 -p 3308:3306 \
+                              -e ADMINER_USER="root" -e ADMINER_PASSWD="password" \
+                              -e BIND_ADDRESS="false" \
+                              -v /home/docker/zentao-server/:/opt/zbox/ \
+                              --add-host smtp.exmail.qq.com:163.177.90.125 \
+                              --name zentao-server \
+                              --restart=always \
+                              idoop/zentao:latest"
+            docker_describe="禅道是通用的项目管理软件"
+            docker_url="官网介绍: https://www.zentao.net/"
+            docker_use="echo \"初始用户名: admin\""
+            docker_passwd="echo \"初始密码: 123456\""
+            docker_app
+
+              ;;
+
+          12)
+            docker_name="qinglong"
+            docker_img="whyour/qinglong:latest"
+            docker_port=5700
+            docker_rum="docker run -d \
+                      -v /home/docker/qinglong/data:/ql/data \
+                      -p 5700:5700 \
+                      --name qinglong \
+                      --hostname qinglong \
+                      --restart unless-stopped \
+                      whyour/qinglong:latest"
+            docker_describe="青龙面板是一个定时任务管理平台"
+            docker_url="官网介绍: https://github.com/whyour/qinglong"
+            docker_use=""
+            docker_passwd=""
+            docker_app
+
+              ;;
+          13)
+            if docker inspect cloudreve &>/dev/null; then
+
+                    clear
+                    echo "cloudreve已安装，访问地址: "
+                    external_ip=$(curl -s ipv4.ip.sb)
+                    echo "http:$external_ip:5212"
+                    echo ""
+
+                    echo "应用操作"
+                    echo "------------------------"
+                    echo "1. 更新应用             2. 卸载应用"
+                    echo "------------------------"
+                    echo "0. 返回上一级选单"
+                    echo "------------------------"
+                    read -p "请输入你的选择: " sub_choice
+
+                    case $sub_choice in
+                        1)
+                            clear
+                            docker rm -f cloudreve
+                            docker rmi -f cloudreve/cloudreve:latest
+                            docker rm -f aria2
+                            docker rmi -f p3terx/aria2-pro
+                            install_docker
+                            cd /home/ && mkdir -p docker/cloud && cd docker/cloud && mkdir temp_data && mkdir -vp cloudreve/{uploads,avatar} && touch cloudreve/conf.ini && touch cloudreve/cloudreve.db && mkdir -p aria2/config && mkdir -p data/aria2 && chmod -R 777 data/aria2
+                            curl -o /home/docker/cloud/docker-compose.yml https://raw.githubusercontent.com/huaniangzi/docker/main/cloudreve-docker-compose.yml
+                            cd /home/docker/cloud/ && docker-compose up -d
+
+
+                            clear
+                            echo "cloudreve已经安装完成"
+                            echo "------------------------"
+                            echo "您可以使用以下地址访问cloudreve:"
+                            external_ip=$(curl -s ipv4.ip.sb)
+                            echo "http:$external_ip:5212"
+                            sleep 3
+                            docker logs cloudreve
+                            echo ""
+                            ;;
+                        2)
+                            clear
+                            docker rm -f cloudreve
+                            docker rmi -f cloudreve/cloudreve:latest
+                            docker rm -f aria2
+                            docker rmi -f p3terx/aria2-pro
+                            rm -rf /home/docker/cloud
+                            echo "应用已卸载"
+                            ;;
+                        0)
+                            break  # 跳出循环，退出菜单
+                            ;;
+                        *)
+                            break  # 跳出循环，退出菜单
+                            ;;
+                    esac
+            else
+                clear
+                echo "安装提示"
+                echo "cloudreve是一个支持多家云存储的网盘系统"
+                echo "官网介绍: https://cloudreve.org/"
+                echo ""
+
+                # 提示用户确认安装
+                read -p "确定安装cloudreve吗？(Y/N): " choice
+                case "$choice" in
+                    [Yy])
+                    clear
+                    install_docker
+                    cd /home/ && mkdir -p docker/cloud && cd docker/cloud && mkdir temp_data && mkdir -vp cloudreve/{uploads,avatar} && touch cloudreve/conf.ini && touch cloudreve/cloudreve.db && mkdir -p aria2/config && mkdir -p data/aria2 && chmod -R 777 data/aria2
+                    curl -o /home/docker/cloud/docker-compose.yml https://raw.githubusercontent.com/huaniangzi/docker/main/cloudreve-docker-compose.yml
+                    cd /home/docker/cloud/ && docker-compose up -d
+
+
+                    clear
+                    echo "cloudreve已经安装完成"
+                    echo "------------------------"
+                    echo "您可以使用以下地址访问cloudreve:"
+                    external_ip=$(curl -s ipv4.ip.sb)
+                    echo "http:$external_ip:5212"
+                    sleep 3
+                    docker logs cloudreve
+                    echo ""
+
+                        ;;
+                    [Nn])
+                        ;;
+                    *)
+                        ;;
+                esac
+            fi
+
+              ;;
+
+          14)
+            docker_name="easyimage"
+            docker_img="ddsderek/easyimage:latest"
+            docker_port=85
+            docker_rum="docker run -d \
+                      --name easyimage \
+                      -p 85:80 \
+                      -e TZ=Asia/Shanghai \
+                      -e PUID=1000 \
+                      -e PGID=1000 \
+                      -v /home/docker/easyimage/config:/app/web/config \
+                      -v /home/docker/easyimage/i:/app/web/i \
+                      --restart unless-stopped \
+                      ddsderek/easyimage:latest"
+            docker_describe="简单图床是一个简单的图床程序"
+            docker_url="官网介绍: https://github.com/icret/EasyImages2.0"
+            docker_use=""
+            docker_passwd=""
+            docker_app
+              ;;
+
+          15)
+            docker_name="emby"
+            docker_img="linuxserver/emby:latest"
+            docker_port=8096
+            docker_rum="docker run -d --name=emby --restart=always \
+                        -v /homeo/docker/emby/config:/config \
+                        -v /homeo/docker/emby/share1:/mnt/share1 \
+                        -v /homeo/docker/emby/share2:/mnt/share2 \
+                        -v /mnt/notify:/mnt/notify \
+                        -p 8096:8096 -p 8920:8920 \
+                        -e UID=1000 -e GID=100 -e GIDLIST=100 \
+                        linuxserver/emby:latest"
+            docker_describe="emby是一个主从式架构的媒体服务器软件，可以用来整理服务器上的视频和音频，并将音频和视频流式传输到客户端设备"
+            docker_url="官网介绍: https://emby.media/"
+            docker_use=""
+            docker_passwd=""
+            docker_app
+              ;;
+
+          16)
+            docker_name="looking-glass"
+            docker_img="wikihostinc/looking-glass-server"
+            docker_port=89
+            docker_rum="docker run -d --name looking-glass --restart always -p 89:80 wikihostinc/looking-glass-server"
+            docker_describe="Speedtest测速面板是一个VPS网速测试工具，多项测试功能，还可以实时监控VPS进出站流量"
+            docker_url="官网介绍: https://github.com/wikihost-opensource/als"
+            docker_use=""
+            docker_passwd=""
+            docker_app
+
+              ;;
+          17)
+
+            docker_name="adguardhome"
+            docker_img="adguard/adguardhome"
+            docker_port=3000
+            docker_rum="docker run -d \
+                            --name adguardhome \
+                            -v /home/docker/adguardhome/work:/opt/adguardhome/work \
+                            -v /home/docker/adguardhome/conf:/opt/adguardhome/conf \
+                            -p 53:53/tcp \
+                            -p 53:53/udp \
+                            -p 3000:3000/tcp \
+                            --restart always \
+                            adguard/adguardhome"
+            docker_describe="AdGuardHome是一款全网广告拦截与反跟踪软件，未来将不止是一个DNS服务器。"
+            docker_url="官网介绍: https://hub.docker.com/r/adguard/adguardhome"
+            docker_use=""
+            docker_passwd=""
+            docker_app
+
+              ;;
+
+
+          18)
+
+            docker_name="onlyoffice"
+            docker_img="onlyoffice/documentserver"
+            docker_port=8082
+            docker_rum="docker run -d -p 8082:80 \
+                        --restart=always \
+                        --name onlyoffice \
+                        -v /home/docker/onlyoffice/DocumentServer/logs:/var/log/onlyoffice  \
+                        -v /home/docker/onlyoffice/DocumentServer/data:/var/www/onlyoffice/Data  \
+                         onlyoffice/documentserver"
+            docker_describe="onlyoffice是一款开源的在线office工具，太强大了！"
+            docker_url="官网介绍: https://www.onlyoffice.com/"
+            docker_use=""
+            docker_passwd=""
+            docker_app
+
+              ;;
+
+          19)
+
+            if docker inspect safeline-tengine &>/dev/null; then
+
+                    clear
+                    echo "雷池已安装，访问地址: "
+                    external_ip=$(curl -s ipv4.ip.sb)
+                    echo "http:$external_ip:9443"
+                    echo ""
+
+                    echo "应用操作"
+                    echo "------------------------"
+                    echo "1. 更新应用             2. 卸载应用"
+                    echo "------------------------"
+                    echo "0. 返回上一级选单"
+                    echo "------------------------"
+                    read -p "请输入你的选择: " sub_choice
+
+                    case $sub_choice in
+                        1)
+                            clear
+                            echo "暂不支持"
+                            echo ""
+                            ;;
+                        2)
+
+                            clear
+                            echo "cd命令到安装目录下执行: docker compose down"
+                            echo ""
+                            ;;
+                        0)
+                            break  # 跳出循环，退出菜单
+                            ;;
+                        *)
+                            break  # 跳出循环，退出菜单
+                            ;;
+                    esac
+            else
+                clear
+                echo "安装提示"
+                echo "雷池是长亭科技开发的WAF站点防火墙程序面板，可以反代站点进行自动化防御"
+                echo "80和443端口不能被占用，无法与宝塔，1panel，npm，ldnmp建站共存"
+                echo "官网介绍: https://github.com/chaitin/safeline"
+                echo ""
+
+                # 提示用户确认安装
+                read -p "确定安装吗？(Y/N): " choice
+                case "$choice" in
+                    [Yy])
+                    clear
+                    install_docker
+                    bash -c "$(curl -fsSLk https://waf-ce.chaitin.cn/release/latest/setup.sh)"
+
+                    clear
+                    echo "雷池WAF面板已经安装完成"
+                    echo "------------------------"
+                    echo "您可以使用以下地址访问:"
+                    external_ip=$(curl -s ipv4.ip.sb)
+                    echo "http:$external_ip:9443"
+                    echo ""
+
+                        ;;
+                    [Nn])
+                        ;;
+                    *)
+                        ;;
+                esac
+            fi
+
+              ;;
+
+          20)
+            docker_name="portainer"
+            docker_img="portainer/portainer"
+            docker_port=9050
+            docker_rum="docker run -d \
+                    --name portainer \
+                    -p 9050:9000 \
+                    -v /var/run/docker.sock:/var/run/docker.sock \
+                    -v /home/docker/portainer:/data \
+                    --restart always \
+                    portainer/portainer"
+            docker_describe="portainer是一个轻量级的docker容器管理面板"
+            docker_url="官网介绍: https://www.portainer.io/"
+            docker_use=""
+            docker_passwd=""
+            docker_app
+
+              ;;
+
+          21)
+            docker_name="vscode-web"
+            docker_img="codercom/code-server"
+            docker_port=8180
+            docker_rum="docker run -d -p 8180:8080 -v /home/docker/vscode-web:/home/coder/.local/share/code-server --name vscode-web --restart always codercom/code-server"
+            docker_describe="VScode是一款强大的在线代码编写工具"
+            docker_url="官网介绍: https://github.com/coder/code-server"
+            docker_use="sleep 3"
+            docker_passwd="docker exec vscode-web cat /home/coder/.config/code-server/config.yaml"
+            docker_app
+              ;;
+          22)
+            docker_name="uptime-kuma"
+            docker_img="louislam/uptime-kuma:latest"
+            docker_port=3003
+            docker_rum="docker run -d \
+                            --name=uptime-kuma \
+                            -p 3003:3001 \
+                            -v /home/docker/uptime-kuma/uptime-kuma-data:/app/data \
+                            --restart=always \
+                            louislam/uptime-kuma:latest"
+            docker_describe="Uptime Kuma 易于使用的自托管监控工具"
+            docker_url="官网介绍: https://github.com/louislam/uptime-kuma"
+            docker_use=""
+            docker_passwd=""
+            docker_app
+              ;;
+
+          23)
+            docker_name="memos"
+            docker_img="ghcr.io/usememos/memos:latest"
+            docker_port=5230
+            docker_rum="docker run -d --name memos -p 5230:5230 -v /home/docker/memos:/var/opt/memos --restart always ghcr.io/usememos/memos:latest"
+            docker_describe="Memos是一款轻量级、自托管的备忘录中心"
+            docker_url="官网介绍: https://github.com/usememos/memos"
+            docker_use=""
+            docker_passwd=""
+            docker_app
+              ;;
+
+
+          0)
+              cd ~
+              ./huaniangzi.sh
+              exit
+              ;;
+          *)
+              echo "无效的输入!"
+              ;;
+      esac
+      break_end
+
+    done
+    ;;
 
 
   9)
@@ -4204,11 +3872,7 @@ case $choice in
                 echo "无效的输入!"
                 ;;
         esac
-        echo -e "\033[0;32m操作完成\033[0m"
-        echo "按任意键继续..."
-        read -n 1 -s -r -p ""
-        echo ""
-        clear
+        break_end
       done
       ;;
 
@@ -5478,11 +5142,7 @@ EOF
                       echo "无效的选择，请重新输入"
                       ;;
               esac
-              echo -e "\033[0;32m操作完成\033[0m"
-              echo "按任意键继续..."
-              read -n 1 -s -r -p ""
-              echo ""
-              clear
+              break_end
           done
 
               ;;
@@ -5552,11 +5212,7 @@ EOF
               echo "无效的输入!"
               ;;
       esac
-      echo -e "\033[0;32m操作完成\033[0m"
-      echo "按任意键继续..."
-      read -n 1 -s -r -p ""
-      echo ""
-      clear
+      break_end
     done
     ;;
   
@@ -5584,9 +5240,5 @@ EOF
     echo "无效的输入!"
 
 esac
-  echo -e "\033[0;32m操作完成\033[0m"
-  echo "按任意键继续..."
-  read -n 1 -s -r -p ""
-  echo ""
-  clear
+  break_end
 done
