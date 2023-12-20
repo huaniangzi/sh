@@ -1252,7 +1252,7 @@ case $choice in
                     6)
                         clear
                         docker_name="vaultwarden"
-                                    docker_img="vaultwarden/server:latest""
+                                    docker_img="vaultwarden/server:latest"
                                     docker_port=$(get_valid_port)
                                     docker_rum="docker run -d \
                                             --name vaultwarden \
