@@ -1273,7 +1273,7 @@ case $choice in
                     3)
                         clear
                         docker_hua_name="easyimage"
-                                    docker_hua_img="xhofe/alist:latest"
+                                    docker_hua_img="ddsderek/easyimage:latest"
                                     docker_hua_port=$(get_valid_port)
                                     docker_hua_rum="docker run -d \
                                                 --name easyimage \
