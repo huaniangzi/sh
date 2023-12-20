@@ -1230,23 +1230,23 @@ case $choice in
                 case $sub_choice in
                     1)
                         clear
-                        docker_name="nginx-proxy-manager"
-                                    docker_img="jc21/nginx-proxy-manager:latest"
-                                    docker_port=80
-                                    docker_rum="docker run -d \
-                                            --name nginx-proxy-manager \
-                                            -p 80:80 \
-                                            -p $docker_port:81 \
-                                            -p 443:443 \
-                                            -v /home/docker/npm/data:/data \
-                                            -v /home/docker/npm/letsencrypt:/etc/letsencrypt \
-                                            --restart unless-stopped \
-                                            jc21/nginx-proxy-manager:latest"
-                                    docker_describe="npm反向代理和Ldnmp反代只能使用一个"
-                                    docker_url=""
-                                    docker_use=""
-                                    docker_passwd=""
-                                    docker_app
+                        docker_hua_name="nginx-proxy-manager"
+                                    docker_hua_img="jc21/nginx-proxy-manager:latest"
+                                    docker_hua_port=$(get_valid_port)
+                                    docker_hua_rum="docker run -d \
+                                                --name nginx-proxy-manager \
+                                                -p 80:80 \
+                                                -p $docker_hua_port:81 \
+                                                -p 443:443 \
+                                                -v /home/docker/npm/data:/data \
+                                                -v /home/docker/npm/letsencrypt:/etc/letsencrypt \
+                                                --restart unless-stopped \
+                                                jc21/nginx-proxy-manager:latest"
+                                    docker_hua_describe="npm反向代理和Ldnmp反代只能使用一个"
+                                    docker_hua_url=""
+                                    docker_hua_use=""
+                                    docker_hua_passwd=""
+                                    docker_hua_app
 
                                       ;;
                     2)
@@ -1272,43 +1272,43 @@ case $choice in
                                       ;;
                     3)
                         clear
-                        docker1_name="easyimage"
-                                    docker1_img="xhofe/alist:latest"
-                                    docker1_port=$(get_valid_port)
-                                    docker1_rum="docker run -d \
-                                            --name easyimage \
-                                            -p "$docker1_port":80 \
-                                            -e TZ=Asia/Shanghai \
-                                            -e PUID=1000 \
-                                            -e PGID=1000 \
-                                            -v /home/docker/easyimage/config:/app/web/config \
-                                            -v /home/docker/easyimage/i:/app/web/i \
-                                            --restart unless-stopped \
-                                            ddsderek/easyimage:latest"
-                                    docker1_describe="easyimage是一个简单图床系统"
-                                    docker1_url=""
-                                    docker1_use=""
-                                    docker1_passwd=""
-                                    docker_app1
+                        docker_hua_name="easyimage"
+                                    docker_hua_img="xhofe/alist:latest"
+                                    docker_hua_port=$(get_valid_port)
+                                    docker_hua_rum="docker run -d \
+                                                --name easyimage \
+                                                -p "$docker_hua_port":80 \
+                                                -e TZ=Asia/Shanghai \
+                                                -e PUID=1000 \
+                                                -e PGID=1000 \
+                                                -v /home/docker/easyimage/config:/app/web/config \
+                                                -v /home/docker/easyimage/i:/app/web/i \
+                                                --restart unless-stopped \
+                                                ddsderek/easyimage:latest"
+                                    docker_hua_describe="easyimage是一个简单图床系统"
+                                    docker_hua_url=""
+                                    docker_hua_use=""
+                                    docker_hua_passwd=""
+                                    docker_hua_app
 
                                       ;;
                     4)
                         clear
-                        docker1_name="memeos"
-                                    docker1_img="neosmemo/memos:latest"
-                                    docker1_port=$(get_valid_port)
-                                    docker1_rum="docker run -d \
-                                            --name memeos \
-                                            --hostname memeos \
-                                            -p $docker1_port:5230 \
-                                            -v /home/docker/memos/.memos/:/var/opt/memos \
-                                            --restart always \
-                                            neosmemo/memos:latest"
-                                    docker1_describe="碎片化知识卡片和一个记事本,备忘录"
-                                    docker1_url=""
-                                    docker1_use=""
-                                    docker1_passwd=""
-                                    docker_app1
+                        docker_hua_name="memeos"
+                                    docker_hua_img="neosmemo/memos:latest"
+                                    docker_hua_port=$(get_valid_port)
+                                    docker_hua_rum="docker run -d \
+                                                --name memeos \
+                                                --hostname memeos \
+                                                -p $docker_hua_port:5230 \
+                                                -v /home/docker/memos/.memos/:/var/opt/memos \
+                                                --restart always \
+                                                neosmemo/memos:latest"
+                                    docker_hua_describe="碎片化知识卡片和一个记事本,备忘录"
+                                    docker_hua_url=""
+                                    docker_hua_use=""
+                                    docker_hua_passwd=""
+                                    docker_hua_app
 
                                       ;;
                     5)
@@ -1338,29 +1338,29 @@ case $choice in
                                       ;;
                     6)
                         clear
-                        docker1_name="vaultwarden"
-                                    docker1_img="vaultwarden/server:latest"
-                                    docker1_port=$(get_valid_port)
-                                    docker1_rum="docker run -d \
-                                            --name vaultwarden \
-                                            -p $docker1_port:80 \
-                                            -v /home/docker/vaultwarden/data:/data \
-                                            -e LOGIN_RATELIMIT_MAX_BURST=10 \
-                                            -e LOGIN_RATELIMIT_SECONDS=60 \
-                                            -e ADMIN_RATELIMIT_MAX_BURST=10 \
-                                            -e ADMIN_RATELIMIT_SECONDS=60 \
-                                            -e ADMIN_SESSION_LIFETIME=20 \
-                                            -e ADMIN_TOKEN=hCWqQngEdKJmWGTSHUvhwyVnSmAPUK \
-                                            -e SENDS_ALLOWED=true \
-                                            -e EMERGENCY_ACCESS_ALLOWED=true \
-                                            -e WEB_VAULT_ENABLED=true \
-                                            -e SIGNUPS_ALLOWED=true \
-                                            vaultwarden/server:latest"
-                                    docker1_describe="vaultwarden密码管理平台，存放账号密码"
-                                    docker1_url=""
-                                    docker1_use=""
-                                    docker1_passwd=""
-                                    docker_app1
+                        docker_hua_name="vaultwarden"
+                                    docker_hua_img="vaultwarden/server:latest"
+                                    docker_hua_port=$(get_valid_port)
+                                    docker_hua_rum="docker run -d \
+                                                --name vaultwarden \
+                                                -p $docker1_port:80 \
+                                                -v /home/docker/vaultwarden/data:/data \
+                                                -e LOGIN_RATELIMIT_MAX_BURST=10 \
+                                                -e LOGIN_RATELIMIT_SECONDS=60 \
+                                                -e ADMIN_RATELIMIT_MAX_BURST=10 \
+                                                -e ADMIN_RATELIMIT_SECONDS=60 \
+                                                -e ADMIN_SESSION_LIFETIME=20 \
+                                                -e ADMIN_TOKEN=hCWqQngEdKJmWGTSHUvhwyVnSmAPUK \
+                                                -e SENDS_ALLOWED=true \
+                                                -e EMERGENCY_ACCESS_ALLOWED=true \
+                                                -e WEB_VAULT_ENABLED=true \
+                                                -e SIGNUPS_ALLOWED=true \
+                                                vaultwarden/server:latest"
+                                    docker_hua_describe="vaultwarden密码管理平台，存放账号密码"
+                                    docker_hua_url=""
+                                    docker_hua_use=""
+                                    docker_hua_passwd=""
+                                    docker_hua_app
 
                                       ;;
 
