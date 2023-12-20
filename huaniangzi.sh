@@ -1230,31 +1230,31 @@ case $choice in
                 case $sub_choice in
                     1)
                         clear
-                        docker1_name="nginx-proxy-manager"
-                                    docker1_img="jc21/nginx-proxy-manager:latest"
-                                    docker1_port=$(get_valid_port)
-                                    docker1_rum="docker run -d \
+                        docker_name="nginx-proxy-manager"
+                                    docker_img="jc21/nginx-proxy-manager:latest"
+                                    docker_port=80
+                                    docker_rum="docker run -d \
                                             --name nginx-proxy-manager \
                                             -p 80:80 \
-                                            -p $docker1_port:81 \
+                                            -p $docker_port:81 \
                                             -p 443:443 \
                                             -v /home/docker/npm/data:/data \
                                             -v /home/docker/npm/letsencrypt:/etc/letsencrypt \
                                             --restart unless-stopped \
                                             jc21/nginx-proxy-manager:latest"
-                                    docker1_describe="npm反向代理和Ldnmp反代只能使用一个"
-                                    docker1_url=""
-                                    docker1_use=""
-                                    docker1_passwd=""
-                                    docker_app1
+                                    docker_describe="npm反向代理和Ldnmp反代只能使用一个"
+                                    docker_url=""
+                                    docker_use=""
+                                    docker_passwd=""
+                                    docker_app
 
                                       ;;
                     2)
                         clear
-                        docker1_name="alist"
-                                    docker1_img="xhofe/alist:latest"
-                                    docker1_port=5244
-                                    docker1_rum="docker run -d \
+                        docker_name="alist"
+                                    docker_img="xhofe/alist:latest"
+                                    docker_port=5244
+                                    docker_rum="docker run -d \
                                             --restart always \
                                             -v /home/docker/alsit/etc/alist:/opt/alist/data \
                                             -p 5244:5244 \
@@ -1263,10 +1263,10 @@ case $choice in
                                             -e UMASK=022 \
                                             --name alist \
                                             xhofe/alist:latest"
-                                    docker1_describe="Alsit是一个云盘存储程序"
-                                    docker1_url=""
-                                    docker1_use="docker exec -it alist ./alist admin random"
-                                    docker1_passwd=""
+                                    docker_describe="Alsit是一个云盘存储程序"
+                                    docker_url=""
+                                    docker_use="docker exec -it alist ./alist admin random"
+                                    docker_passwd=""
                                     docker_app
 
                                       ;;
@@ -1313,10 +1313,10 @@ case $choice in
                                       ;;
                     5)
                         clear
-                        docker1_name="qbittorrent"
-                                    docker1_img="lscr.io/linuxserver/qbittorrent:4.5.5"
-                                    docker1_port=6881
-                                    docker1_rum="docker run -d \
+                        docker_name="qbittorrent"
+                                    docker_img="lscr.io/linuxserver/qbittorrent:4.5.5"
+                                    docker_port=8081
+                                    docker_rum="docker run -d \
                                             --name=qbittorrent \
                                             -e PUID=1000 \
                                             -e PGID=1000 \
@@ -1329,10 +1329,10 @@ case $choice in
                                             -v /home/docker/qbittorrent/downloads:/downloads \
                                             --restart unless-stopped \
                                             lscr.io/linuxserver/qbittorrent:4.5.5"
-                                    docker1_describe="qbittorrent离线BT磁力下载服务"
-                                    docker1_url="官网介绍: https://hub.docker.com/r/linuxserver/qbittorrent"
-                                    docker1_use="admin"
-                                    docker1_passwd="adminadmin"
+                                    docker_describe="qbittorrent离线BT磁力下载服务"
+                                    docker_url="官网介绍: https://hub.docker.com/r/linuxserver/qbittorrent"
+                                    docker_use="admin"
+                                    docker_passwd="adminadmin"
                                     docker_app
 
                                       ;;
