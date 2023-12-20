@@ -362,12 +362,12 @@ fi
 
 }
 
-docker_app1() {
-if docker inspect "$docker1_name" &>/dev/null; then
+docker_hua_app() {
+if docker inspect "$docker_hua_name" &>/dev/null; then
     clear
-    echo "$docker1_name 已安装，访问地址: "
+    echo "$docker_hua_name 已安装，访问地址: "
     external_ip=$(curl -s ipv4.ip.sb)
-    echo "http:$external_ip:$docker1_port"
+    echo "http:$external_ip:$docker_hua_port"
     echo ""
     echo "应用操作"
     echo "------------------------"
@@ -381,27 +381,27 @@ if docker inspect "$docker1_name" &>/dev/null; then
         1)
             clear
             install_netstat
-            docker1_port=$(get_valid_port)
-            docker rm -f "$docker1_name"
-            docker rmi -f "$docker1_img"
+            docker_hua_port=$(get_valid_port)
+            docker rm -f "$docker_hua_name"
+            docker rmi -f "$docker_hua_img"
             # 安装 Docker（请确保有 install_docker 函数）
             install_docker
             $docker_rum
             clear
-            echo "$docker1_name 已经安装完成"
+            echo "$docker_hua_name 已经安装完成"
             echo "------------------------"
             # 获取外部 IP 地址
             external_ip=$(curl -s ipv4.ip.sb)
             echo "您可以使用以下地址访问:"
-            echo "http:$external_ip:$docker1_port"
-            $docker1_use
-            $docker1_passwd
+            echo "http:$external_ip:$docker_hua_port"
+            $docker_hua_use
+            $docker_hua_passwd
             ;;
         2)
             clear
-            docker rm -f "$host_name"
-            docker rmi -f "$host_img"
-            rm -rf "/home/docker/$docker1_name"
+            docker rm -f "$docker_hua_name"
+            docker rmi -f "$docker_hua_img"
+            rm -rf "/home/docker/$docker_hua_name"
             echo "应用已卸载"
             ;;
         0)
@@ -414,8 +414,8 @@ if docker inspect "$docker1_name" &>/dev/null; then
 else
     clear
     echo "安装提示"
-    echo "$docker1_describe"
-    echo "$docker1_url"
+    echo "$docker_hua_describe"
+    echo "$docker_hua_url"
     echo ""
 
     # 提示用户确认安装
@@ -424,19 +424,19 @@ else
         [Yy])
             clear
             install_netstat
-            docker1_port=$(get_valid_port)
+            docker_hua_port=$(get_valid_port)
             # 安装 Docker（请确保有 install_docker 函数）
             install_docker
             $docker_rum
             clear
-            echo "$docker1_name 已经安装完成"
+            echo "$docker_hua_name 已经安装完成"
             echo "------------------------"
             # 获取外部 IP 地址
             external_ip=$(curl -s ipv4.ip.sb)
             echo "您可以使用以下地址访问:"
-            echo "http:$external_ip:$docker1_port"
-            $docker1_use
-            $docker1_passwd
+            echo "http:$external_ip:$docker_hua_port"
+            $docker_hua_use
+            $docker_hua_passwd
             ;;
         [Nn])
             # 用户选择不安装
@@ -482,13 +482,13 @@ get_valid_port() {
     local host_port
 
     while [ "$port_available" = false ]; do
-        read -p "请输入你想要映射到容器的主机端口: " host_port
-        if check_port_availability "$host_port"; then
+        read -p "请输入你想要映射到容器的主机端口: " docker_hua_port
+        if check_port_availability "$docker_hua_port"; then
             port_available=true
         fi
     done
 
-    echo "$host_port"
+    echo "$docker_hua_port"
 }
 
 
