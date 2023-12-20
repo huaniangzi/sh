@@ -1142,407 +1142,94 @@ case $choice in
 
                 case $sub_choice in
                     1)
-                        if docker inspect easyimage &>/dev/null; then
-                            clear
-                            echo "npm反向代理已安装，访问地址: "
-                            external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$external_ip:$host_port"
-                            echo ""
+                        clear
+                        docker_name="nginx-proxy-manager"
+                                    docker_img="jc21/nginx-proxy-manager:latest"
+                                    docker_port=$(get_valid_port)
+                                    docker_rum="docker run -d \
+                                            --name nginx-proxy-manager \
+                                            -p 80:80 \
+                                            -p $host_port:81 \
+                                            -p 443:443 \
+                                            -v /home/docker/npm/data:/data \
+                                            -v /home/docker/npm/letsencrypt:/etc/letsencrypt \
+                                            --restart unless-stopped \
+                                            jc21/nginx-proxy-manager:latest"
+                                    docker_describe="npm反向代理和Ldnmp反代只能使用一个"
+                                    docker_url=""
+                                    docker_use=""
+                                    docker_passwd=""
+                                    docker_app
 
-                            echo "应用操作"
-                            echo "------------------------"
-                            echo "1. 更新应用             2. 卸载应用"
-                            echo "0. 返回上一级菜单"
-                            echo "------------------------"
-                            read -p "请输入你的选择: " sub_choice
-
-                            case $sub_choice in
-                                1)
-                                    clear
-                                    install_netstat
-                                    clear
-                                    host_port=$(get_valid_port)
-                                    docker rm -f nginx-proxy-manager
-                                    docker rmi -f jc21/nginx-proxy-manager:latest
-                                    install_docker
-                                    docker run -d \
-                                        --name nginx-proxy-manager \
-                                        -p 80:80 \
-                                        -p $host_port:81 \
-                                        -p 443:443 \
-                                        -v /home/docker/npm/data:/data \
-                                        -v /home/docker/npm/letsencrypt:/etc/letsencrypt \
-                                        --restart unless-stopped \
-                                        jc21/nginx-proxy-manager:latest
-
-
-                                    echo "npm反向代理已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问npm反向代理:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:$host_port"  # 使用用户输入的端口
-                                    echo ""
-                                    ;;
-                                2)
-                                    clear
-                                    docker rm -f nginx-proxy-manager
-                                    docker rmi -f jc21/nginx-proxy-manager:latest
-                                    rm -rf /home/docker/npm
-                                    echo "应用已卸载"
-                                    ;;
-                                0)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                                *)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                            esac
-                        else
-                            clear
-                            echo "安装提示"
-                            echo "npm反向代理和Ldnmp反代只能使用一个"
-                            echo ""
-
-                            read -p "确定安装npm反向代理吗？(Y/N): " choice
-                            case "$choice" in
-                                [Yy])
-                                    clear
-                                    install_netstat
-                                    clear
-                                    host_port=$(get_valid_port)
-
-                                    docker run -d \
-                                        --name nginx-proxy-manager \
-                                        -p 80:80 \
-                                        -p $host_port:81 \
-                                        -p 443:443 \
-                                        -v /home/docker/npm/data:/data \
-                                        -v /home/docker/npm/letsencrypt:/etc/letsencrypt \
-                                        --restart unless-stopped \
-                                        jc21/nginx-proxy-manager:latest
-
-                                    clear
-                                    echo "npm反向代理已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问npm反向代理:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:$host_port"
-                                    echo ""
-                                    ;;
-                                [Nn])
-                                    ;;
-                                *)
-                                    ;;
-                            esac
-                        fi
-                          ;;
+                                      ;;
                     2)
-                        if docker inspect easyimage &>/dev/null; then
-                            clear
-                            echo "AList已安装，访问地址: "
-                            external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$external_ip:5244"
-                            echo ""
+                        clear
+                        docker_name="alist"
+                                    docker_img="xhofe/alist:latest"
+                                    docker_port=5244
+                                    docker_rum="docker run -d \
+                                            --restart always \
+                                            -v /home/docker/alsit/etc/alist:/opt/alist/data \
+                                            -p 5244:5244 \
+                                            -e PUID=0 \
+                                            -e PGID=0 \
+                                            -e UMASK=022 \
+                                            --name alist \
+                                            xhofe/alist:latest"
+                                    docker_describe="Alsit是一个云盘存储程序"
+                                    docker_url=""
+                                    docker_use="docker exec -it alist ./alist admin random"
+                                    docker_passwd=""
+                                    docker_app
 
-                            echo "应用操作"
-                            echo "------------------------"
-                            echo "1. 更新应用             2. 卸载应用"
-                            echo "0. 返回上一级菜单"
-                            echo "------------------------"
-                            read -p "请输入你的选择: " sub_choice
-
-                            case $sub_choice in
-                                1)
-                                    clear
-                                    docker rm -f alist
-                                    docker rmi -f xhofe/alist:latest
-                                    install_docker
-                                    docker run -d \
-                                        --restart always \
-                                        -v /home/docker/alsit/etc/alist:/opt/alist/data \
-                                        -p 5244:5244 \
-                                        -e PUID=0 \
-                                        -e PGID=0 \
-                                        -e UMASK=022 \
-                                        --name alist \
-                                        xhofe/alist:latest
-
-                                    echo "AList已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问AList:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:5244"  # 使用用户输入的端口
-                                    echo ""
-                                    ;;
-                                2)
-                                    clear
-                                    docker rm -f alist
-                                    docker rmi -f xhofe/alist:latest
-                                    rm -rf /home/docker/alsit
-                                    echo "应用已卸载"
-                                    ;;
-                                0)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                                *)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                            esac
-                        else
-                            clear
-                            echo "安装提示"
-                            echo "Alsit是一个云盘存储程序"
-                            echo ""
-
-                            read -p "确定安装Alsit吗？(Y/N): " choice
-                            case "$choice" in
-                                [Yy])
-                                    clear
-                                    docker run -d \
-                                        --restart always \
-                                        -v /home/docker/alsit/etc/alist:/opt/alist/data \
-                                        -p 5244:5244 \
-                                        -e PUID=0 \
-                                        -e PGID=0 \
-                                        -e UMASK=022 \
-                                        --name alist \
-                                        xhofe/alist:latest
-
-                                    clear
-                                    echo "Alsit已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问AList:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:5244"
-                                    echo ""
-                                    ;;
-                                [Nn])
-                                    ;;
-                                *)
-                                    ;;
-                            esac
-                        fi
-                          ;;
+                                      ;;
                     3)
-                        if docker inspect easyimage &>/dev/null; then
-                            clear
-                            echo "简单图床已安装，访问地址: "
-                            external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$external_ip:$host_port"
-                            echo ""
+                        clear
+                        docker_name="easyimage"
+                                    docker_img="xhofe/alist:latest"
+                                    docker_port=$(get_valid_port)
+                                    docker_rum="docker run -d \
+                                            --name easyimage \
+                                            -p "$docker_port":80 \
+                                            -e TZ=Asia/Shanghai \
+                                            -e PUID=1000 \
+                                            -e PGID=1000 \
+                                            -v /home/docker/easyimage/config:/app/web/config \
+                                            -v /home/docker/easyimage/i:/app/web/i \
+                                            --restart unless-stopped \
+                                            ddsderek/easyimage:latest"
+                                    docker_describe="easyimage是一个简单图床系统"
+                                    docker_url=""
+                                    docker_use=""
+                                    docker_passwd=""
+                                    docker_app
 
-                            echo "应用操作"
-                            echo "------------------------"
-                            echo "1. 更新应用             2. 卸载应用"
-                            echo "0. 返回上一级菜单"
-                            echo "------------------------"
-                            read -p "请输入你的选择: " sub_choice
-
-                            case $sub_choice in
-                                1)
-                                    clear
-                                    install_netstat
-                                    clear
-                                    host_port=$(get_valid_port)
-                                    docker rm -f easyimage
-                                    docker rmi -f ddsderek/easyimage:latest
-                                    install_docker
-                                    docker run -d \
-                                        --name easyimage \
-                                        -p "$host_port":80 \
-                                        -e TZ=Asia/Shanghai \
-                                        -e PUID=1000 \
-                                        -e PGID=1000 \
-                                        -v /home/docker/easyimage/config:/app/web/config \
-                                        -v /home/docker/easyimage/i:/app/web/i \
-                                        --restart unless-stopped \
-                                        ddsderek/easyimage:latest
-
-                                    clear
-                                    echo "简单图床已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问简单图床:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:$host_port"  # 使用用户输入的端口
-                                    echo ""
-                                    ;;
-                                2)
-                                    clear
-                                    docker rm -f easyimage
-                                    docker rmi -f ddsderek/easyimage:latest
-                                    rm -rf /home/docker/easyimage
-                                    echo "应用已卸载"
-                                    ;;
-                                0)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                                *)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                            esac
-                        else
-                            clear
-                            echo "安装提示"
-                            echo "简单图床是一个简单的图床程序"
-                            echo "官网介绍: https://github.com/icret/EasyImages2.0"
-                            echo ""
-
-                            read -p "确定安装简单图床吗？(Y/N): " choice
-                            case "$choice" in
-                                [Yy])
-                                    clear
-                                    install_netstat
-                                    clear
-                                    host_port=$(get_valid_port)
-
-                                    # 根据用户输入的主机端口运行容器并保持容器内部端口为80
-                                    docker rm -f easyimage
-                                    docker rmi -f ddsderek/easyimage:latest
-                                    install_docker
-                                    docker run -d \
-                                        --name easyimage \
-                                        -p "$host_port":80 \
-                                        -e TZ=Asia/Shanghai \
-                                        -e PUID=1000 \
-                                        -e PGID=1000 \
-                                        -v /home/docker/easyimage/config:/app/web/config \
-                                        -v /home/docker/easyimage/i:/app/web/i \
-                                        --restart unless-stopped \
-                                        ddsderek/easyimage:latest
-
-                                    clear
-                                    echo "简单图床已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问简单图床:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:$host_port"
-                                    echo ""
-                                    ;;
-                                [Nn])
-                                    ;;
-                                *)
-                                    ;;
-                            esac
-                        fi
-                          ;;
+                                      ;;
                     4)
-                        if docker inspect easyimage &>/dev/null; then
-                            clear
-                            echo "碎片化知识卡片已安装，访问地址: "
-                            external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$external_ip:$host_port"
-                            echo ""
+                        clear
+                        docker_name="memeos"
+                                    docker_img="neosmemo/memos:latest"
+                                    docker_port=$(get_valid_port)
+                                    docker_rum="docker run -d \
+                                            --name memeos \
+                                            --hostname memeos \
+                                            -p $host_port:5230 \
+                                            -v /home/docker/memos/.memos/:/var/opt/memos \
+                                            --restart always \
+                                            neosmemo/memos:latest"
+                                    docker_describe="碎片化知识卡片和一个记事本,备忘录"
+                                    docker_url=""
+                                    docker_use=""
+                                    docker_passwd=""
+                                    docker_app
 
-                            echo "应用操作"
-                            echo "------------------------"
-                            echo "1. 更新应用             2. 卸载应用"
-                            echo "0. 返回上一级菜单"
-                            echo "------------------------"
-                            read -p "请输入你的选择: " sub_choice
-
-                            case $sub_choice in
-                                1)
-                                    clear
-                                    install_netstat
-                                    clear
-                                    host_port=$(get_valid_port)
-                                    docker rm -f memeos
-                                    docker rmi -f neosmemo/memos:latest
-                                    install_docker
-                                    docker run -d \
-                                        --name memeos \
-                                        --hostname memeos \
-                                        -p $host_port:5230 \
-                                        -v /home/docker/memos/.memos/:/var/opt/memos \
-                                        --restart always \
-                                        neosmemo/memos:latest
-
-                                    echo "碎片化知识卡片已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问碎片化知识卡片:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:$host_port"  # 使用用户输入的端口
-                                    echo ""
-                                    ;;
-                                2)
-                                    clear
-                                    docker rm -f memeos
-                                    docker rmi -f neosmemo/memos:latest
-                                    rm -rf /home/docker/memos
-                                    echo "应用已卸载"
-                                    ;;
-                                0)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                                *)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                            esac
-                        else
-                            clear
-                            echo "安装提示"
-                            echo "碎片化知识卡片和一个记事本,备忘录"
-                            echo ""
-
-                            read -p "确定安装碎片化知识卡片吗？(Y/N): " choice
-                            case "$choice" in
-                                [Yy])
-                                    clear
-                                    install_netstat
-                                    clear
-                                    host_port=$(get_valid_port)
-
-                                    docker rm -f easyimage
-                                    docker rmi -f ddsderek/easyimage:latest
-                                    install_docker
-                                    docker run -d \
-                                        --name memeos \
-                                        --hostname memeos \
-                                        -p $host_port:5230 \
-                                        -v /home/docker/memos/.memos/:/var/opt/memos \
-                                        --restart always \
-                                        neosmemo/memos:latest
-
-                                    clear
-                                    echo "碎片化知识卡片已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问碎片化知识卡片:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:$host_port"
-                                    echo ""
-                                    ;;
-                                [Nn])
-                                    ;;
-                                *)
-                                    ;;
-                            esac
-                        fi
-                          ;;
+                                      ;;
                     5)
-                        if docker inspect qbittorrent &>/dev/null; then
-                              clear
-
-                              echo "QB已安装，访问地址: "
-                              external_ip=$(curl -s ipv4.ip.sb)
-                              echo "http:$external_ip:8081"
-                              echo ""
-
-                              echo "应用操作"
-                              echo "------------------------"
-                              echo "1. 更新应用             2. 卸载应用"
-                              echo "------------------------"
-                              echo "0. 返回上一级选单"
-                              echo "------------------------"
-                              read -p "请输入你的选择: " sub_choice
-
-                              case $sub_choice in
-                                  1)
-                                      clear
-                                      docker rm -f qbittorrent
-                                      docker rmi -f lscr.io/linuxserver/qbittorrent:latest
-                                      docker rmi -f lscr.io/linuxserver/qbittorrent:4.5.5
-                                      install_docker
-                                      docker run -d \
+                        clear
+                        docker_name="qbittorrent"
+                                    docker_img="lscr.io/linuxserver/qbittorrent:4.5.5"
+                                    docker_port=$(get_valid_port)
+                                    docker_rum="docker run -d \
                                             --name=qbittorrent \
                                             -e PUID=1000 \
                                             -e PGID=1000 \
@@ -1554,189 +1241,41 @@ case $choice in
                                             -v /home/docker/qbittorrent/config:/config \
                                             -v /home/docker/qbittorrent/downloads:/downloads \
                                             --restart unless-stopped \
-                                            lscr.io/linuxserver/qbittorrent:latest
-                                      clear
-                                      echo "QB已经安装完成"
-                                      echo "------------------------"
-                                      # Get external IP address
-                                      external_ip=$(curl -s ipv4.ip.sb)
-
-                                      echo "您可以使用以下地址访问QB:"
-                                      echo "http:$external_ip:8081"
-                                      echo "账号: admin"
-                                      echo "密码: adminadmin"
-                                      echo ""
-                                      ;;
-                                  2)
-                                      clear
-                                      docker rm -f qbittorrent
-                                      docker rmi -f lscr.io/linuxserver/qbittorrent:latest
-                                      docker rmi -f lscr.io/linuxserver/qbittorrent:4.5.5
-                                      rm -rf /home/docker/qbittorrent
-                                      echo "应用已卸载"
-                                      ;;
-                                  0)
-                                      break  # 跳出循环，退出菜单
-                                      ;;
-                                  *)
-                                      break  # 跳出循环，退出菜单
-                                      ;;
-                              esac
-                        else
-                              clear
-                              echo "安装提示"
-                              echo "qbittorrent离线BT磁力下载服务"
-                              echo "官网介绍: https://hub.docker.com/r/linuxserver/qbittorrent"
-                              echo ""
-
-                              # 提示用户确认安装
-                              read -p "确定安装QB吗？(Y/N): " choice
-                              case "$choice" in
-                                  [Yy])
-                                  clear
-                                  install_docker
-                                  docker run -d \
-                                        --name=qbittorrent \
-                                        -e PUID=1000 \
-                                        -e PGID=1000 \
-                                        -e TZ=Etc/UTC \
-                                        -e WEBUI_PORT=8081 \
-                                        -p 8081:8081 \
-                                        -p 6881:6881 \
-                                        -p 6881:6881/udp \
-                                        -v /home/docker/qbittorrent/config:/config \
-                                        -v /home/docker/qbittorrent/downloads:/downloads \
-                                        --restart unless-stopped \
-                                        lscr.io/linuxserver/qbittorrent:4.5.5
-                                  clear
-                                  echo "QB已经安装完成"
-                                  echo "------------------------"
-                                  # Get external IP address
-                                  external_ip=$(curl -s ipv4.ip.sb)
-
-                                  echo "您可以使用以下地址访问QB:"
-                                  echo "http:$external_ip:8081"
-                                  echo "账号: admin"
-                                  echo "密码: adminadmin"
-                                  echo ""
+                                            lscr.io/linuxserver/qbittorrent:4.5.5"
+                                    docker_describe="qbittorrent离线BT磁力下载服务"
+                                    docker_url="官网介绍: https://hub.docker.com/r/linuxserver/qbittorrent"
+                                    docker_use="admin"
+                                    docker_passwd="adminadmin"
+                                    docker_app
 
                                       ;;
-                                  [Nn])
-                                      ;;
-                                  *)
-                                      ;;
-                              esac
-                        fi
-                          ;;
                     6)
-                        if docker inspect vaultwarden &>/dev/null; then
-                            clear
-                            echo "vaultwarden密码管理已安装，访问地址: "
-                            external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$external_ip:$host_port"
-                            echo ""
+                        clear
+                        docker_name="vaultwarden"
+                                    docker_img="vaultwarden/server:latest""
+                                    docker_port=$(get_valid_port)
+                                    docker_rum="docker run -d \
+                                            --name vaultwarden \
+                                            -p $host_port:80 \
+                                            -v /home/docker/vaultwarden/data:/data \
+                                            -e LOGIN_RATELIMIT_MAX_BURST=10 \
+                                            -e LOGIN_RATELIMIT_SECONDS=60 \
+                                            -e ADMIN_RATELIMIT_MAX_BURST=10 \
+                                            -e ADMIN_RATELIMIT_SECONDS=60 \
+                                            -e ADMIN_SESSION_LIFETIME=20 \
+                                            -e ADMIN_TOKEN=hCWqQngEdKJmWGTSHUvhwyVnSmAPUK \
+                                            -e SENDS_ALLOWED=true \
+                                            -e EMERGENCY_ACCESS_ALLOWED=true \
+                                            -e WEB_VAULT_ENABLED=true \
+                                            -e SIGNUPS_ALLOWED=true \
+                                            vaultwarden/server:latest"
+                                    docker_describe="vaultwarden密码管理平台，存放账号密码"
+                                    docker_url=""
+                                    docker_use=""
+                                    docker_passwd=""
+                                    docker_app
 
-                            echo "应用操作"
-                            echo "------------------------"
-                            echo "1. 更新应用             2. 卸载应用"
-                            echo "0. 返回上一级菜单"
-                            echo "------------------------"
-                            read -p "请输入你的选择: " sub_choice
-
-                            case $sub_choice in
-                                1)
-                                    clear
-                                    install_netstat
-                                    clear
-                                    host_port=$(get_valid_port)
-                                    docker rm -f vaultwarden
-                                    docker rmi -f vaultwarden/server:latest
-                                    install_docker
-                                    docker run -d \
-                                        --name vaultwarden \
-                                        -p $host_port:80 \
-                                        -v /home/docker/vaultwarden/data:/data \
-                                        -e LOGIN_RATELIMIT_MAX_BURST=10 \
-                                        -e LOGIN_RATELIMIT_SECONDS=60 \
-                                        -e ADMIN_RATELIMIT_MAX_BURST=10 \
-                                        -e ADMIN_RATELIMIT_SECONDS=60 \
-                                        -e ADMIN_SESSION_LIFETIME=20 \
-                                        -e ADMIN_TOKEN=hCWqQngEdKJmWGTSHUvhwyVnSmAPUK \
-                                        -e SENDS_ALLOWED=true \
-                                        -e EMERGENCY_ACCESS_ALLOWED=true \
-                                        -e WEB_VAULT_ENABLED=true \
-                                        -e SIGNUPS_ALLOWED=true \
-                                        vaultwarden/server:latest
-
-                                    echo "vaultwarden密码管理已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问vaultwarden密码管理:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:$host_port"  # 使用用户输入的端口
-                                    echo ""
-                                    ;;
-                                2)
-                                    clear
-                                    docker rm -f vaultwarden
-                                    docker rmi -f vaultwarden/server:latest
-                                    rm -rf /home/docker/vaultwarden
-                                    echo "应用已卸载"
-                                    ;;
-                                0)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                                *)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                            esac
-                        else
-                            clear
-                            echo "安装提示"
-                            echo "vaultwarden密码管理平台，存放账号密码"
-                            echo ""
-
-                            read -p "确定安装vaultwarden密码管理吗？(Y/N): " choice
-                            case "$choice" in
-                                [Yy])
-                                    clear
-                                    install_netstat
-                                    clear
-                                    host_port=$(get_valid_port)
-
-                                    docker rm -f vaultwarden
-                                    docker rmi -f vaultwarden/server:latest
-                                    install_docker
-                                    docker run -d \
-                                        --name vaultwarden \
-                                        -p $host_port:80 \
-                                        -v /home/docker/vaultwarden/data:/data \
-                                        -e LOGIN_RATELIMIT_MAX_BURST=10 \
-                                        -e LOGIN_RATELIMIT_SECONDS=60 \
-                                        -e ADMIN_RATELIMIT_MAX_BURST=10 \
-                                        -e ADMIN_RATELIMIT_SECONDS=60 \
-                                        -e ADMIN_SESSION_LIFETIME=20 \
-                                        -e ADMIN_TOKEN=hCWqQngEdKJmWGTSHUvhwyVnSmAPUK \
-                                        -e SENDS_ALLOWED=true \
-                                        -e EMERGENCY_ACCESS_ALLOWED=true \
-                                        -e WEB_VAULT_ENABLED=true \
-                                        -e SIGNUPS_ALLOWED=true \
-                                        vaultwarden/server:latest
-
-                                    clear
-                                    echo "vaultwarden密码管理已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问vaultwarden密码管理:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:$host_port"
-                                    echo ""
-                                    ;;
-                                [Nn])
-                                    ;;
-                                *)
-                                    ;;
-                            esac
-                        fi
-                          ;;
+                                      ;;
 
                     0)
                         # 返回上一级菜单
