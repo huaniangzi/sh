@@ -381,7 +381,7 @@ if docker inspect "$host_name" &>/dev/null; then
         1)
             clear
             install_netstat
-            docker_port=$(get_valid_port)
+            host_port=$(get_valid_port)
             docker rm -f "$host_name"
             docker rmi -f "$host_img"
             # 安装 Docker（请确保有 install_docker 函数）
