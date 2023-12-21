@@ -1308,7 +1308,7 @@ case $choice in
                                     get_docker_port
                                     docker run -d \
                                         --name easyimage \
-                                        -p "$hua_port":80 \
+                                        -p $hua_port:80 \
                                         -e TZ=Asia/Shanghai \
                                         -e PUID=1000 \
                                         -e PGID=1000 \
@@ -1350,15 +1350,14 @@ case $choice in
                             case "$choice" in
                                 [Yy])
                                     clear
-                                    install_docker
-                                    get_docker_port
                                     # 根据用户输入的主机端口运行容器并保持容器内部端口为80
                                     docker rm -f easyimage
                                     docker rmi -f ddsderek/easyimage:latest
                                     install_docker
+                                    get_docker_port
                                     docker run -d \
                                         --name easyimage \
-                                        -p "$hua_port":80 \
+                                        -p $hua_port:80 \
                                         -e TZ=Asia/Shanghai \
                                         -e PUID=1000 \
                                         -e PGID=1000 \
@@ -1383,7 +1382,7 @@ case $choice in
                         fi
                           ;;
                     4)
-                        if docker inspect easyimage &>/dev/null; then
+                        if docker inspect memeos &>/dev/null; then
                             clear
                             echo "碎片化知识卡片已安装，访问地址: "
                             external_ip=$(curl -s ipv4.ip.sb)
@@ -1408,7 +1407,7 @@ case $choice in
                                         --name memeos \
                                         --hostname memeos \
                                         -p $hua_port:5230 \
-                                        -v /home/docker/memos/.memos/:/var/opt/memos \
+                                        -v /home/docker/memos/memos/:/var/opt/memos \
                                         --restart always \
                                         neosmemo/memos:latest
 
@@ -1451,7 +1450,7 @@ case $choice in
                                         --name memeos \
                                         --hostname memeos \
                                         -p $hua_port:5230 \
-                                        -v /home/docker/memos/.memos/:/var/opt/memos \
+                                        -v /home/docker/memos/memos/:/var/opt/memos \
                                         --restart always \
                                         neosmemo/memos:latest
 
