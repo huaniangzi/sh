@@ -1269,7 +1269,6 @@ case $choice in
                         clear
                         docker_hua_name="easyimage"
                                     docker_hua_img="ddsderek/easyimage:latest"
-                                    docker_hua_port=$(get_valid_port)
                                     docker_hua_rum="docker run -d \
                                                 --name easyimage \
                                                 -p "$docker_hua_port":80 \
