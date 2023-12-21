@@ -1231,7 +1231,7 @@ case $choice in
                                     docker_hua_rum="docker run -d \
                                                 --name nginx-proxy-manager \
                                                 -p 80:80 \
-                                                -p $docker_hua_port:81 \
+                                                -p $docker_hua_port:81/tcp \
                                                 -p 443:443 \
                                                 -v /home/docker/npm/data:/data \
                                                 -v /home/docker/npm/letsencrypt:/etc/letsencrypt \
