@@ -301,6 +301,7 @@ if docker inspect "$docker_name" &>/dev/null; then
             docker rmi -f "$docker_img"
             # 安装 Docker（请确保有 install_docker 函数）
             install_docker
+            get_docker_port
             $docker_rum
             clear
             echo "$docker_name 已经安装完成"
@@ -384,7 +385,7 @@ docker_hua_app() {
                 docker rmi -f "$docker_hua_img"
                 # 安装 Docker（请确保有 install_docker 函数）
                 install_docker
-                read -p "请输入新的端口号: " docker_hua_port  # 获取用户输入的新端口号
+                get_docker_port
                 $docker_hua_rum
                 clear
                 echo "$docker_hua_name 已经安装完成"
@@ -423,7 +424,7 @@ docker_hua_app() {
                 install_netstat
                 # 安装 Docker（请确保有 install_docker 函数）
                 install_docker
-                read -p "请输入新的端口号: " docker_hua_port  # 获取用户输入的新端口号
+                get_docker_port
                 $docker_hua_rum
                 clear
                 echo "$docker_hua_name 已经安装完成"
@@ -443,49 +444,11 @@ docker_hua_app() {
     fi
 }
 
-
-
-
-# 检查是否安装了netstat
-install_netstat() {
-    if ! command -v netstat &>/dev/null; then
-        if command -v apt &>/dev/null; then
-            apt update -y && apt install -y net-tools
-        elif command -v yum &>/dev/null; then
-            yum -y update && yum -y install net-tools
-        else
-            echo "未知的包管理器!"
-            # 可能需要针对其他包管理器执行相应的安装命令
-        fi
-    fi
+get_docker_port() {
+    read -p "请输入新的端口号: " docker_hua_port  # 获取用户输入的新端口号
+    # 可以在这里加入对端口号的验证逻辑
 }
 
-
-# 函数：检查端口是否被占用
-check_port_availability() {
-    local port=$1
-    if netstat -tuln | grep ":$port" &>/dev/null; then
-        echo "端口 $port 已被占用，请重新输入。"
-        return 1  # 返回非零表示端口被占用
-    else
-        return 0  # 返回零表示端口可用
-    fi
-}
-
-# 函数：获取用户输入的主机端口，并检查端口是否被占用
-get_valid_port() {
-    local port_available=false
-    local host_port
-
-    while [ "$port_available" = false ]; do
-        read -p "请输入你想要映射到容器的主机端口: " docker_hua_port
-        if check_port_availability "$docker_hua_port"; then
-            port_available=true
-        fi
-    done
-
-    echo "$docker_hua_port"
-}
 
 
 while true; do
@@ -1226,6 +1189,7 @@ case $choice in
                 case $sub_choice in
                     1)
                         clear
+                        read -p "请输入新的端口号: " docker_hua_port  # 获取用户输入的新端口号
                         docker_hua_name="nginx-proxy-manager"
                                     docker_hua_img="jc21/nginx-proxy-manager:latest"
                                     docker_hua_rum="docker run -d \
