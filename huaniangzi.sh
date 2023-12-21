@@ -363,16 +363,11 @@ fi
 }
 
 docker_hua_app() {
-    if docker inspect "$docker_hua_name" &>/dev/null; then
+        if docker inspect "$docker_hua_name" &>/dev/null; then
         clear
         echo "$docker_hua_name 已安装，访问地址: "
         external_ip=$(curl -s ipv4.ip.sb)
-        existing_port=$(docker inspect -f '{{(index (index .NetworkSettings.Ports "80/tcp") 0).HostPort}}' "$docker_hua_name" 2>/dev/null)
-        if [ -n "$existing_port" ]; then
-            echo "http:$external_ip:$existing_port"
-        else
-            echo "端口号未知，请执行更新或重新安装操作获取端口号。"
-        fi
+        echo "http:$external_ip:$docker_hua_port"
         echo ""
         echo "应用操作"
         echo "------------------------"
@@ -389,7 +384,7 @@ docker_hua_app() {
                 docker rmi -f "$docker_hua_img"
                 # 安装 Docker（请确保有 install_docker 函数）
                 install_docker
-                docker_hua_port=$(get_valid_port) # 更新应用时获取新的有效端口号
+                read -p "请输入新的端口号: " docker_hua_port  # 获取用户输入的新端口号
                 $docker_hua_rum
                 clear
                 echo "$docker_hua_name 已经安装完成"
@@ -428,6 +423,7 @@ docker_hua_app() {
                 install_netstat
                 # 安装 Docker（请确保有 install_docker 函数）
                 install_docker
+                read -p "请输入新的端口号: " docker_hua_port  # 获取用户输入的新端口号
                 $docker_hua_rum
                 clear
                 echo "$docker_hua_name 已经安装完成"
@@ -1232,7 +1228,6 @@ case $choice in
                         clear
                         docker_hua_name="nginx-proxy-manager"
                                     docker_hua_img="jc21/nginx-proxy-manager:latest"
-                                    docker_hua_port=$(get_valid_port)
                                     docker_hua_rum="docker run -d \
                                                 --name nginx-proxy-manager \
                                                 -p 80:80 \
@@ -1251,10 +1246,10 @@ case $choice in
                                       ;;
                     2)
                         clear
-                        docker_name="alist"
-                                    docker_img="xhofe/alist:latest"
-                                    docker_port=5244
-                                    docker_rum="docker run -d \
+                        docker_hua_name="alist"
+                                    docker_hua_img="xhofe/alist:latest"
+                                    docker_hua_port=5244
+                                    docker_hua_rum="docker run -d \
                                             --restart always \
                                             -v /home/docker/alsit/etc/alist:/opt/alist/data \
                                             -p 5244:5244 \
@@ -1263,11 +1258,11 @@ case $choice in
                                             -e UMASK=022 \
                                             --name alist \
                                             xhofe/alist:latest"
-                                    docker_describe="Alsit是一个云盘存储程序"
-                                    docker_url=""
-                                    docker_use="docker exec -it alist ./alist admin random"
-                                    docker_passwd=""
-                                    docker_app
+                                    docker_hua_describe="Alsit是一个云盘存储程序"
+                                    docker_hua_url=""
+                                    docker_hua_use="docker exec -it alist ./alist admin random"
+                                    docker_hua_passwd=""
+                                    docker_hua_app
 
                                       ;;
                     3)
@@ -1313,10 +1308,10 @@ case $choice in
                                       ;;
                     5)
                         clear
-                        docker_name="qbittorrent"
-                                    docker_img="lscr.io/linuxserver/qbittorrent:4.5.5"
-                                    docker_port=8081
-                                    docker_rum="docker run -d \
+                        docker_hua_name="qbittorrent"
+                                    docker_hua_img="lscr.io/linuxserver/qbittorrent:4.5.5"
+                                    docker_hua_port=8081
+                                    docker_hua_rum="docker run -d \
                                             --name=qbittorrent \
                                             -e PUID=1000 \
                                             -e PGID=1000 \
@@ -1329,11 +1324,11 @@ case $choice in
                                             -v /home/docker/qbittorrent/downloads:/downloads \
                                             --restart unless-stopped \
                                             lscr.io/linuxserver/qbittorrent:4.5.5"
-                                    docker_describe="qbittorrent离线BT磁力下载服务"
-                                    docker_url="官网介绍: https://hub.docker.com/r/linuxserver/qbittorrent"
-                                    docker_use="admin"
-                                    docker_passwd="adminadmin"
-                                    docker_app
+                                    docker_hua_describe="qbittorrent离线BT磁力下载服务"
+                                    docker_hua_url="官网介绍: https://hub.docker.com/r/linuxserver/qbittorrent"
+                                    docker_hua_use="admin"
+                                    docker_hua_passwd="adminadmin"
+                                    docker_hua_app
 
                                       ;;
                     6)
