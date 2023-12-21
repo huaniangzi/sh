@@ -362,98 +362,13 @@ fi
 
 }
 
-docker_app2() {
-if docker inspect "$docker_name" &>/dev/null; then
-    clear
-    echo "$docker_name 已安装，访问地址: "
-    external_ip=$(curl -s ipv4.ip.sb)
-    echo "http:$external_ip:$docker_port"
-    echo ""
-    echo "应用操作"
-    echo "------------------------"
-    echo "1. 更新应用             2. 卸载应用"
-    echo "------------------------"
-    echo "0. 返回上一级选单"
-    echo "------------------------"
-    read -p "请输入你的选择: " sub_choice
-
-    case $sub_choice in
-        1)
-            clear
-            docker rm -f "$docker_name"
-            docker rmi -f "$docker_img"
-            # 安装 Docker（请确保有 install_docker 函数）
-            install_docker
-            get_docker_port
-            $docker_rum
-            clear
-            echo "$docker_name 已经安装完成"
-            echo "------------------------"
-            # 获取外部 IP 地址
-            external_ip=$(curl -s ipv4.ip.sb)
-            echo "您可以使用以下地址访问:"
-            echo "http:$external_ip:$docker_port"
-            $docker_use
-            $docker_passwd
-            ;;
-        2)
-            clear
-            docker rm -f "$docker_name"
-            docker rmi -f "$docker_img"
-            rm -rf "/home/docker/$docker_name"
-            echo "应用已卸载"
-            ;;
-        0)
-            # 跳出循环，退出菜单
-            ;;
-        *)
-            # 跳出循环，退出菜单
-            ;;
-    esac
-else
-    clear
-    echo "安装提示"
-    echo "$docker_describe"
-    echo "$docker_url"
-    echo ""
-
-    # 提示用户确认安装
-    read -p "确定安装吗？(Y/N): " choice
-    case "$choice" in
-        [Yy])
-            clear
-            # 安装 Docker（请确保有 install_docker 函数）
-            install_docker
-            get_docker_port
-            $docker_rum
-            clear
-            echo "$docker_name 已经安装完成"
-            echo "------------------------"
-            # 获取外部 IP 地址
-            external_ip=$(curl -s ipv4.ip.sb)
-            echo "您可以使用以下地址访问:"
-            echo "http:$external_ip:$docker_port"
-            $docker_use
-            $docker_passwd
-            ;;
-        [Nn])
-            # 用户选择不安装
-            ;;
-        *)
-            # 无效输入
-            ;;
-    esac
-fi
-
-}
-
-
-
 get_docker_port() {
     read -p "请输入新的端口号: " hua_port  # 获取用户输入的新端口号
     # 可以在这里加入对端口号的验证逻辑
 }
 
+#---------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------
 
 
 while true; do
@@ -1186,7 +1101,6 @@ case $choice in
                 echo  "4. 安装碎片化知识卡片"
                 echo  "5. 安装QB离线BT磁力下载面板"
                 echo  "6. 安装vaultwarden密码管理"
-                echo  "7. 测试使用"
                 echo  "------------------------"
                 echo  "0. 返回上一级菜单"
                 echo  "------------------------"
@@ -1770,28 +1684,6 @@ case $choice in
                             esac
                         fi
                           ;;
-
-                    7)
-                      docker_name="npm"
-                      docker_img="jc21/nginx-proxy-manager:latest"
-                      docker_port=$(get_docker_port)
-                      docker_rum="docker run -d \
-                                    --name=$docker_name \
-                                    -p 80:80 \
-                                    -p $hua_port:81 \
-                                    -p 443:443 \
-                                    -v /home/docker/npm/data:/data \
-                                    -v /home/docker/npm/letsencrypt:/etc/letsencrypt \
-                                    --restart=always \
-                                    $docker_img"
-                      docker_describe="如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装npm！"
-                      docker_url="官网介绍: https://nginxproxymanager.com/"
-                      docker_use="echo \"初始用户名: admin@example.com\""
-                      docker_passwd="echo \"初始密码: changeme\""
-
-                      docker_app2
-
-                        ;;
 
                     0)
                         # 返回上一级菜单
