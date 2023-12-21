@@ -1144,6 +1144,10 @@ case $choice in
                                     echo "您可以使用以下地址访问npm反向代理:"
                                     external_ip=$(curl -s ipv4.ip.sb)
                                     echo "http:$external_ip:$hua_port"  # 使用用户输入的端口
+                                    echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装npm！"
+                                    echo "官网介绍: https://nginxproxymanager.com/"
+                                    echo "echo \"初始用户名: admin@example.com\""
+                                    echo "echo \"初始密码: changeme\""
                                     echo ""
                                     ;;
                                 2)
@@ -1188,6 +1192,10 @@ case $choice in
                                     echo "您可以使用以下地址访问npm反向代理:"
                                     external_ip=$(curl -s ipv4.ip.sb)
                                     echo "http:$external_ip:$hua_port"
+                                    echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装npm！"
+                                    echo "官网介绍: https://nginxproxymanager.com/"
+                                    echo "echo \"初始用户名: admin@example.com\""
+                                    echo "echo \"初始密码: changeme\""
                                     echo ""
                                     ;;
                                 [Nn])
@@ -1198,92 +1206,25 @@ case $choice in
                         fi
                           ;;
                     2)
-                        if docker inspect easyimage &>/dev/null; then
-                            clear
-                            echo "AList已安装，访问地址: "
-                            external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$external_ip:5244"
-                            echo ""
+                        docker_name="alist"
+                        docker_img="xhofe/alist:latest"
+                        docker_port=5244
+                        docker_rum="docker run -d \
+                                            --restart=always \
+                                            -v /home/docker/alist:/opt/alist/data \
+                                            -p 5244:5244 \
+                                            -e PUID=0 \
+                                            -e PGID=0 \
+                                            -e UMASK=022 \
+                                            --name="alist" \
+                                            xhofe/alist:latest"
+                        docker_describe="一个支持多种存储，支持网页浏览和 WebDAV 的文件列表程序，由 gin 和 Solidjs 驱动"
+                        docker_url="官网介绍: https://alist.nn.ci/zh/"
+                        docker_use="docker exec -it alist ./alist admin random"
+                        docker_passwd=""
 
-                            echo "应用操作"
-                            echo "------------------------"
-                            echo "1. 更新应用             2. 卸载应用"
-                            echo "0. 返回上一级菜单"
-                            echo "------------------------"
-                            read -p "请输入你的选择: " sub_choice
+                        docker_app
 
-                            case $sub_choice in
-                                1)
-                                    clear
-                                    docker rm -f alist
-                                    docker rmi -f xhofe/alist:latest
-                                    install_docker
-                                    docker run -d \
-                                        --restart always \
-                                        -v /home/docker/alsit/etc/alist:/opt/alist/data \
-                                        -p 5244:5244 \
-                                        -e PUID=0 \
-                                        -e PGID=0 \
-                                        -e UMASK=022 \
-                                        --name alist \
-                                        xhofe/alist:latest
-
-                                    echo "AList已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问AList:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:5244"  # 使用用户输入的端口
-                                    echo ""
-                                    ;;
-                                2)
-                                    clear
-                                    docker rm -f alist
-                                    docker rmi -f xhofe/alist:latest
-                                    rm -rf /home/docker/alsit
-                                    echo "应用已卸载"
-                                    ;;
-                                0)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                                *)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                            esac
-                        else
-                            clear
-                            echo "安装提示"
-                            echo "Alsit是一个云盘存储程序"
-                            echo ""
-
-                            read -p "确定安装Alsit吗？(Y/N): " choice
-                            case "$choice" in
-                                [Yy])
-                                    clear
-                                    install_docker
-                                    docker run -d \
-                                        --restart always \
-                                        -v /home/docker/alsit/etc/alist:/opt/alist/data \
-                                        -p 5244:5244 \
-                                        -e PUID=0 \
-                                        -e PGID=0 \
-                                        -e UMASK=022 \
-                                        --name alist \
-                                        xhofe/alist:latest
-
-                                    clear
-                                    echo "Alsit已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问AList:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:5244"
-                                    echo ""
-                                    ;;
-                                [Nn])
-                                    ;;
-                                *)
-                                    ;;
-                            esac
-                        fi
                           ;;
                     3)
                         if docker inspect easyimage &>/dev/null; then
@@ -1471,114 +1412,29 @@ case $choice in
                         fi
                           ;;
                     5)
-                        if docker inspect qbittorrent &>/dev/null; then
-                              clear
+                        docker_name="qbittorrent"
+                        docker_img="lscr.io/linuxserver/qbittorrent:4.5.5"
+                        docker_port=8081
+                        docker_rum="docker run -d \
+                                              --name=qbittorrent \
+                                              -e PUID=1000 \
+                                              -e PGID=1000 \
+                                              -e TZ=Etc/UTC \
+                                              -e WEBUI_PORT=8081 \
+                                              -p 8081:8081 \
+                                              -p 6881:6881 \
+                                              -p 6881:6881/udp \
+                                              -v /home/docker/qbittorrent/config:/config \
+                                              -v /home/docker/qbittorrent/downloads:/downloads \
+                                              --restart unless-stopped \
+                                              lscr.io/linuxserver/qbittorrent:4.5.5"
+                        docker_describe="qbittorrent离线BT磁力下载服务"
+                        docker_url="官网介绍: https://hub.docker.com/r/linuxserver/qbittorrent"
+                        docker_use="echo \"用户名: admin\""
+                        docker_passwd="echo \"密码: adminadmin\""
 
-                              echo "QB已安装，访问地址: "
-                              external_ip=$(curl -s ipv4.ip.sb)
-                              echo "http:$external_ip:8081"
-                              echo ""
+                        docker_app
 
-                              echo "应用操作"
-                              echo "------------------------"
-                              echo "1. 更新应用             2. 卸载应用"
-                              echo "------------------------"
-                              echo "0. 返回上一级选单"
-                              echo "------------------------"
-                              read -p "请输入你的选择: " sub_choice
-
-                              case $sub_choice in
-                                  1)
-                                      clear
-                                      docker rm -f qbittorrent
-                                      docker rmi -f lscr.io/linuxserver/qbittorrent:latest
-                                      docker rmi -f lscr.io/linuxserver/qbittorrent:4.5.5
-                                      install_docker
-                                      docker run -d \
-                                            --name=qbittorrent \
-                                            -e PUID=1000 \
-                                            -e PGID=1000 \
-                                            -e TZ=Etc/UTC \
-                                            -e WEBUI_PORT=8081 \
-                                            -p 8081:8081 \
-                                            -p 6881:6881 \
-                                            -p 6881:6881/udp \
-                                            -v /home/docker/qbittorrent/config:/config \
-                                            -v /home/docker/qbittorrent/downloads:/downloads \
-                                            --restart unless-stopped \
-                                            lscr.io/linuxserver/qbittorrent:latest
-                                      clear
-                                      echo "QB已经安装完成"
-                                      echo "------------------------"
-                                      # Get external IP address
-                                      external_ip=$(curl -s ipv4.ip.sb)
-
-                                      echo "您可以使用以下地址访问QB:"
-                                      echo "http:$external_ip:8081"
-                                      echo "账号: admin"
-                                      echo "密码: adminadmin"
-                                      echo ""
-                                      ;;
-                                  2)
-                                      clear
-                                      docker rm -f qbittorrent
-                                      docker rmi -f lscr.io/linuxserver/qbittorrent:latest
-                                      docker rmi -f lscr.io/linuxserver/qbittorrent:4.5.5
-                                      rm -rf /home/docker/qbittorrent
-                                      echo "应用已卸载"
-                                      ;;
-                                  0)
-                                      break  # 跳出循环，退出菜单
-                                      ;;
-                                  *)
-                                      break  # 跳出循环，退出菜单
-                                      ;;
-                              esac
-                        else
-                              clear
-                              echo "安装提示"
-                              echo "qbittorrent离线BT磁力下载服务"
-                              echo "官网介绍: https://hub.docker.com/r/linuxserver/qbittorrent"
-                              echo ""
-
-                              # 提示用户确认安装
-                              read -p "确定安装QB吗？(Y/N): " choice
-                              case "$choice" in
-                                  [Yy])
-                                  clear
-                                  install_docker
-                                  docker run -d \
-                                        --name=qbittorrent \
-                                        -e PUID=1000 \
-                                        -e PGID=1000 \
-                                        -e TZ=Etc/UTC \
-                                        -e WEBUI_PORT=8081 \
-                                        -p 8081:8081 \
-                                        -p 6881:6881 \
-                                        -p 6881:6881/udp \
-                                        -v /home/docker/qbittorrent/config:/config \
-                                        -v /home/docker/qbittorrent/downloads:/downloads \
-                                        --restart unless-stopped \
-                                        lscr.io/linuxserver/qbittorrent:4.5.5
-                                  clear
-                                  echo "QB已经安装完成"
-                                  echo "------------------------"
-                                  # Get external IP address
-                                  external_ip=$(curl -s ipv4.ip.sb)
-
-                                  echo "您可以使用以下地址访问QB:"
-                                  echo "http:$external_ip:8081"
-                                  echo "账号: admin"
-                                  echo "密码: adminadmin"
-                                  echo ""
-
-                                      ;;
-                                  [Nn])
-                                      ;;
-                                  *)
-                                      ;;
-                              esac
-                        fi
                           ;;
                     6)
                         if docker inspect vaultwarden &>/dev/null; then
