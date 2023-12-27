@@ -606,6 +606,11 @@ case $choice in
                     echo "14. fzf 全局搜索工具"
                     echo "------------------------"
                     echo "21. cmatrix 黑客帝国屏保"
+                    echo -e "22. sl 跑火车屏保 \033[33mNEW\033[0m"
+                    echo "------------------------"
+                    echo -e "26. 俄罗斯方块小游戏 \033[33mNEW\033[0m"
+                    echo -e "27. 贪吃蛇小游戏 \033[33mNEW\033[0m"
+                    echo -e "28. 太空入侵者小游戏 \033[33mNEW\033[0m"
                     echo "------------------------"
                     echo "31. 全部安装"
                     echo "32. 全部卸载"
@@ -724,15 +729,40 @@ case $choice in
                             clear
                             cmatrix
                             ;;
+                          22)
+                            clear
+                            install sl
+                            clear
+                            /usr/games/sl
+                            ;;
+                          26)
+                            clear
+                            install bastet
+                            clear
+                            /usr/games/bastet
+                            ;;
+                          27)
+                            clear
+                            install nsnake
+                            clear
+                            /usr/games/nsnake
+                            ;;
+                          28)
+                            clear
+                            install ninvaders
+                            clear
+                            /usr/games/ninvaders
+
+                            ;;
 
                         31)
                             clear
-                            install curl wget sudo socat htop iftop unzip tar tmux ffmpeg btop ranger gdu fzf cmatrix
+                            install curl wget sudo socat htop iftop unzip tar tmux ffmpeg btop ranger gdu fzf cmatrix sl bastet nsnake ninvaders
                             ;;
 
                         32)
                             clear
-                            remove htop iftop unzip tmux ffmpeg btop ranger gdu fzf cmatrix
+                            remove htop iftop unzip tmux ffmpeg btop ranger gdu fzf cmatrix sl bastet nsnake ninvaders
                             ;;
 
                         41)
@@ -1167,7 +1197,7 @@ case $choice in
                         else
                             clear
                             echo "安装提示"
-                            echo "npm反向代理和Ldnmp反代只能使用一个"
+                            echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装npm！"
                             echo ""
 
                             read -p "确定安装npm反向代理吗？(Y/N): " choice
