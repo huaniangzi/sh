@@ -33,6 +33,12 @@ apt update -y  && apt install -y curl
 ------
 
 ### 一键脚本
+
+```
+curl -sS -O https://tiiiii.top/huaniangzi.sh && chmod +x huaniangzi.sh && ./huaniangzi.sh
+```
+or
+
 ```
 curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi.sh && chmod +x huaniangzi.sh && ./huaniangzi.sh
 ```
