@@ -1,4 +1,19 @@
 #!/bin/bash
+# 判断是否已经存在 alias
+if ! grep -q "alias hua='./huaniangzi.sh'" ~/.bashrc; then
+    # 如果不存在，则添加 alias
+    echo "alias hua='./huaniangzi.sh'" >> ~/.bashrc
+    source ~/.bashrc
+else
+    clear
+fi
+
+
+ipv4_address() {
+ipv4_address=$(curl -s ipv4.ip.sb)
+
+}
+
 
 install() {
     if [ $# -eq 0 ]; then
@@ -55,6 +70,13 @@ break_end() {
       clear
 }
 
+huaniangzi() {
+            cd ~
+            ./huaniangzi.sh
+            exit
+}
+
+
 check_port() {
     # 定义要检测的端口
     PORT=80
@@ -74,9 +96,7 @@ check_port() {
             echo -e "\e[1;31m端口 $PORT 已被占用，无法安装环境，卸载以下程序后重试！\e[0m"
             echo "$result"
             break_end
-            cd ~
-            ./huaniangzi.sh
-            exit
+            huaniangzi
         fi
     else
         echo ""
@@ -219,6 +239,13 @@ install_ssltls() {
       docker start nginx > /dev/null 2>&1
 }
 
+default_server_ssl() {
+install openssl
+openssl req -x509 -nodes -newkey rsa:2048 -keyout /home/web/certs/default_server.key -out /home/web/certs/default_server.crt -days 5475 -subj "/C=US/ST=State/L=City/O=Organization/OU=Organizational Unit/CN=Common Name"
+
+}
+
+
 nginx_status() {
 
     nginx_container_name="nginx"
@@ -244,8 +271,8 @@ nginx_status() {
 }
 
 add_yuming() {
-      external_ip=$(curl -s ipv4.ip.sb)
-      echo -e "先将域名解析到本机IP: \033[33m$external_ip\033[0m"
+      ipv4_address
+      echo -e "先将域名解析到本机IP: \033[33m$ipv4_address\033[0m"
       read -p "请输入你解析的域名: " yuming
 }
 
@@ -261,10 +288,10 @@ add_db() {
 }
 
 reverse_proxy() {
-      external_ip=$(curl -s ipv4.ip.sb)
+      ipv4_address
       wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/reverse-proxy.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
-      sed -i "s/0.0.0.0/$external_ip/g" /home/web/conf.d/$yuming.conf
+      sed -i "s/0.0.0.0/$ipv4_address/g" /home/web/conf.d/$yuming.conf
       sed -i "s/0000/3099/g" /home/web/conf.d/$yuming.conf
       docker restart nginx
 }
@@ -283,8 +310,8 @@ docker_app() {
 if docker inspect "$docker_name" &>/dev/null; then
     clear
     echo "$docker_name 已安装，访问地址: "
-    external_ip=$(curl -s ipv4.ip.sb)
-    echo "http:$external_ip:$docker_port"
+    ipv4_address
+    echo "http:$ipv4_address:$docker_port"
     echo ""
     echo "应用操作"
     echo "------------------------"
@@ -306,9 +333,9 @@ if docker inspect "$docker_name" &>/dev/null; then
             echo "$docker_name 已经安装完成"
             echo "------------------------"
             # 获取外部 IP 地址
-            external_ip=$(curl -s ipv4.ip.sb)
+            ipv4_address
             echo "您可以使用以下地址访问:"
-            echo "http:$external_ip:$docker_port"
+            echo "http:$ipv4_address:$docker_port"
             $docker_use
             $docker_passwd
             ;;
@@ -345,9 +372,9 @@ else
             echo "$docker_name 已经安装完成"
             echo "------------------------"
             # 获取外部 IP 地址
-            external_ip=$(curl -s ipv4.ip.sb)
+            ipv4_address
             echo "您可以使用以下地址访问:"
-            echo "http:$external_ip:$docker_port"
+            echo "http:$ipv4_address:$docker_port"
             $docker_use
             $docker_passwd
             ;;
@@ -378,7 +405,8 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.5.1 （支持Ubuntu，Debian，Centos系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.5.4 （支持Ubuntu，Debian，Centos系统）\033[0m"
+echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本-\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
 echo "2. 系统更新"
@@ -401,7 +429,7 @@ case $choice in
     clear
     # 函数: 获取IPv4和IPv6地址
     fetch_ip_addresses() {
-      ipv4_address=$(curl -s ipv4.ip.sb)
+      ipv4_address
       # ipv6_address=$(curl -s ipv6.ip.sb)
       ipv6_address=$(curl -s --max-time 2 ipv6.ip.sb)
 
@@ -777,9 +805,7 @@ case $choice in
                             ;;
 
                         0)
-                            cd ~
-                            ./huaniangzi.sh
-                            exit
+                            huaniangzi
                             ;;
 
                         *)
@@ -821,9 +847,7 @@ case $choice in
                 ;;
             00)
                 # 返回主菜单
-                cd ~
-                ./huaniangzi.sh
-                exit
+                huaniangzi
                 ;;
             *)
                 echo "无效的输入!"
@@ -895,9 +919,7 @@ case $choice in
               curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
               ;;
           0)
-              cd ~
-              ./huaniangzi.sh
-              exit
+              huaniangzi
               ;;
           *)
               echo "无效的输入!"
@@ -955,7 +977,7 @@ case $choice in
             2)
               clear
               external_ip=$(curl -s ipv4.ip.sb)
-              echo -e "先将域名解析到本机IP: \033[33m$external_ip\033[0m"
+              echo -e "先将域名解析到本机IP: \033[33m$ipv4_address\033[0m"
               read -p "请输入你的域名: " yuming
               read -p "请输入跳转域名: " reverseproxy
 
@@ -977,7 +999,7 @@ case $choice in
             3)
               clear
               external_ip=$(curl -s ipv4.ip.sb)
-              echo -e "先将域名解析到本机IP: \033[33m$external_ip\033[0m"
+              echo -e "先将域名解析到本机IP: \033[33m$ipv4_address\033[0m"
               read -p "请输入你的域名: " yuming
               read -p "请输入你的反代IP: " reverseproxy
               read -p "请输入你的反代端口: " port
@@ -1142,7 +1164,7 @@ case $choice in
                             clear
                             echo "npm反向代理已安装，访问地址: "
                             external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$external_ip:$hua_port"
+                            echo "http:$ipv4_address:$hua_port"
                             echo ""
 
                             echo "应用操作"
@@ -1173,7 +1195,7 @@ case $choice in
                                     echo "------------------------"
                                     echo "您可以使用以下地址访问npm反向代理:"
                                     external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:$hua_port"  # 使用用户输入的端口
+                                    echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
                                     echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装npm！"
                                     echo "官网介绍: https://nginxproxymanager.com/"
                                     echo "echo \"初始用户名: admin@example.com\""
@@ -1221,7 +1243,7 @@ case $choice in
                                     echo "------------------------"
                                     echo "您可以使用以下地址访问npm反向代理:"
                                     external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:$hua_port"
+                                    echo "http:$ipv4_address:$hua_port"
                                     echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装npm！"
                                     echo "官网介绍: https://nginxproxymanager.com/"
                                     echo "echo \"初始用户名: admin@example.com\""
@@ -1261,7 +1283,7 @@ case $choice in
                             clear
                             echo "简单图床已安装，访问地址: "
                             external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$external_ip:$hua_port"
+                            echo "http:$ipv4_address:$hua_port"
                             echo ""
 
                             echo "应用操作"
@@ -1294,7 +1316,7 @@ case $choice in
                                     echo "------------------------"
                                     echo "您可以使用以下地址访问简单图床:"
                                     external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:$hua_port"  # 使用用户输入的端口
+                                    echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
                                     echo ""
                                     ;;
                                 2)
@@ -1343,7 +1365,7 @@ case $choice in
                                     echo "------------------------"
                                     echo "您可以使用以下地址访问简单图床:"
                                     external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:$hua_port"
+                                    echo "http:$ipv4_address:$hua_port"
                                     echo ""
                                     ;;
                                 [Nn])
@@ -1358,7 +1380,7 @@ case $choice in
                             clear
                             echo "碎片化知识卡片已安装，访问地址: "
                             external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$external_ip:$hua_port"
+                            echo "http:$ipv4_address:$hua_port"
                             echo ""
 
                             echo "应用操作"
@@ -1387,7 +1409,7 @@ case $choice in
                                     echo "------------------------"
                                     echo "您可以使用以下地址访问碎片化知识卡片:"
                                     external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:$hua_port"  # 使用用户输入的端口
+                                    echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
                                     echo ""
                                     ;;
                                 2)
@@ -1431,7 +1453,7 @@ case $choice in
                                     echo "------------------------"
                                     echo "您可以使用以下地址访问碎片化知识卡片:"
                                     external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:$hua_port"
+                                    echo "http:$ipv4_address:$hua_port"
                                     echo ""
                                     ;;
                                 [Nn])
@@ -1471,7 +1493,7 @@ case $choice in
                             clear
                             echo "vaultwarden密码管理已安装，访问地址: "
                             external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$external_ip:$hua_port"
+                            echo "http:$ipv4_address:$hua_port"
                             echo ""
 
                             echo "应用操作"
@@ -1508,7 +1530,7 @@ case $choice in
                                     echo "------------------------"
                                     echo "您可以使用以下地址访问vaultwarden密码管理:"
                                     external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:$hua_port"  # 使用用户输入的端口
+                                    echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
                                     echo ""
                                     ;;
                                 2)
@@ -1560,7 +1582,7 @@ case $choice in
                                     echo "------------------------"
                                     echo "您可以使用以下地址访问vaultwarden密码管理:"
                                     external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$external_ip:$hua_port"
+                                    echo "http:$ipv4_address:$hua_port"
                                     echo ""
                                     ;;
                                 [Nn])
@@ -1950,10 +1972,8 @@ case $choice in
                 ;;
             00)
                 # 返回主菜单
-                cd ~
-                ./huaniangzi.sh
-                exit
-                ;;
+                huaniangzi
+              ;;
             *)
                 echo "无效的输入!"
                 ;;
@@ -1999,8 +2019,7 @@ case $choice in
 
         wget -O /home/web/nginx.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/nginx10.conf
         wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/default10.conf
-        localhostIP=$(curl -s ipv4.ip.sb)
-        sed -i "s/localhost/$localhostIP/g" /home/web/conf.d/default.conf
+        default_server_ssl
 
         # 下载 docker-compose.yml 文件并进行替换
         wget -O /home/web/docker-compose.yml https://raw.githubusercontent.com/huaniangzi/docker/main/LNMP-docker-compose-10.yml
@@ -2191,8 +2210,7 @@ case $choice in
 
         wget -O /home/web/nginx.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/nginx10.conf
         wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/default10.conf
-        localhostIP=$(curl -s ipv4.ip.sb)
-        sed -i "s/localhost/$localhostIP/g" /home/web/conf.d/default.conf
+        default_server_ssl
 
         docker rm -f nginx >/dev/null 2>&1
         docker rmi nginx >/dev/null 2>&1
@@ -2208,8 +2226,8 @@ case $choice in
 
         22)
         clear
-        external_ip=$(curl -s ipv4.ip.sb)
-        echo -e "先将域名解析到本机IP: \033[33m$external_ip\033[0m"
+        ipv4_address
+        echo -e "先将域名解析到本机IP: \033[33m$ipv4_address\033[0m"
         read -p "请输入你的域名: " yuming
         read -p "请输入跳转域名: " reverseproxy
 
@@ -2230,8 +2248,8 @@ case $choice in
 
         23)
         clear
-        external_ip=$(curl -s ipv4.ip.sb)
-        echo -e "先将域名解析到本机IP: \033[33m$external_ip\033[0m"
+        ipv4_address
+        echo -e "先将域名解析到本机IP: \033[33m$ipv4_address\033[0m"
         read -p "请输入你的域名: " yuming
         read -p "请输入你的反代IP: " reverseproxy
         read -p "请输入你的反代端口: " port
@@ -2255,7 +2273,7 @@ case $choice in
         clear
         # wordpress
         external_ip=$(curl -s ipv4.ip.sb)
-        echo -e "先将域名解析到本机IP: \033[33m$external_ip\033[0m"
+        echo -e "先将域名解析到本机IP: \033[33m$ipv4_address\033[0m"
         read -p "请输入你解析的域名: " yuming
         install_ssltls
 
@@ -2469,6 +2487,7 @@ case $choice in
 
       34)
         clear
+        cd /home/ && ls -t /home/*.tar.gz | head -1 | xargs -I {} tar -xzf {}
         check_port
         install_dependency
         install_docker
@@ -2590,9 +2609,7 @@ case $choice in
 
             wget -O /home/web/nginx.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/nginx10.conf
             wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/default10.conf
-            localhostIP=$(curl -s ipv4.ip.sb)
-            sed -i "s/localhost/$localhostIP/g" /home/web/conf.d/default.conf
-
+            default_server_ssl
             docker run -d --name nginx --restart always --network web_default -p 80:80 -p 443:443 -v /home/web/nginx.conf:/etc/nginx/nginx.conf -v /home/web/conf.d:/etc/nginx/conf.d -v /home/web/certs:/etc/nginx/certs -v /home/web/html:/var/www/html -v /home/web/log/nginx:/var/log/nginx nginx
             docker exec -it nginx chmod -R 777 /var/www/html
 
@@ -2720,10 +2737,8 @@ case $choice in
           ;;
 
       0)
-          cd ~
-          ./huaniangzi.sh
-          exit
-        ;;
+          huaniangzi
+          ;;
 
       *)
           echo "无效的输入!"
@@ -3160,9 +3175,9 @@ case $choice in
                     mkdir -p /home/docker      # 递归创建目录
                     echo "$yuming" > /home/docker/mail.txt  # 写入文件
                     echo "------------------------"
-                    external_ip=$(curl -s ipv4.ip.sb)
+                    ipv4_address
                     echo "先解析这些DNS记录"
-                    echo "A           mail            $external_ip"
+                    echo "A           mail            $ipv4_address"
                     echo "CNAME       imap            $yuming"
                     echo "CNAME       pop             $yuming"
                     echo "CNAME       smtp            $yuming"
@@ -3207,8 +3222,8 @@ case $choice in
 
                     clear
                     echo "rocket.chat已安装，访问地址: "
-                    external_ip=$(curl -s ipv4.ip.sb)
-                    echo "http:$external_ip:3897"
+                    ipv4_address
+                    echo "http:$ipv4_address:3897"
                     echo ""
 
                     echo "应用操作"
@@ -3229,11 +3244,11 @@ case $choice in
                             docker run --name rocketchat --restart=always -p 3897:3000 --link db --env ROOT_URL=http://localhost --env MONGO_OPLOG_URL=mongodb://db:27017/rs5 -d rocket.chat
 
                             clear
-                            external_ip=$(curl -s ipv4.ip.sb)
+                            ipv4_address
                             echo "rocket.chat已经安装完成"
                             echo "------------------------"
                             echo "多等一会，您可以使用以下地址访问rocket.chat:"
-                            echo "http:$external_ip:3897"
+                            echo "http:$ipv4_address:3897"
                             echo ""
                             ;;
                         2)
@@ -3277,11 +3292,11 @@ case $choice in
 
                     clear
 
-                    external_ip=$(curl -s ipv4.ip.sb)
+                    ipv4_address
                     echo "rocket.chat已经安装完成"
                     echo "------------------------"
                     echo "多等一会，您可以使用以下地址访问rocket.chat:"
-                    echo "http:$external_ip:3897"
+                    echo "http:$ipv4_address:3897"
                     echo ""
 
                         ;;
@@ -3338,8 +3353,8 @@ case $choice in
 
                     clear
                     echo "cloudreve已安装，访问地址: "
-                    external_ip=$(curl -s ipv4.ip.sb)
-                    echo "http:$external_ip:5212"
+                    ipv4_address
+                    echo "http:$ipv4_address:5212"
                     echo ""
 
                     echo "应用操作"
@@ -3367,8 +3382,8 @@ case $choice in
                             echo "cloudreve已经安装完成"
                             echo "------------------------"
                             echo "您可以使用以下地址访问cloudreve:"
-                            external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$external_ip:5212"
+                            ipv4_address
+                            echo "http:$ipv4_address:5212"
                             sleep 3
                             docker logs cloudreve
                             echo ""
@@ -3411,8 +3426,8 @@ case $choice in
                     echo "cloudreve已经安装完成"
                     echo "------------------------"
                     echo "您可以使用以下地址访问cloudreve:"
-                    external_ip=$(curl -s ipv4.ip.sb)
-                    echo "http:$external_ip:5212"
+                    ipv4_address
+                    echo "http:$ipv4_address:5212"
                     sleep 3
                     docker logs cloudreve
                     echo ""
@@ -3527,8 +3542,8 @@ case $choice in
 
                     clear
                     echo "雷池已安装，访问地址: "
-                    external_ip=$(curl -s ipv4.ip.sb)
-                    echo "http:$external_ip:9443"
+                    ipv4_address
+                    echo "http:$ipv4_address:9443"
                     echo ""
 
                     echo "应用操作"
@@ -3578,8 +3593,8 @@ case $choice in
                     echo "雷池WAF面板已经安装完成"
                     echo "------------------------"
                     echo "您可以使用以下地址访问:"
-                    external_ip=$(curl -s ipv4.ip.sb)
-                    echo "http:$external_ip:9443"
+                    ipv4_address
+                    echo "http:$ipv4_address:9443"
                     echo ""
 
                         ;;
@@ -3650,12 +3665,129 @@ case $choice in
             docker_passwd=""
             docker_app
               ;;
+            
+          24)
+
+            docker_name="PandoraNext"
+            docker_img="pengzhile/pandora-next"
+            docker_port=8181
+            docker_rum="docker run -d --restart always --name PandoraNext \
+                            -p 8181:8181 \
+                            -v /home/docker/PandoraNext/data:/data \
+                            -v /home/docker/PandoraNext/sessions:/root/.cache/PandoraNext \
+                            pengzhile/pandora-next"
+            docker_describe="pandora-next一个好用的GPT镜像站服务，国内也可以访问"
+            docker_url="官网介绍: https://github.com/pandora-next/deploy"
+
+
+            if docker inspect "$docker_name" &>/dev/null; then
+                clear
+                echo "$docker_name 已安装，访问地址: "
+                ipv4_address
+                echo "http:$ipv4_address:$docker_port"
+                echo ""
+                echo "应用操作"
+                echo "------------------------"
+                echo "1. 更新应用             2. 卸载应用"
+                echo "3. 修改config           4. 修改tokens"
+                echo "------------------------"
+                echo "0. 返回上一级选单"
+                echo "------------------------"
+                read -p "请输入你的选择: " sub_choice
+
+                case $sub_choice in
+                    1)
+                        clear
+                        docker rm -f "$docker_name"
+                        docker rmi -f "$docker_img"
+                        # 安装 Docker（请确保有 install_docker 函数）
+                        install_docker
+                        $docker_rum
+                        clear
+                        echo "$docker_name 已经安装完成"
+                        echo "------------------------"
+                        # 获取外部 IP 地址
+                        ipv4_address
+                        echo "您可以使用以下地址访问:"
+                        echo "http:$ipv4_address:$docker_port"
+
+                        ;;
+                    2)
+                        clear
+                        docker rm -f "$docker_name"
+                        docker rmi -f "$docker_img"
+                        rm -rf "/home/docker/$docker_name"
+                        echo "应用已卸载"
+                        ;;
+                    3)
+                        clear
+                        nano /home/docker/PandoraNext/data/config.json
+                        echo "正在重启$docker_name"
+                        docker restart "$docker_name"
+
+                        ;;
+                    4)
+                        clear
+                        nano /home/docker/PandoraNext/data/tokens.json
+                        echo "正在重启$docker_name"
+                        docker restart "$docker_name"
+
+                        ;;
+                    0)
+                        # 跳出循环，退出菜单
+                        ;;
+                    *)
+                        # 跳出循环，退出菜单
+                        ;;
+                esac
+            else
+                clear
+                echo "安装提示"
+                echo "$docker_describe"
+                echo "$docker_url"
+                echo ""
+
+                # 提示用户确认安装
+                read -p "确定安装吗？(Y/N): " choice
+                case "$choice" in
+                    [Yy])
+                        clear
+                        echo "获取license_id请访问: https://dash.pandoranext.com/"
+                        read -p "请输入你的GitHub的license_id: " github1
+
+                        install_docker
+
+                        mkdir -p /home/docker/PandoraNext/{data,sessions}
+                        cd /home/docker/PandoraNext/data
+                        wget https://raw.githubusercontent.com/huaniangzi/sh/main/PandoraNext/config.json
+                        wget https://raw.githubusercontent.com/huaniangzi/sh/main/PandoraNext/tokens.json
+                        sed -i "s/github/$github1/g" /home/docker/PandoraNext/data/config.json
+                        webgptpasswd1=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c16)
+                        sed -i "s/webgptpasswd/$webgptpasswd1/g" /home/docker/PandoraNext/data/config.json
+
+                        $docker_rum
+                        clear
+                        echo "$docker_name 已经安装完成"
+                        echo "------------------------"
+                        # 获取外部 IP 地址
+                        ipv4_address
+                        echo "您可以使用以下地址访问:"
+                        echo "http:$ipv4_address:$docker_port"
+
+                        ;;
+                    [Nn])
+                        # 用户选择不安装
+                        ;;
+                    *)
+                        # 无效输入
+                        ;;
+                esac
+            fi
+              ;;
 
 
           0)
-              cd ~
-              ./huaniangzi.sh
-              exit
+              huaniangzi
               ;;
           *)
               echo "无效的输入!"
@@ -3697,9 +3829,7 @@ case $choice in
                 wget -N --no-check-certificate https://raw.githubusercontent.com/Misaka-blog/hysteria-install/main/hy1/hysteria.sh && bash hysteria.sh
                 ;;
             0)
-                cd ~
-                ./huaniangzi.sh
-                exit
+                kejilion
                 ;;
             *)
                 echo "无效的输入!"
@@ -3746,8 +3876,9 @@ case $choice in
           1)
               clear
               read -p "请输入你的快捷按键: " kuaijiejian
-              echo "alias $kuaijiejian='curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi.sh && chmod +x huaniangzi.sh && ./huaniangzi.sh'" >> ~/.bashrc
-              echo "快捷键已添加。请重新启动终端，或运行 'source ~/.bashrc' 以使修改生效。"
+              echo "alias $kuaijiejian='./huaniangzi.sh'" >> ~/.bashrc
+              source ~/.bashrc
+              echo "快捷键已设置"
               ;;
 
           2)
@@ -4446,28 +4577,9 @@ case $choice in
 
                   case $sub_choice in
                       1)
-                        apt purge -y 'linux-*xanmod1*'
-                        update-grub
-
                         apt update -y
-                        apt install -y wget gnupg
-
-                        # wget -qO - https://dl.xanmod.org/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
-                        wget -qO - https://raw.githubusercontent.com/huaniangzi/sh/main/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
-
-                        # 步骤3：添加存储库
-                        echo 'deb [signed-by=/usr/share/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main' | tee /etc/apt/sources.list.d/xanmod-release.list
-
-                        # version=$(wget -q https://dl.xanmod.org/check_x86-64_psabi.sh && chmod +x check_x86-64_psabi.sh && ./check_x86-64_psabi.sh | grep -oP 'x86-64-v\K\d+|x86-64-v\d+')
-                        version=$(wget -q https://raw.githubusercontent.com/huaniangzi/sh/main/check_x86-64_psabi.sh && chmod +x check_x86-64_psabi.sh && ./check_x86-64_psabi.sh | grep -oP 'x86-64-v\K\d+|x86-64-v\d+')
-
-                        apt update -y
-                        apt install -y linux-xanmod-x64v$version
-
+                        apt upgrade -y
                         echo "XanMod内核已更新。重启后生效"
-                        rm -f /etc/apt/sources.list.d/xanmod-release.list
-                        rm -f check_x86-64_psabi.sh*
-
                         reboot
 
                           ;;
@@ -4759,7 +4871,7 @@ EOF
                   echo "主机名已更改为: $new_hostname"
 
                   # 获取当前机器的 IPv4 地址
-                  ipv4_address=$(curl -s ipv4.ip.sb)
+                  ipv4_address
 
                   # 修改 /etc/hosts 文件，将新的主机名映射到获取的 IPv4 地址
                   sed -i "/localhost/a $ipv4_address $new_hostname" /etc/hosts
@@ -5032,14 +5144,12 @@ EOF
               ;;
 
           99)
-          clear
-          echo "正在重启服务器，即将断开SSH连接"
-          reboot
+              clear
+              echo "正在重启服务器，即将断开SSH连接"
+              reboot
               ;;
           0)
-              cd ~
-              ./huaniangzi.sh
-              exit
+              huaniangzi
               ;;
           *)
               echo "无效的输入!"
@@ -5060,8 +5170,7 @@ EOF
     echo "按任意键继续..."
     read -n 1 -s -r -p ""
     echo ""
-    ./huaniangzi.sh
-    exit
+    huaniangzi
     ;;
 
   0)
