@@ -3829,7 +3829,7 @@ case $choice in
                 wget -N --no-check-certificate https://raw.githubusercontent.com/Misaka-blog/hysteria-install/main/hy1/hysteria.sh && bash hysteria.sh
                 ;;
             0)
-                kejilion
+                huaniangzi
                 ;;
             *)
                 echo "无效的输入!"
