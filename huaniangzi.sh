@@ -1537,8 +1537,7 @@ case $choice in
             if docker inspect easyimage &>/dev/null; then
                 clear
                 echo "简单图床已安装，访问地址: "
-                external_ip=$(curl -s ipv4.ip.sb)
-                echo "http:$ip_address:$hua_port"
+                echo "http:$ipv4_address:$docker_port"
                 echo ""
 
                 echo "应用操作"
@@ -1632,8 +1631,7 @@ case $choice in
             if docker inspect memeos &>/dev/null; then
                 clear
                 echo "碎片化知识卡片已安装，访问地址: "
-                external_ip=$(curl -s ipv4.ip.sb)
-                echo "http:$ip_address:$hua_port"
+                echo "http:$ipv4_address:$docker_port"
                 echo ""
 
                 echo "应用操作"
@@ -1743,8 +1741,7 @@ case $choice in
             if docker inspect vaultwarden &>/dev/null; then
                 clear
                 echo "vaultwarden密码管理已安装，访问地址: "
-                external_ip=$(curl -s ipv4.ip.sb)
-                echo "http:$ip_address:$hua_port"
+                echo "http:$ipv4_address:$docker_port"
                 echo ""
 
                 echo "应用操作"
