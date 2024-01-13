@@ -1277,9 +1277,12 @@ EOF
 
                             case $sub_choice in
                                 1)
-                                    docker-compose pull
-                                    docker-compose up -d
-                                    docker image prune -f
+                                    install_docker
+                                    mkdir -p /home/docker/npm
+                                    cd /home/docker/npm
+                                    cat > docker-compose.yml << EOF
+$(curl -sSL https://raw.githubusercontent.com/huaniangzi/docker-compose/main/easyimage)
+EOF
                                     clear
                                     echo "简单图床已经安装完成"
                                     echo "------------------------"
