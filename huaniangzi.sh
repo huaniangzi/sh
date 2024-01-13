@@ -1,17 +1,11 @@
 #!/bin/bash
 # 判断是否已经存在 alias
-if ! grep -q "alias hua='./huaniangzi.sh'" ~/.bashrc; then
-    # 如果不存在，则添加 alias
-    echo "alias hua='./huaniangzi.sh'" >> ~/.bashrc
-    source ~/.bashrc
-else
-    clear
-fi
+ln -sf ~/huaniangzi.sh /usr/local/bin/hua
 
 
-ipv4_address() {
-ipv4_address=$(curl -s ipv4.ip.sb)
-
+ip_address() {
+ip_address=$(curl -s ipv4.ip.sb)
+ipv6_address=$(curl -s --max-time 1 ipv6.ip.sb)
 }
 
 
@@ -71,9 +65,8 @@ break_end() {
 }
 
 huaniangzi() {
-            cd ~
-            ./huaniangzi.sh
-            exit
+              hua
+              exit
 }
 
 
@@ -119,6 +112,12 @@ iptables_open() {
     iptables -P FORWARD ACCEPT
     iptables -P OUTPUT ACCEPT
     iptables -F
+
+    ip6tables -P INPUT ACCEPT
+    ip6tables -P FORWARD ACCEPT
+    ip6tables -P OUTPUT ACCEPT
+    ip6tables -F
+
 }
 
 install_ldnmp() {
@@ -226,7 +225,7 @@ install_certbot() {
     chmod +x auto_cert_renewal.sh
 
     # 安排每日午夜运行脚本
-    echo "0 0 * * * cd ~ && ./auto_cert_renewal.sh" | crontab -
+    echo "0 0 * * * ~/auto_cert_renewal.sh" | crontab -
 }
 
 install_ssltls() {
@@ -248,6 +247,8 @@ openssl req -x509 -nodes -newkey rsa:2048 -keyout /home/web/certs/default_server
 
 nginx_status() {
 
+    sleep 1
+
     nginx_container_name="nginx"
 
     # 获取容器的状态
@@ -265,14 +266,18 @@ nginx_status() {
         rm /home/web/certs/${yuming}_key.pem >/dev/null 2>&1
         rm /home/web/certs/${yuming}_cert.pem >/dev/null 2>&1
         docker restart nginx >/dev/null 2>&1
+        
+        dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
+        docker exec mysql mysql -u root -p"$dbrootpasswd" -e "DROP DATABASE $dbname;" 2> /dev/null
+        
         echo -e "\e[1;31m检测到域名证书申请失败，请检测域名是否正确解析或更换域名重新尝试！\e[0m"
     fi
 
 }
 
 add_yuming() {
-      ipv4_address
-      echo -e "先将域名解析到本机IP: \033[33m$ipv4_address\033[0m"
+      ip_address
+      echo -e "先将域名解析到本机IP: \033[33m$ip_address  $ipv6_address\033[0m"
       read -p "请输入你解析的域名: " yuming
 }
 
@@ -288,10 +293,10 @@ add_db() {
 }
 
 reverse_proxy() {
-      ipv4_address
+      ip_address
       wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/reverse-proxy.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
-      sed -i "s/0.0.0.0/$ipv4_address/g" /home/web/conf.d/$yuming.conf
+      sed -i "s/0.0.0.0/$ip_address/g" /home/web/conf.d/$yuming.conf
       sed -i "s/0000/3099/g" /home/web/conf.d/$yuming.conf
       docker restart nginx
 }
@@ -301,17 +306,17 @@ restart_ldnmp() {
       docker exec php chmod -R 777 /var/www/html
       docker exec php74 chmod -R 777 /var/www/html
 
+      docker restart nginx
       docker restart php
       docker restart php74
-      docker restart nginx
 }
 
 docker_app() {
 if docker inspect "$docker_name" &>/dev/null; then
     clear
     echo "$docker_name 已安装，访问地址: "
-    ipv4_address
-    echo "http:$ipv4_address:$docker_port"
+    ip_address
+    echo "http:$ip_address:$docker_port"
     echo ""
     echo "应用操作"
     echo "------------------------"
@@ -333,9 +338,9 @@ if docker inspect "$docker_name" &>/dev/null; then
             echo "$docker_name 已经安装完成"
             echo "------------------------"
             # 获取外部 IP 地址
-            ipv4_address
+            ip_address
             echo "您可以使用以下地址访问:"
-            echo "http:$ipv4_address:$docker_port"
+            echo "http:$ip_address:$docker_port"
             $docker_use
             $docker_passwd
             ;;
@@ -372,9 +377,9 @@ else
             echo "$docker_name 已经安装完成"
             echo "------------------------"
             # 获取外部 IP 地址
-            ipv4_address
+            ip_address
             echo "您可以使用以下地址访问:"
-            echo "http:$ipv4_address:$docker_port"
+            echo "http:$ip_address:$docker_port"
             $docker_use
             $docker_passwd
             ;;
@@ -405,7 +410,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.5.4 （支持Ubuntu，Debian，Centos系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.5.5 （支持Ubuntu，Debian，Centos系统）\033[0m"
 echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本-\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
@@ -428,20 +433,12 @@ case $choice in
   1)
     clear
     # 函数: 获取IPv4和IPv6地址
-    fetch_ip_addresses() {
-      ipv4_address
-      # ipv6_address=$(curl -s ipv6.ip.sb)
-      ipv6_address=$(curl -s --max-time 2 ipv6.ip.sb)
-
-    }
-
-    # 获取IP地址
-    fetch_ip_addresses
+    ip_address
 
     if [ "$(uname -m)" == "x86_64" ]; then
       cpu_info=$(cat /proc/cpuinfo | grep 'model name' | uniq | sed -e 's/model name[[:space:]]*: //')
     else
-      cpu_info=$(lscpu | grep 'Model name' | sed -e 's/Model name[[:space:]]*: //')
+      cpu_info=$(lscpu | grep 'BIOS Model name' | awk -F': ' '{print $2}' | sed 's/^[ \t]*//')
     fi
 
     cpu_usage=$(top -bn1 | grep 'Cpu(s)' | awk '{print $2 + $4}')
@@ -451,7 +448,7 @@ case $choice in
 
     mem_info=$(free -b | awk 'NR==2{printf "%.2f/%.2f MB (%.2f%%)", $3/1024/1024, $2/1024/1024, $3*100/$2}')
 
-    disk_info=$(df -h | awk '$NF=="/"{printf "%d/%dGB (%s)", $3,$2,$5}')
+    disk_info=$(df -h | awk '$NF=="/"{printf "%s/%s (%s)", $3, $2, $5}')
 
     country=$(curl -s ipinfo.io/country)
     city=$(curl -s ipinfo.io/city)
@@ -484,7 +481,6 @@ case $choice in
       fi
     fi
 
-    clear
     output=$(awk 'BEGIN { rx_total = 0; tx_total = 0 }
         NR > 2 { rx_total += $2; tx_total += $10 }
         END {
@@ -540,7 +536,7 @@ case $choice in
     echo "------------------------"
     echo "网络拥堵算法: $congestion_algorithm $queue_algorithm"
     echo "------------------------"
-    echo "公网IPv4地址: $ipv4_address"
+    echo "公网IPv4地址: $ip_address"
     echo "公网IPv6地址: $ipv6_address"
     echo "------------------------"
     echo "地理位置: $country $city"
@@ -977,7 +973,7 @@ case $choice in
             2)
               clear
               external_ip=$(curl -s ipv4.ip.sb)
-              echo -e "先将域名解析到本机IP: \033[33m$ipv4_address\033[0m"
+              echo -e "先将域名解析到本机IP: \033[33m$ip_address\033[0m"
               read -p "请输入你的域名: " yuming
               read -p "请输入跳转域名: " reverseproxy
 
@@ -999,7 +995,7 @@ case $choice in
             3)
               clear
               external_ip=$(curl -s ipv4.ip.sb)
-              echo -e "先将域名解析到本机IP: \033[33m$ipv4_address\033[0m"
+              echo -e "先将域名解析到本机IP: \033[33m$ip_address\033[0m"
               read -p "请输入你的域名: " yuming
               read -p "请输入你的反代IP: " reverseproxy
               read -p "请输入你的反代端口: " port
@@ -1164,7 +1160,7 @@ case $choice in
                             clear
                             echo "npm反向代理已安装，访问地址: "
                             external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$ipv4_address:$hua_port"
+                            echo "http:$ip_address:$hua_port"
                             echo ""
 
                             echo "应用操作"
@@ -1195,7 +1191,7 @@ case $choice in
                                     echo "------------------------"
                                     echo "您可以使用以下地址访问npm反向代理:"
                                     external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
+                                    echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
                                     echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装npm！"
                                     echo "官网介绍: https://nginxproxymanager.com/"
                                     echo "echo \"初始用户名: admin@example.com\""
@@ -1243,7 +1239,7 @@ case $choice in
                                     echo "------------------------"
                                     echo "您可以使用以下地址访问npm反向代理:"
                                     external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$ipv4_address:$hua_port"
+                                    echo "http:$ip_address:$hua_port"
                                     echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装npm！"
                                     echo "官网介绍: https://nginxproxymanager.com/"
                                     echo "echo \"初始用户名: admin@example.com\""
@@ -1283,7 +1279,7 @@ case $choice in
                             clear
                             echo "简单图床已安装，访问地址: "
                             external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$ipv4_address:$hua_port"
+                            echo "http:$ip_address:$hua_port"
                             echo ""
 
                             echo "应用操作"
@@ -1316,7 +1312,7 @@ case $choice in
                                     echo "------------------------"
                                     echo "您可以使用以下地址访问简单图床:"
                                     external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
+                                    echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
                                     echo ""
                                     ;;
                                 2)
@@ -1365,7 +1361,7 @@ case $choice in
                                     echo "------------------------"
                                     echo "您可以使用以下地址访问简单图床:"
                                     external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$ipv4_address:$hua_port"
+                                    echo "http:$ip_address:$hua_port"
                                     echo ""
                                     ;;
                                 [Nn])
@@ -1380,7 +1376,7 @@ case $choice in
                             clear
                             echo "碎片化知识卡片已安装，访问地址: "
                             external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$ipv4_address:$hua_port"
+                            echo "http:$ip_address:$hua_port"
                             echo ""
 
                             echo "应用操作"
@@ -1409,7 +1405,7 @@ case $choice in
                                     echo "------------------------"
                                     echo "您可以使用以下地址访问碎片化知识卡片:"
                                     external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
+                                    echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
                                     echo ""
                                     ;;
                                 2)
@@ -1453,7 +1449,7 @@ case $choice in
                                     echo "------------------------"
                                     echo "您可以使用以下地址访问碎片化知识卡片:"
                                     external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$ipv4_address:$hua_port"
+                                    echo "http:$ip_address:$hua_port"
                                     echo ""
                                     ;;
                                 [Nn])
@@ -1493,7 +1489,7 @@ case $choice in
                             clear
                             echo "vaultwarden密码管理已安装，访问地址: "
                             external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$ipv4_address:$hua_port"
+                            echo "http:$ip_address:$hua_port"
                             echo ""
 
                             echo "应用操作"
@@ -1530,7 +1526,7 @@ case $choice in
                                     echo "------------------------"
                                     echo "您可以使用以下地址访问vaultwarden密码管理:"
                                     external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
+                                    echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
                                     echo ""
                                     ;;
                                 2)
@@ -1582,7 +1578,7 @@ case $choice in
                                     echo "------------------------"
                                     echo "您可以使用以下地址访问vaultwarden密码管理:"
                                     external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$ipv4_address:$hua_port"
+                                    echo "http:$ip_address:$hua_port"
                                     echo ""
                                     ;;
                                 [Nn])
@@ -2226,9 +2222,8 @@ case $choice in
 
         22)
         clear
-        ipv4_address
-        echo -e "先将域名解析到本机IP: \033[33m$ipv4_address\033[0m"
-        read -p "请输入你的域名: " yuming
+        ip_address
+        add_yuming
         read -p "请输入跳转域名: " reverseproxy
 
         install_ssltls
@@ -2248,9 +2243,8 @@ case $choice in
 
         23)
         clear
-        ipv4_address
-        echo -e "先将域名解析到本机IP: \033[33m$ipv4_address\033[0m"
-        read -p "请输入你的域名: " yuming
+        ip_address
+        add_yuming
         read -p "请输入你的反代IP: " reverseproxy
         read -p "请输入你的反代端口: " port
 
@@ -2273,7 +2267,7 @@ case $choice in
         clear
         # wordpress
         external_ip=$(curl -s ipv4.ip.sb)
-        echo -e "先将域名解析到本机IP: \033[33m$ipv4_address\033[0m"
+        echo -e "先将域名解析到本机IP: \033[33m$ip_address\033[0m"
         read -p "请输入你解析的域名: " yuming
         install_ssltls
 
@@ -2342,6 +2336,11 @@ case $choice in
           docker exec mysql mysql -u root -p"$dbrootpasswd" -e "SHOW DATABASES;" 2> /dev/null | grep -Ev "Database|information_schema|mysql|performance_schema|sys"
 
           echo "------------------------"
+          echo ""
+          echo "站点目录"
+          echo "------------------------"
+          echo -e "数据 \e[37m/home/web/html\e[0m     证书 \e[37m/home/web/certs\e[0m     配置 \e[37m/home/web/conf.d\e[0m"
+          echo "------------------------"echo "------------------------"
           echo ""
           echo "操作"
           echo "------------------------"
@@ -2647,7 +2646,7 @@ case $choice in
                 case $sub_choice in
                     1)
                     # nginx调优
-                    sed -i 's/worker_connections.*/worker_connections 1024;/' /home/web/nginx.conf
+                    sed -i 's/worker_connections.*/worker_connections 8129;/' /home/web/nginx.conf
 
                     # php调优
                     wget -O /home/www.conf https://raw.githubusercontent.com/huaniangzi/sh/main/www-1.conf
@@ -2758,12 +2757,14 @@ case $choice in
       echo "7. 哪吒探针VPS监控面板                  8. QB离线BT磁力下载面板"
       echo "9. Poste.io邮件服务器程序               10. RocketChat多人在线聊天系统"
       echo "11. 禅道项目管理软件                    12. 青龙面板定时任务管理平台"
-      echo "13. Cloudreve网盘系统                   14. 简单图床图片管理程序"
-      echo "15. emby多媒体管理系统                  16. Speedtest测速服务面板"
+      echo "13. Cloudreve网盘                       14. 简单图床图片管理程序"
+      echo "15. emby多媒体管理系统                  16. Speedtest测速面板"
       echo "17. AdGuardHome去广告软件               18. onlyoffice在线办公OFFICE"
       echo "19. 雷池WAF防火墙面板                   20. portainer容器管理面板"
       echo "21. VScode网页版                        22. UptimeKuma监控工具"
-      echo "23. Memos网页备忘录"
+      echo "23. Memos网页备忘录                     24. pandoranext潘多拉GPT镜像站"
+      echo "25. Nextcloud网盘                       26. QD-Today定时任务管理框架"
+      echo "27. Dockge容器堆栈管理面板              28. LibreSpeed测速工具"
       echo "------------------------"
       echo "0. 返回主菜单"
       echo "------------------------"
@@ -2938,53 +2939,88 @@ case $choice in
             fi
               ;;
           3)
-            clear
-            echo "安装提示"
-            echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装1Panel！"
-            echo "会根据系统自动安装，支持Debian，Ubuntu，Centos"
-            echo "官网介绍: https://1panel.cn/"
-            echo ""
-            # 获取当前系统类型
-            get_system_type() {
-              if [ -f /etc/os-release ]; then
-                . /etc/os-release
-                if [ "$ID" == "centos" ]; then
-                  echo "centos"
-                elif [ "$ID" == "ubuntu" ]; then
-                  echo "ubuntu"
-                elif [ "$ID" == "debian" ]; then
-                  echo "debian"
-                else
-                  echo "unknown"
-                fi
-              else
-                echo "unknown"
-              fi
-            }
+            if command -v 1pctl &> /dev/null; then
+                clear
+                echo "1Panel已安装，应用操作"
+                echo ""
+                echo "------------------------"
+                echo "1. 查看1Panel信息           2. 卸载1Panel"
+                echo "------------------------"
+                echo "0. 返回上一级选单"
+                echo "------------------------"
+                read -p "请输入你的选择: " sub_choice
 
-            system_type=$(get_system_type)
+                case $sub_choice in
+                    1)
+                        clear
+                        1pctl user-info
+                        1pctl update password
+                        ;;
+                    2)
+                        clear
+                        1pctl uninstall
 
-            if [ "$system_type" == "unknown" ]; then
-              echo "不支持的操作系统类型"
+                        ;;
+                    0)
+                        break  # 跳出循环，退出菜单
+                        ;;
+                    *)
+                        break  # 跳出循环，退出菜单
+                        ;;
+                esac
             else
-              read -p "确定安装1Panel吗？(Y/N): " choice
-              case "$choice" in
-                [Yy])
-                  iptables_open
-                  if [ "$system_type" == "centos" ]; then
-                    curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh -o quick_start.sh && sh quick_start.sh
-                  elif [ "$system_type" == "ubuntu" ]; then
-                    curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh -o quick_start.sh && bash quick_start.sh
-                  elif [ "$system_type" == "debian" ]; then
-                    curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh -o quick_start.sh && bash quick_start.sh
+
+                clear
+                echo "安装提示"
+                echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装1Panel！"
+                echo "会根据系统自动安装，支持Debian，Ubuntu，Centos"
+                echo "官网介绍: https://1panel.cn/"
+                echo ""
+                # 获取当前系统类型
+                get_system_type() {
+                  if [ -f /etc/os-release ]; then
+                    . /etc/os-release
+                    if [ "$ID" == "centos" ]; then
+                      echo "centos"
+                    elif [ "$ID" == "ubuntu" ]; then
+                      echo "ubuntu"
+                    elif [ "$ID" == "debian" ]; then
+                      echo "debian"
+                    else
+                      echo "unknown"
+                    fi
+                  else
+                    echo "unknown"
                   fi
-                  ;;
-                [Nn])
-                  ;;
-                *)
-                  ;;
-              esac
+                }
+
+                system_type=$(get_system_type)
+
+                if [ "$system_type" == "unknown" ]; then
+                  echo "不支持的操作系统类型"
+                else
+                  read -p "确定安装1Panel吗？(Y/N): " choice
+                  case "$choice" in
+                    [Yy])
+                      iptables_open
+                      install_docker
+                      if [ "$system_type" == "centos" ]; then
+                        curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh -o quick_start.sh && sh quick_start.sh
+                      elif [ "$system_type" == "ubuntu" ]; then
+                        curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh -o quick_start.sh && bash quick_start.sh
+                      elif [ "$system_type" == "debian" ]; then
+                        curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh -o quick_start.sh && bash quick_start.sh
+                      fi
+                      ;;
+                    [Nn])
+                      ;;
+                    *)
+                      ;;
+                  esac
+                fi
             fi
+
+
               ;;
           4)
 
@@ -3108,7 +3144,7 @@ case $choice in
                             clear
                             docker rm -f mailserver
                             docker rmi -f analogic/poste.io
-                            install_docker
+
                             yuming=$(cat /home/docker/mail.txt)
                             docker run \
                                 --net=host \
@@ -3175,9 +3211,9 @@ case $choice in
                     mkdir -p /home/docker      # 递归创建目录
                     echo "$yuming" > /home/docker/mail.txt  # 写入文件
                     echo "------------------------"
-                    ipv4_address
+                    ip_address
                     echo "先解析这些DNS记录"
-                    echo "A           mail            $ipv4_address"
+                    echo "A           mail            $ip_address"
                     echo "CNAME       imap            $yuming"
                     echo "CNAME       pop             $yuming"
                     echo "CNAME       smtp            $yuming"
@@ -3222,8 +3258,8 @@ case $choice in
 
                     clear
                     echo "rocket.chat已安装，访问地址: "
-                    ipv4_address
-                    echo "http:$ipv4_address:3897"
+                    ip_address
+                    echo "http:$ip_address:3897"
                     echo ""
 
                     echo "应用操作"
@@ -3239,16 +3275,16 @@ case $choice in
                             clear
                             docker rm -f rocketchat
                             docker rmi -f rocket.chat:6.3
-                            install_docker
+
 
                             docker run --name rocketchat --restart=always -p 3897:3000 --link db --env ROOT_URL=http://localhost --env MONGO_OPLOG_URL=mongodb://db:27017/rs5 -d rocket.chat
 
                             clear
-                            ipv4_address
+                            ip_address
                             echo "rocket.chat已经安装完成"
                             echo "------------------------"
                             echo "多等一会，您可以使用以下地址访问rocket.chat:"
-                            echo "http:$ipv4_address:3897"
+                            echo "http:$ip_address:3897"
                             echo ""
                             ;;
                         2)
@@ -3292,11 +3328,11 @@ case $choice in
 
                     clear
 
-                    ipv4_address
+                    ip_address
                     echo "rocket.chat已经安装完成"
                     echo "------------------------"
                     echo "多等一会，您可以使用以下地址访问rocket.chat:"
-                    echo "http:$ipv4_address:3897"
+                    echo "http:$ip_address:3897"
                     echo ""
 
                         ;;
@@ -3353,7 +3389,7 @@ case $choice in
 
                     clear
                     echo "cloudreve已安装，访问地址: "
-                    ipv4_address
+                    ip_address
                     echo "http:$ipv4_address:5212"
                     echo ""
 
@@ -3372,7 +3408,7 @@ case $choice in
                             docker rmi -f cloudreve/cloudreve:latest
                             docker rm -f aria2
                             docker rmi -f p3terx/aria2-pro
-                            install_docker
+
                             cd /home/ && mkdir -p docker/cloud && cd docker/cloud && mkdir temp_data && mkdir -vp cloudreve/{uploads,avatar} && touch cloudreve/conf.ini && touch cloudreve/cloudreve.db && mkdir -p aria2/config && mkdir -p data/aria2 && chmod -R 777 data/aria2
                             curl -o /home/docker/cloud/docker-compose.yml https://raw.githubusercontent.com/huaniangzi/docker/main/cloudreve-docker-compose.yml
                             cd /home/docker/cloud/ && docker-compose up -d
@@ -3382,7 +3418,7 @@ case $choice in
                             echo "cloudreve已经安装完成"
                             echo "------------------------"
                             echo "您可以使用以下地址访问cloudreve:"
-                            ipv4_address
+                            ip_address
                             echo "http:$ipv4_address:5212"
                             sleep 3
                             docker logs cloudreve
@@ -3426,7 +3462,7 @@ case $choice in
                     echo "cloudreve已经安装完成"
                     echo "------------------------"
                     echo "您可以使用以下地址访问cloudreve:"
-                    ipv4_address
+                    ip_address
                     echo "http:$ipv4_address:5212"
                     sleep 3
                     docker logs cloudreve
@@ -3542,7 +3578,7 @@ case $choice in
 
                     clear
                     echo "雷池已安装，访问地址: "
-                    ipv4_address
+                    ip_address
                     echo "http:$ipv4_address:9443"
                     echo ""
 
@@ -3593,7 +3629,7 @@ case $choice in
                     echo "雷池WAF面板已经安装完成"
                     echo "------------------------"
                     echo "您可以使用以下地址访问:"
-                    ipv4_address
+                    ip_address
                     echo "http:$ipv4_address:9443"
                     echo ""
 
@@ -3665,7 +3701,7 @@ case $choice in
             docker_passwd=""
             docker_app
               ;;
-            
+
           24)
 
             docker_name="PandoraNext"
@@ -3683,7 +3719,7 @@ case $choice in
             if docker inspect "$docker_name" &>/dev/null; then
                 clear
                 echo "$docker_name 已安装，访问地址: "
-                ipv4_address
+                ip_address
                 echo "http:$ipv4_address:$docker_port"
                 echo ""
                 echo "应用操作"
@@ -3700,14 +3736,13 @@ case $choice in
                         clear
                         docker rm -f "$docker_name"
                         docker rmi -f "$docker_img"
-                        # 安装 Docker（请确保有 install_docker 函数）
-                        install_docker
+
                         $docker_rum
                         clear
                         echo "$docker_name 已经安装完成"
                         echo "------------------------"
                         # 获取外部 IP 地址
-                        ipv4_address
+                        ip_address
                         echo "您可以使用以下地址访问:"
                         echo "http:$ipv4_address:$docker_port"
 
@@ -3770,7 +3805,7 @@ case $choice in
                         echo "$docker_name 已经安装完成"
                         echo "------------------------"
                         # 获取外部 IP 地址
-                        ipv4_address
+                        ip_address
                         echo "您可以使用以下地址访问:"
                         echo "http:$ipv4_address:$docker_port"
 
@@ -3783,6 +3818,60 @@ case $choice in
                         ;;
                 esac
             fi
+
+              ;;
+
+          25)
+            docker_name="nextcloud"
+            docker_img="nextcloud:latest"
+            docker_port=8989
+            rootpasswd=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c16)
+            docker_rum="docker run -d --name nextcloud --restart=always -p 8989:80 -v /home/docker/nextcloud:/var/www/html -e NEXTCLOUD_ADMIN_USER=nextcloud -e NEXTCLOUD_ADMIN_PASSWORD=$rootpasswd nextcloud"
+            docker_describe="Nextcloud拥有超过 400,000 个部署，是您可以下载的最受欢迎的本地内容协作平台"
+            docker_url="官网介绍: https://nextcloud.com/"
+            docker_use="echo \"账号: nextcloud  密码: $rootpasswd\""
+            docker_passwd=""
+            docker_app
+              ;;
+
+          26)
+            docker_name="qd"
+            docker_img="qdtoday/qd:latest"
+            docker_port=8923
+            docker_rum="docker run -d --name qd -p 8923:80 -v /home/docker/qd/config:/usr/src/app/config qdtoday/qd"
+            docker_describe="QD-Today是一个HTTP请求定时任务自动执行框架"
+            docker_url="官网介绍: https://qd-today.github.io/qd/zh_CN/"
+            docker_use=""
+            docker_passwd=""
+            docker_app
+              ;;
+          27)
+            docker_name="dockge"
+            docker_img="louislam/dockge:latest"
+            docker_port=5003
+            docker_rum="docker run -d --name dockge --restart unless-stopped -p 5003:5001 -v /var/run/docker.sock:/var/run/docker.sock -v /home/docker/dockge/data:/app/data -v  /home/docker/dockge/stacks:/opt/stacks -e DOCKGE_STACKS_DIR=/home/docker/dockge/stacks louislam/dockge"
+            docker_describe="dockge是一个可视化的docker-compose容器管理面板"
+            docker_url="官网介绍: https://github.com/louislam/dockge"
+            docker_use=""
+            docker_passwd=""
+            docker_app
+              ;;
+
+          28)
+            docker_name="speedtest"
+            docker_img="ghcr.io/librespeed/speedtest:latest"
+            docker_port=6681
+            docker_rum="docker run -d \
+                            --name speedtest \
+                            --restart always \
+                            -e MODE=standalone \
+                            -p 6681:80 \
+                            ghcr.io/librespeed/speedtest:latest"
+            docker_describe="librespeed是用Javascript实现的轻量级速度测试工具，即开即用"
+            docker_url="官网介绍: https://github.com/librespeed/speedtest"
+            docker_use=""
+            docker_passwd=""
+            docker_app
               ;;
 
 
@@ -3876,7 +3965,7 @@ case $choice in
           1)
               clear
               read -p "请输入你的快捷按键: " kuaijiejian
-              echo "alias $kuaijiejian='./huaniangzi.sh'" >> ~/.bashrc
+              echo "alias $kuaijiejian='~/huaniangzi.sh'" >> ~/.bashrc
               source ~/.bashrc
               echo "快捷键已设置"
               ;;
@@ -4577,9 +4666,25 @@ case $choice in
 
                   case $sub_choice in
                       1)
+                        apt purge -y 'linux-*xanmod1*'
+                        update-grub
+
+                        # wget -qO - https://dl.xanmod.org/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
+                        wget -qO - https://raw.githubusercontent.com/huaniangzi/sh/main/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
+
+                        # 步骤3：添加存储库
+                        echo 'deb [signed-by=/usr/share/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main' | tee /etc/apt/sources.list.d/xanmod-release.list
+
+                        # version=$(wget -q https://dl.xanmod.org/check_x86-64_psabi.sh && chmod +x check_x86-64_psabi.sh && ./check_x86-64_psabi.sh | grep -oP 'x86-64-v\K\d+|x86-64-v\d+')
+                        version=$(wget -q https://raw.githubusercontent.com/huaniangzi/sh/main/check_x86-64_psabi.sh && chmod +x check_x86-64_psabi.sh && ./check_x86-64_psabi.sh | grep -oP 'x86-64-v\K\d+|x86-64-v\d+')
+
                         apt update -y
-                        apt upgrade -y
+                        apt install -y linux-xanmod-x64v$version
+
                         echo "XanMod内核已更新。重启后生效"
+                        rm -f /etc/apt/sources.list.d/xanmod-release.list
+                        rm -f check_x86-64_psabi.sh*
+
                         reboot
 
                           ;;
@@ -4871,11 +4976,11 @@ EOF
                   echo "主机名已更改为: $new_hostname"
 
                   # 获取当前机器的 IPv4 地址
-                  ipv4_address
+                  ip_address
 
                   # 修改 /etc/hosts 文件，将新的主机名映射到获取的 IPv4 地址
-                  sed -i "/localhost/a $ipv4_address $new_hostname" /etc/hosts
-                  echo "主机名 $new_hostname 已映射到 IP 地址 $ipv4_address"
+                  sed -i "/localhost/a $ip_address $new_hostname" /etc/hosts
+                  echo "主机名 $new_hostname 已映射到 IP 地址 $ip_address"
               else
                   echo "无效的主机名。未更改主机名。"
                   exit 1
