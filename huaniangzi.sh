@@ -418,7 +418,7 @@ echo "2. 系统更新"
 echo "3. 系统清理"
 echo "4. 常用工具 ▶"
 echo "5. 测试脚本合集 ▶ "
-echo -e "\033[33m6. Docker建站 ▶ \033[0m"
+echo "6. Docker管理 ▶ "
 echo -e "\033[33m7. LDNMP建站 ▶ \033[0m"
 echo "8. 常用面板工具 ▶ "
 echo "9. 外面的世界 ▶ "
@@ -926,1005 +926,108 @@ case $choice in
     ;;
 
   6)
-    clear
     while true; do
-        echo -e "\033[31m▶ Docker建站 \033[0m"
-        echo "------------------------"
-        echo -e "\033[33m1. 仅安装nginx \033[0m"
-        echo "2. 站点重定向"
-        echo "3. 站点反向代理"
-        echo "4. 站点数据管理"
-        echo "5. 卸载LDNMP环境"
-        echo "------------------------"
-        echo -e "\033[33m6. Docker项目 \033[0m"
-        echo "7. Docker管理器"
-        echo "------------------------"
-        echo "0. 返回上一级菜单"
-        echo "------------------------"
-        read -p "请输入你的选择: " sub_choice
+      clear
+      echo "▶ Docker管理器"
+      echo "------------------------"
+      echo "1. 安装更新Docker环境"
+      echo "------------------------"
+      echo "2. 查看Dcoker全局状态"
+      echo "------------------------"
+      echo "3. Dcoker容器管理 ▶"
+      echo "4. Dcoker镜像管理 ▶"
+      echo "5. Dcoker网络管理 ▶"
+      echo "6. Dcoker卷管理 ▶"
+      echo "------------------------"
+      echo "7. 清理无用的docker容器和镜像网络数据卷"
+      echo "------------------------"
+      echo "8. 卸载Dcoker环境"
+      echo "------------------------"
+      echo "0. 返回主菜单"
+      echo "------------------------"
+      read -p "请输入你的选择: " sub_choice
 
-        case $sub_choice in
-            1)
+      case $sub_choice in
+          1)
               clear
-              check_port
-              install_dependency
-              install_docker
-              install_certbot
-
-              cd /home && mkdir -p web/html web/mysql web/certs web/conf.d web/redis web/log/nginx && touch web/docker-compose.yml
-
-              wget -O /home/web/nginx.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/nginx10.conf
-              wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/default10.conf
-              localhostIP=$(curl -s ipv4.ip.sb)
-              sed -i "s/localhost/$localhostIP/g" /home/web/conf.d/default.conf
-
-              docker rm -f nginx >/dev/null 2>&1
-              docker rmi nginx >/dev/null 2>&1
-              docker run -d --name nginx --restart always -p 80:80 -p 443:443 -v /home/web/nginx.conf:/etc/nginx/nginx.conf -v /home/web/conf.d:/etc/nginx/conf.d -v /home/web/certs:/etc/nginx/certs -v /home/web/html:/var/www/html -v /home/web/log/nginx:/var/log/nginx nginx
-
-              clear
-              nginx_version=$(docker exec nginx nginx -v 2>&1)
-              nginx_version=$(echo "$nginx_version" | grep -oP "nginx/\K[0-9]+\.[0-9]+\.[0-9]+")
-              echo "nginx已安装完成"
-              echo "当前版本: v$nginx_version"
-              echo ""
-                ;;
-
-            2)
-              clear
-              external_ip=$(curl -s ipv4.ip.sb)
-              echo -e "先将域名解析到本机IP: \033[33m$ip_address\033[0m"
-              read -p "请输入你的域名: " yuming
-              read -p "请输入跳转域名: " reverseproxy
-
-              install_ssltls
-
-              wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/rewrite.conf
-              sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
-              sed -i "s/baidu.com/$reverseproxy/g" /home/web/conf.d/$yuming.conf
-
-              docker restart nginx
-
-              clear
-              echo "您的重定向网站做好了！"
-              echo "https://$yuming"
-              nginx_status
-
-                ;;
-
-            3)
-              clear
-              external_ip=$(curl -s ipv4.ip.sb)
-              echo -e "先将域名解析到本机IP: \033[33m$ip_address\033[0m"
-              read -p "请输入你的域名: " yuming
-              read -p "请输入你的反代IP: " reverseproxy
-              read -p "请输入你的反代端口: " port
-
-              install_ssltls
-
-              wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/reverse-proxy.conf
-              sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
-              sed -i "s/0.0.0.0/$reverseproxy/g" /home/web/conf.d/$yuming.conf
-              sed -i "s/0000/$port/g" /home/web/conf.d/$yuming.conf
-
-              docker restart nginx
-
-              clear
-              echo "您的反向代理网站做好了！"
-              echo "https://$yuming"
-              nginx_status
-                ;;
-
-            4)
-                while true; do
-                    clear
-                    echo "LDNMP环境"
-                    echo "------------------------"
-                    # 获取nginx版本
-                    nginx_version=$(docker exec nginx nginx -v 2>&1)
-                    nginx_version=$(echo "$nginx_version" | grep -oP "nginx/\K[0-9]+\.[0-9]+\.[0-9]+")
-                    echo -n "nginx : v$nginx_version"
-                    # 获取mysql版本
-                    dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
-                    mysql_version=$(docker exec mysql mysql -u root -p"$dbrootpasswd" -e "SELECT VERSION();" 2>/dev/null | tail -n 1)
-                    echo -n "            mysql : v$mysql_version"
-                    # 获取php版本
-                    php_version=$(docker exec php php -v 2>/dev/null | grep -oP "PHP \K[0-9]+\.[0-9]+\.[0-9]+")
-                    echo -n "            php : v$php_version"
-                    # 获取redis版本
-                    redis_version=$(docker exec redis redis-server -v 2>&1 | grep -oP "v=+\K[0-9]+\.[0-9]+")
-                    echo "            redis : v$redis_version"
-                    echo "------------------------"
-                    echo ""
-
-
-                    # ls -t /home/web/conf.d | sed 's/\.[^.]*$//'
-                    echo "站点信息                      证书到期时间"
-                    echo "------------------------"
-                    for cert_file in /home/web/certs/*_cert.pem; do
-                      domain=$(basename "$cert_file" | sed 's/_cert.pem//')
-                      if [ -n "$domain" ]; then
-                        expire_date=$(openssl x509 -noout -enddate -in "$cert_file" | awk -F'=' '{print $2}')
-                        formatted_date=$(date -d "$expire_date" '+%Y-%m-%d')
-                        printf "%-30s%s\n" "$domain" "$formatted_date"
-                      fi
-                    done
-
-                    echo "------------------------"
-                    echo ""
-                    echo "操作"
-                    echo "------------------------"
-                    echo "1. 申请/更新域名证书               2. 更换站点域名"
-                    echo -e "3. 清理站点缓存                    4. 查看站点分析报告 \033[33mNEW\033[0m"
-                    echo "------------------------"
-                    echo "7. 删除指定站点"
-                    echo "------------------------"
-                    echo "0. 返回上一级菜单"
-                    echo "------------------------"
-                    read -p "请输入你的选择: " sub_choice
-                    case $sub_choice in
-                        1)
-                            read -p "请输入你的域名: " yuming
-                            install_ssltls
-
-                            ;;
-
-                        2)
-                            read -p "请输入旧域名: " oddyuming
-                            read -p "请输入新域名: " newyuming
-                            mv /home/web/conf.d/$oddyuming.conf /home/web/conf.d/$newyuming.conf
-                            sed -i "s/$oddyuming/$newyuming/g" /home/web/conf.d/$newyuming.conf
-                            mv /home/web/html/$oddyuming /home/web/html/$newyuming
-
-                            rm /home/web/certs/${oddyuming}_key.pem
-                            rm /home/web/certs/${oddyuming}_cert.pem
-                            install_ssltls
-
-                            ;;
-
-
-                        3)
-                            docker exec -it nginx rm -rf /var/cache/nginx
-                            docker restart nginx
-                            ;;
-                        4)
-                            if ! command -v goaccess &>/dev/null; then
-                                if command -v apt &>/dev/null; then
-                                    apt update -y && apt install -y goaccess
-                                elif command -v yum &>/dev/null; then
-                                    yum -y update && yum -y install goaccess
-                                else
-                                    echo "未知的包管理器!"
-                                    break
-                                fi
-                            fi
-                            goaccess --log-format=COMBINED /home/web/log/nginx/access.log
-
-                            ;;
-
-                        7)
-                            read -p "请输入你的域名: " yuming
-                            rm -r /home/web/html/$yuming
-                            rm /home/web/conf.d/$yuming.conf
-                            rm /home/web/certs/${yuming}_key.pem
-                            rm /home/web/certs/${yuming}_cert.pem
-                            docker restart nginx
-                            ;;
-                        0)
-                            break  # 跳出循环，退出菜单
-                            ;;
-                        *)
-                            break  # 跳出循环，退出菜单
-                            ;;
-                    esac
-                done
-
-                  ;;
-            5)
-                clear
-                read -p "强烈建议先备份全部网站数据，再卸载LDNMP环境。确定删除所有网站数据吗？(Y/N): " choice
-                case "$choice" in
-                  [Yy])
-                    docker rm -f nginx php php74 mysql redis
-                    docker rmi nginx php:fpm php:7.4.33-fpm mysql redis
-                    rm -r /home/web
-                    ;;
-                  [Nn])
-
-                    ;;
-                  *)
-                    echo "无效的选择，请输入 Y 或 N。"
-                    ;;
-                esac
-                ;;
-
-            6)
-                clear
-                while true; do
-                echo -e "\033[31m▶ Docker项目\033[0m"
-                echo  "------------------------"
-                echo  "1. 安装npm反向代理"
-                echo  "2. 安装Alsit"
-                echo  "3. 安装简单图床"
-                echo  "4. 安装碎片化知识卡片"
-                echo  "5. 安装QB离线BT磁力下载面板"
-                echo  "6. 安装vaultwarden密码管理"
-                echo  "------------------------"
-                echo  "0. 返回上一级菜单"
-                echo  "------------------------"
-                read -p "请输入你的选择: " sub_choice
-
-                case $sub_choice in
-                    1)
-                        if docker inspect easyimage &>/dev/null; then
-                            clear
-                            echo "npm反向代理已安装，访问地址: "
-                            external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$ip_address:$hua_port"
-                            echo ""
-
-                            echo "应用操作"
-                            echo "------------------------"
-                            echo "1. 更新应用             2. 卸载应用"
-                            echo "0. 返回上一级菜单"
-                            echo "------------------------"
-                            read -p "请输入你的选择: " sub_choice
-
-                            case $sub_choice in
-                                1)
-                                    clear
-                                    docker rm -f nginx-proxy-manager
-                                    docker rmi -f jc21/nginx-proxy-manager:latest
-                                    install_docker
-                                    get_docker_port
-                                    docker run -d \
-                                        --name nginx-proxy-manager \
-                                        -p 80:80 \
-                                        -p $hua_port:81 \
-                                        -p 443:443 \
-                                        -v /home/docker/npm/data:/data \
-                                        -v /home/docker/npm/letsencrypt:/etc/letsencrypt \
-                                        --restart unless-stopped \
-                                        jc21/nginx-proxy-manager:latest
-
-                                    echo "npm反向代理已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问npm反向代理:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
-                                    echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装npm！"
-                                    echo "官网介绍: https://nginxproxymanager.com/"
-                                    echo "echo \"初始用户名: admin@example.com\""
-                                    echo "echo \"初始密码: changeme\""
-                                    echo ""
-                                    ;;
-                                2)
-                                    clear
-                                    docker rm -f nginx-proxy-manager
-                                    docker rmi -f jc21/nginx-proxy-manager:latest
-                                    rm -rf /home/docker/npm
-                                    echo "应用已卸载"
-                                    ;;
-                                0)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                                *)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                            esac
-                        else
-                            clear
-                            echo "安装提示"
-                            echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装npm！"
-                            echo ""
-
-                            read -p "确定安装npm反向代理吗？(Y/N): " choice
-                            case "$choice" in
-                                [Yy])
-                                    clear
-                                    install_docker
-                                    get_docker_port
-                                    docker run -d \
-                                        --name nginx-proxy-manager \
-                                        -p 80:80 \
-                                        -p $hua_port:81 \
-                                        -p 443:443 \
-                                        -v /home/docker/npm/data:/data \
-                                        -v /home/docker/npm/letsencrypt:/etc/letsencrypt \
-                                        --restart unless-stopped \
-                                        jc21/nginx-proxy-manager:latest
-
-                                    clear
-                                    echo "npm反向代理已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问npm反向代理:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$ip_address:$hua_port"
-                                    echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装npm！"
-                                    echo "官网介绍: https://nginxproxymanager.com/"
-                                    echo "echo \"初始用户名: admin@example.com\""
-                                    echo "echo \"初始密码: changeme\""
-                                    echo ""
-                                    ;;
-                                [Nn])
-                                    ;;
-                                *)
-                                    ;;
-                            esac
-                        fi
-                          ;;
-                    2)
-                        docker_name="alist"
-                        docker_img="xhofe/alist:latest"
-                        docker_port=5244
-                        docker_rum="docker run -d \
-                                            --restart=always \
-                                            -v /home/docker/alist:/opt/alist/data \
-                                            -p 5244:5244 \
-                                            -e PUID=0 \
-                                            -e PGID=0 \
-                                            -e UMASK=022 \
-                                            --name="alist" \
-                                            xhofe/alist:latest"
-                        docker_describe="一个支持多种存储，支持网页浏览和 WebDAV 的文件列表程序，由 gin 和 Solidjs 驱动"
-                        docker_url="官网介绍: https://alist.nn.ci/zh/"
-                        docker_use="docker exec -it alist ./alist admin random"
-                        docker_passwd=""
-
-                        docker_app
-
-                          ;;
-                    3)
-                        if docker inspect easyimage &>/dev/null; then
-                            clear
-                            echo "简单图床已安装，访问地址: "
-                            external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$ip_address:$hua_port"
-                            echo ""
-
-                            echo "应用操作"
-                            echo "------------------------"
-                            echo "1. 更新应用             2. 卸载应用"
-                            echo "0. 返回上一级菜单"
-                            echo "------------------------"
-                            read -p "请输入你的选择: " sub_choice
-
-                            case $sub_choice in
-                                1)
-                                    clear
-                                    docker rm -f easyimage
-                                    docker rmi -f ddsderek/easyimage:latest
-                                    install_docker
-                                    get_docker_port
-                                    docker run -d \
-                                        --name easyimage \
-                                        -p $hua_port:80 \
-                                        -e TZ=Asia/Shanghai \
-                                        -e PUID=1000 \
-                                        -e PGID=1000 \
-                                        -v /home/docker/easyimage/config:/app/web/config \
-                                        -v /home/docker/easyimage/i:/app/web/i \
-                                        --restart unless-stopped \
-                                        ddsderek/easyimage:latest
-
-                                    clear
-                                    echo "简单图床已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问简单图床:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
-                                    echo ""
-                                    ;;
-                                2)
-                                    clear
-                                    docker rm -f easyimage
-                                    docker rmi -f ddsderek/easyimage:latest
-                                    rm -rf /home/docker/easyimage
-                                    echo "应用已卸载"
-                                    ;;
-                                0)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                                *)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                            esac
-                        else
-                            clear
-                            echo "安装提示"
-                            echo "简单图床是一个简单的图床程序"
-                            echo "官网介绍: https://github.com/icret/EasyImages2.0"
-                            echo ""
-
-                            read -p "确定安装简单图床吗？(Y/N): " choice
-                            case "$choice" in
-                                [Yy])
-                                    clear
-                                    # 根据用户输入的主机端口运行容器并保持容器内部端口为80
-                                    docker rm -f easyimage
-                                    docker rmi -f ddsderek/easyimage:latest
-                                    install_docker
-                                    get_docker_port
-                                    docker run -d \
-                                        --name easyimage \
-                                        -p $hua_port:80 \
-                                        -e TZ=Asia/Shanghai \
-                                        -e PUID=1000 \
-                                        -e PGID=1000 \
-                                        -v /home/docker/easyimage/config:/app/web/config \
-                                        -v /home/docker/easyimage/i:/app/web/i \
-                                        --restart unless-stopped \
-                                        ddsderek/easyimage:latest
-
-                                    clear
-                                    echo "简单图床已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问简单图床:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$ip_address:$hua_port"
-                                    echo ""
-                                    ;;
-                                [Nn])
-                                    ;;
-                                *)
-                                    ;;
-                            esac
-                        fi
-                          ;;
-                    4)
-                        if docker inspect memeos &>/dev/null; then
-                            clear
-                            echo "碎片化知识卡片已安装，访问地址: "
-                            external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$ip_address:$hua_port"
-                            echo ""
-
-                            echo "应用操作"
-                            echo "------------------------"
-                            echo "1. 更新应用             2. 卸载应用"
-                            echo "0. 返回上一级菜单"
-                            echo "------------------------"
-                            read -p "请输入你的选择: " sub_choice
-
-                            case $sub_choice in
-                                1)
-                                    clear
-                                    docker rm -f memeos
-                                    docker rmi -f neosmemo/memos:latest
-                                    install_docker
-                                    get_docker_port
-                                    docker run -d \
-                                        --name memeos \
-                                        --hostname memeos \
-                                        -p $hua_port:5230 \
-                                        -v /home/docker/memos/memos/:/var/opt/memos \
-                                        --restart always \
-                                        neosmemo/memos:latest
-
-                                    echo "碎片化知识卡片已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问碎片化知识卡片:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
-                                    echo ""
-                                    ;;
-                                2)
-                                    clear
-                                    docker rm -f memeos
-                                    docker rmi -f neosmemo/memos:latest
-                                    rm -rf /home/docker/memos
-                                    echo "应用已卸载"
-                                    ;;
-                                0)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                                *)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                            esac
-                        else
-                            clear
-                            echo "安装提示"
-                            echo "碎片化知识卡片和一个记事本,备忘录"
-                            echo ""
-
-                            read -p "确定安装碎片化知识卡片吗？(Y/N): " choice
-                            case "$choice" in
-                                [Yy])
-                                    clear
-                                    docker rm -f easyimage
-                                    docker rmi -f ddsderek/easyimage:latest
-                                    install_docker
-                                    get_docker_port
-                                    docker run -d \
-                                        --name memeos \
-                                        --hostname memeos \
-                                        -p $hua_port:5230 \
-                                        -v /home/docker/memos/memos/:/var/opt/memos \
-                                        --restart always \
-                                        neosmemo/memos:latest
-
-                                    clear
-                                    echo "碎片化知识卡片已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问碎片化知识卡片:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$ip_address:$hua_port"
-                                    echo ""
-                                    ;;
-                                [Nn])
-                                    ;;
-                                *)
-                                    ;;
-                            esac
-                        fi
-                          ;;
-                    5)
-                        docker_name="qbittorrent"
-                        docker_img="lscr.io/linuxserver/qbittorrent:4.5.5"
-                        docker_port=8081
-                        docker_rum="docker run -d \
-                                              --name=qbittorrent \
-                                              -e PUID=1000 \
-                                              -e PGID=1000 \
-                                              -e TZ=Etc/UTC \
-                                              -e WEBUI_PORT=8081 \
-                                              -p 8081:8081 \
-                                              -p 6881:6881 \
-                                              -p 6881:6881/udp \
-                                              -v /home/docker/qbittorrent/config:/config \
-                                              -v /home/docker/qbittorrent/downloads:/downloads \
-                                              --restart unless-stopped \
-                                              lscr.io/linuxserver/qbittorrent:4.5.5"
-                        docker_describe="qbittorrent离线BT磁力下载服务"
-                        docker_url="官网介绍: https://hub.docker.com/r/linuxserver/qbittorrent"
-                        docker_use="echo \"用户名: admin\""
-                        docker_passwd="echo \"密码: adminadmin\""
-
-                        docker_app
-
-                          ;;
-                    6)
-                        if docker inspect vaultwarden &>/dev/null; then
-                            clear
-                            echo "vaultwarden密码管理已安装，访问地址: "
-                            external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$ip_address:$hua_port"
-                            echo ""
-
-                            echo "应用操作"
-                            echo "------------------------"
-                            echo "1. 更新应用             2. 卸载应用"
-                            echo "0. 返回上一级菜单"
-                            echo "------------------------"
-                            read -p "请输入你的选择: " sub_choice
-
-                            case $sub_choice in
-                                1)
-                                    clear
-                                    docker rm -f vaultwarden
-                                    docker rmi -f vaultwarden/server:latest
-                                    install_docker
-                                    get_docker_port
-                                    docker run -d \
-                                        --name vaultwarden \
-                                        -p $hua_port:80 \
-                                        -v /home/docker/vaultwarden/data:/data \
-                                        -e LOGIN_RATELIMIT_MAX_BURST=10 \
-                                        -e LOGIN_RATELIMIT_SECONDS=60 \
-                                        -e ADMIN_RATELIMIT_MAX_BURST=10 \
-                                        -e ADMIN_RATELIMIT_SECONDS=60 \
-                                        -e ADMIN_SESSION_LIFETIME=20 \
-                                        -e ADMIN_TOKEN=hCWqQngEdKJmWGTSHUvhwyVnSmAPUK \
-                                        -e SENDS_ALLOWED=true \
-                                        -e EMERGENCY_ACCESS_ALLOWED=true \
-                                        -e WEB_VAULT_ENABLED=true \
-                                        -e SIGNUPS_ALLOWED=true \
-                                        vaultwarden/server:latest
-
-                                    echo "vaultwarden密码管理已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问vaultwarden密码管理:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
-                                    echo ""
-                                    ;;
-                                2)
-                                    clear
-                                    docker rm -f vaultwarden
-                                    docker rmi -f vaultwarden/server:latest
-                                    rm -rf /home/docker/vaultwarden
-                                    echo "应用已卸载"
-                                    ;;
-                                0)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                                *)
-                                    break  # 跳出循环，退出菜单
-                                    ;;
-                            esac
-                        else
-                            clear
-                            echo "安装提示"
-                            echo "vaultwarden密码管理平台，存放账号密码"
-                            echo ""
-
-                            read -p "确定安装vaultwarden密码管理吗？(Y/N): " choice
-                            case "$choice" in
-                                [Yy])
-                                    clear
-                                    docker rm -f vaultwarden
-                                    docker rmi -f vaultwarden/server:latest
-                                    install_docker
-                                    get_docker_port
-                                    docker run -d \
-                                        --name vaultwarden \
-                                        -p $hua_port:80 \
-                                        -v /home/docker/vaultwarden/data:/data \
-                                        -e LOGIN_RATELIMIT_MAX_BURST=10 \
-                                        -e LOGIN_RATELIMIT_SECONDS=60 \
-                                        -e ADMIN_RATELIMIT_MAX_BURST=10 \
-                                        -e ADMIN_RATELIMIT_SECONDS=60 \
-                                        -e ADMIN_SESSION_LIFETIME=20 \
-                                        -e ADMIN_TOKEN=hCWqQngEdKJmWGTSHUvhwyVnSmAPUK \
-                                        -e SENDS_ALLOWED=true \
-                                        -e EMERGENCY_ACCESS_ALLOWED=true \
-                                        -e WEB_VAULT_ENABLED=true \
-                                        -e SIGNUPS_ALLOWED=true \
-                                        vaultwarden/server:latest
-
-                                    clear
-                                    echo "vaultwarden密码管理已经安装完成"
-                                    echo "------------------------"
-                                    echo "您可以使用以下地址访问vaultwarden密码管理:"
-                                    external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$ip_address:$hua_port"
-                                    echo ""
-                                    ;;
-                                [Nn])
-                                    ;;
-                                *)
-                                    ;;
-                            esac
-                        fi
-                          ;;
-
-                    0)
-                        # 返回上一级菜单
-                        break  # 使用 break 来跳出当前循环，返回上一级
-                        ;;
-                    *)
-                        echo "无效的输入!"
-                        ;;
-                esac
-                break_end
-              done
+              curl -fsSL https://get.docker.com | sh && ln -s /usr/libexec/docker/cli-plugins/docker-compose /usr/local/bin
+              systemctl start docker
+              systemctl enable docker
               ;;
+          2)
+              clear
+              echo "Dcoker版本"
+              docker --version
+              docker-compose --version
+              echo ""
+              echo "Dcoker镜像列表"
+              docker image ls
+              echo ""
+              echo "Dcoker容器列表"
+              docker ps -a
+              echo ""
+              echo "Dcoker卷列表"
+              docker volume ls
+              echo ""
+              echo "Dcoker网络列表"
+              docker network ls
+              echo ""
 
-            7)
-                clear
-                while true; do
-                  echo -e "\033[31m▶ Docker管理器\033[0m"
+              ;;
+          3)
+              while true; do
+                  clear
+                  echo "Docker容器列表"
+                  docker ps -a
+                  echo ""
+                  echo "容器操作"
                   echo "------------------------"
-                  echo "1. 安装更新Docker环境"
+                  echo "1. 创建新的容器"
                   echo "------------------------"
-                  echo "2. 查看Dcoker全局状态"
+                  echo "2. 启动指定容器             6. 启动所有容器"
+                  echo "3. 停止指定容器             7. 暂停所有容器"
+                  echo "4. 删除指定容器             8. 删除所有容器"
+                  echo "5. 重启指定容器             9. 重启所有容器"
                   echo "------------------------"
-                  echo "3. Dcoker容器管理 ▶"
-                  echo "4. Dcoker镜像管理 ▶"
-                  echo "5. Dcoker网络管理 ▶"
-                  echo "6. Dcoker卷管理 ▶"
+                  echo "11. 进入指定容器           12. 查看容器日志           13. 查看容器网络"
                   echo "------------------------"
-                  echo "7. 清理无用的docker容器和镜像网络数据卷"
-                  echo "------------------------"
-                  echo "8. 卸载Dcoker环境"
-                  echo "------------------------"
-                  echo "0. 返回上一级菜单"
+                  echo "0. 返回上一级选单"
                   echo "------------------------"
                   read -p "请输入你的选择: " sub_choice
 
                   case $sub_choice in
                       1)
-                          clear
-                          curl -fsSL https://get.docker.com | sh && ln -s /usr/libexec/docker/cli-plugins/docker-compose /usr/local/bin
-                          systemctl start docker
-                          systemctl enable docker
+                          read -p "请输入创建命令: " dockername
+                          $dockername
                           ;;
-                      2)
-                          clear
-                          echo "Dcoker版本"
-                          docker --version
-                          docker-compose --version
-                          echo ""
-                          echo "Dcoker镜像列表"
-                          docker image ls
-                          echo ""
-                          echo "Dcoker容器列表"
-                          docker ps -a
-                          echo ""
-                          echo "Dcoker卷列表"
-                          docker volume ls
-                          echo ""
-                          echo "Dcoker网络列表"
-                          docker network ls
-                          echo ""
 
+                      2)
+                          read -p "请输入容器名: " dockername
+                          docker start $dockername
                           ;;
                       3)
-                          while true; do
-                              clear
-                              echo "Docker容器列表"
-                              docker ps -a
-                              echo ""
-                              echo "容器操作"
-                              echo "------------------------"
-                              echo "1. 创建新的容器"
-                              echo "------------------------"
-                              echo "2. 启动指定容器             6. 启动所有容器"
-                              echo "3. 停止指定容器             7. 暂停所有容器"
-                              echo "4. 删除指定容器             8. 删除所有容器"
-                              echo "5. 重启指定容器             9. 重启所有容器"
-                              echo "------------------------"
-                              echo "11. 进入指定容器           12. 查看容器日志           13. 查看容器网络"
-                              echo "------------------------"
-                              echo "0. 返回上一级菜单"
-                              echo "------------------------"
-                              read -p "请输入你的选择: " sub_choice
-
-                              case $sub_choice in
-                                  1)
-                                      read -p "请输入创建命令: " dockername
-                                      $dockername
-                                      ;;
-
-                                  2)
-                                      read -p "请输入容器名: " dockername
-                                      docker start $dockername
-                                      ;;
-                                  3)
-                                      read -p "请输入容器名: " dockername
-                                      docker stop $dockername
-                                      ;;
-                                  4)
-                                      read -p "请输入容器名: " dockername
-                                      docker rm -f $dockername
-                                      ;;
-                                  5)
-                                      read -p "请输入容器名: " dockername
-                                      docker restart $dockername
-                                      ;;
-                                  6)
-                                      docker start $(docker ps -a -q)
-                                      ;;
-                                  7)
-                                      docker stop $(docker ps -q)
-                                      ;;
-                                  8)
-                                      read -p "确定删除所有容器吗？(Y/N): " choice
-                                      case "$choice" in
-                                        [Yy])
-                                          docker rm -f $(docker ps -a -q)
-                                          ;;
-                                        [Nn])
-                                          ;;
-                                        *)
-                                          echo "无效的选择，请输入 Y 或 N。"
-                                          ;;
-                                      esac
-                                      ;;
-                                  9)
-                                      docker restart $(docker ps -q)
-                                      ;;
-                                  11)
-                                      read -p "请输入容器名: " dockername
-                                      docker exec -it $dockername /bin/bash
-                                      break_end
-                                      ;;
-                                  12)
-                                      read -p "请输入容器名: " dockername
-                                      docker logs $dockername
-                                      break_end
-                                      ;;
-                                  13)
-                                      echo ""
-                                      container_ids=$(docker ps -q)
-
-                                      echo "------------------------------------------------------------"
-                                      printf "%-25s %-25s %-25s\n" "容器名称" "网络名称" "IP地址"
-
-                                      for container_id in $container_ids; do
-                                          container_info=$(docker inspect --format '{{ .Name }}{{ range $network, $config := .NetworkSettings.Networks }} {{ $network }} {{ $config.IPAddress }}{{ end }}' "$container_id")
-
-                                          container_name=$(echo "$container_info" | awk '{print $1}')
-                                          network_info=$(echo "$container_info" | cut -d' ' -f2-)
-
-                                          while IFS= read -r line; do
-                                              network_name=$(echo "$line" | awk '{print $1}')
-                                              ip_address=$(echo "$line" | awk '{print $2}')
-
-                                              printf "%-20s %-20s %-15s\n" "$container_name" "$network_name" "$ip_address"
-                                          done <<< "$network_info"
-                                      done
-
-                                      break_end
-                                      ;;
-
-                                  0)
-                                      break  # 跳出循环，退出菜单
-                                      ;;
-
-                                  *)
-                                      break  # 跳出循环，退出菜单
-                                      ;;
-                              esac
-                          done
+                          read -p "请输入容器名: " dockername
+                          docker stop $dockername
                           ;;
                       4)
-                          while true; do
-                              clear
-                              echo "Docker镜像列表"
-                              docker image ls
-                              echo ""
-                              echo "镜像操作"
-                              echo "------------------------"
-                              echo "1. 获取指定镜像             3. 删除指定镜像"
-                              echo "2. 更新指定镜像             4. 删除所有镜像"
-                              echo "------------------------"
-                              echo "0. 返回上一级菜单"
-                              echo "------------------------"
-                              read -p "请输入你的选择: " sub_choice
-
-                              case $sub_choice in
-                                  1)
-                                      read -p "请输入镜像名: " dockername
-                                      docker pull $dockername
-                                      ;;
-                                  2)
-                                      read -p "请输入镜像名: " dockername
-                                      docker pull $dockername
-                                      ;;
-                                  3)
-                                      read -p "请输入镜像名: " dockername
-                                      docker rmi -f $dockername
-                                      ;;
-                                  4)
-                                      read -p "确定删除所有镜像吗？(Y/N): " choice
-                                      case "$choice" in
-                                        [Yy])
-                                          docker rmi -f $(docker images -q)
-                                          ;;
-                                        [Nn])
-
-                                          ;;
-                                        *)
-                                          echo "无效的选择，请输入 Y 或 N。"
-                                          ;;
-                                      esac
-                                      ;;
-                                  0)
-                                      break  # 跳出循环，退出菜单
-                                      ;;
-
-                                  *)
-                                      break  # 跳出循环，退出菜单
-                                      ;;
-                              esac
-                          done
+                          read -p "请输入容器名: " dockername
+                          docker rm -f $dockername
                           ;;
-
                       5)
-                          while true; do
-                              clear
-                              echo "Docker网络列表"
-                              echo "------------------------------------------------------------"
-                              docker network ls
-                              echo ""
-
-                              echo "------------------------------------------------------------"
-                              container_ids=$(docker ps -q)
-                              printf "%-25s %-25s %-25s\n" "容器名称" "网络名称" "IP地址"
-
-                              for container_id in $container_ids; do
-                                  container_info=$(docker inspect --format '{{ .Name }}{{ range $network, $config := .NetworkSettings.Networks }} {{ $network }} {{ $config.IPAddress }}{{ end }}' "$container_id")
-
-                                  container_name=$(echo "$container_info" | awk '{print $1}')
-                                  network_info=$(echo "$container_info" | cut -d' ' -f2-)
-
-                                  while IFS= read -r line; do
-                                      network_name=$(echo "$line" | awk '{print $1}')
-                                      ip_address=$(echo "$line" | awk '{print $2}')
-
-                                      printf "%-20s %-20s %-15s\n" "$container_name" "$network_name" "$ip_address"
-                                  done <<< "$network_info"
-                              done
-
-                              echo ""
-                              echo "网络操作"
-                              echo "------------------------"
-                              echo "1. 创建网络"
-                              echo "2. 加入网络"
-                              echo "3. 退出网络"
-                              echo "4. 删除网络"
-                              echo "------------------------"
-                              echo "0. 返回上一级菜单"
-                              echo "------------------------"
-                              read -p "请输入你的选择: " sub_choice
-
-                              case $sub_choice in
-                                  1)
-                                      read -p "设置新网络名: " dockernetwork
-                                      docker network create $dockernetwork
-                                      ;;
-                                  2)
-                                      read -p "加入网络名: " dockernetwork
-                                      read -p "那些容器加入该网络: " dockername
-                                      docker network connect $dockernetwork $dockername
-                                      echo ""
-                                      ;;
-                                  3)
-                                      read -p "退出网络名: " dockernetwork
-                                      read -p "那些容器退出该网络: " dockername
-                                      docker network disconnect $dockernetwork $dockername
-                                      echo ""
-                                      ;;
-
-                                  4)
-                                      read -p "请输入要删除的网络名: " dockernetwork
-                                      docker network rm $dockernetwork
-                                      ;;
-                                  0)
-                                      break  # 跳出循环，退出菜单
-                                      ;;
-
-                                  *)
-                                      break  # 跳出循环，退出菜单
-                                      ;;
-                              esac
-                          done
+                          read -p "请输入容器名: " dockername
+                          docker restart $dockername
                           ;;
-
                       6)
-                          while true; do
-                              clear
-                              echo "Docker卷列表"
-                              docker volume ls
-                              echo ""
-                              echo "卷操作"
-                              echo "------------------------"
-                              echo "1. 创建新卷"
-                              echo "2. 删除卷"
-                              echo "------------------------"
-                              echo "0. 返回上一级菜单"
-                              echo "------------------------"
-                              read -p "请输入你的选择: " sub_choice
-
-                              case $sub_choice in
-                                  1)
-                                      read -p "设置新卷名: " dockerjuan
-                                      docker volume create $dockerjuan
-
-                                      ;;
-                                  2)
-                                      read -p "输入删除卷名: " dockerjuan
-                                      docker volume rm $dockerjuan
-
-                                      ;;
-                                  0)
-                                      break  # 跳出循环，退出菜单
-                                      ;;
-
-                                  *)
-                                      break  # 跳出循环，退出菜单
-                                      ;;
-                              esac
-                          done
+                          docker start $(docker ps -a -q)
                           ;;
                       7)
-                          clear
-                          read -p "确定清理无用的镜像容器网络吗？(Y/N): " choice
+                          docker stop $(docker ps -q)
+                          ;;
+                      8)
+                          read -p "确定删除所有容器吗？(Y/N): " choice
                           case "$choice" in
                             [Yy])
-                              docker system prune -af --volumes
+                              docker rm -f $(docker ps -a -q)
                               ;;
                             [Nn])
                               ;;
@@ -1933,16 +1036,89 @@ case $choice in
                               ;;
                           esac
                           ;;
-                      8)
-                          clear
-                          read -p "确定卸载docker环境吗？(Y/N): " choice
+                      9)
+                          docker restart $(docker ps -q)
+                          ;;
+                      11)
+                          read -p "请输入容器名: " dockername
+                          docker exec -it $dockername /bin/bash
+                          break_end
+                          ;;
+                      12)
+                          read -p "请输入容器名: " dockername
+                          docker logs $dockername
+                          break_end
+                          ;;
+                      13)
+                          echo ""
+                          container_ids=$(docker ps -q)
+
+                          echo "------------------------------------------------------------"
+                          printf "%-25s %-25s %-25s\n" "容器名称" "网络名称" "IP地址"
+
+                          for container_id in $container_ids; do
+                              container_info=$(docker inspect --format '{{ .Name }}{{ range $network, $config := .NetworkSettings.Networks }} {{ $network }} {{ $config.IPAddress }}{{ end }}' "$container_id")
+
+                              container_name=$(echo "$container_info" | awk '{print $1}')
+                              network_info=$(echo "$container_info" | cut -d' ' -f2-)
+
+                              while IFS= read -r line; do
+                                  network_name=$(echo "$line" | awk '{print $1}')
+                                  ip_address=$(echo "$line" | awk '{print $2}')
+
+                                  printf "%-20s %-20s %-15s\n" "$container_name" "$network_name" "$ip_address"
+                              done <<< "$network_info"
+                          done
+
+                          break_end
+                          ;;
+
+                      0)
+                          break  # 跳出循环，退出菜单
+                          ;;
+
+                      *)
+                          break  # 跳出循环，退出菜单
+                          ;;
+                  esac
+              done
+              ;;
+          4)
+              while true; do
+                  clear
+                  echo "Docker镜像列表"
+                  docker image ls
+                  echo ""
+                  echo "镜像操作"
+                  echo "------------------------"
+                  echo "1. 获取指定镜像             3. 删除指定镜像"
+                  echo "2. 更新指定镜像             4. 删除所有镜像"
+                  echo "------------------------"
+                  echo "0. 返回上一级选单"
+                  echo "------------------------"
+                  read -p "请输入你的选择: " sub_choice
+
+                  case $sub_choice in
+                      1)
+                          read -p "请输入镜像名: " dockername
+                          docker pull $dockername
+                          ;;
+                      2)
+                          read -p "请输入镜像名: " dockername
+                          docker pull $dockername
+                          ;;
+                      3)
+                          read -p "请输入镜像名: " dockername
+                          docker rmi -f $dockername
+                          ;;
+                      4)
+                          read -p "确定删除所有镜像吗？(Y/N): " choice
                           case "$choice" in
                             [Yy])
-                              docker rm $(docker ps -a -q) && docker rmi $(docker images -q) && docker network prune
-                              remove docker docker-ce > /dev/null 2>&1
-                              rm -rf /var/lib/docker
+                              docker rmi -f $(docker images -q)
                               ;;
                             [Nn])
+
                               ;;
                             *)
                               echo "无效的选择，请输入 Y 或 N。"
@@ -1950,32 +1126,166 @@ case $choice in
                           esac
                           ;;
                       0)
-                          # 返回上一级菜单
-                          break  # 使用 break 来跳出当前循环，返回上一级
+                          break  # 跳出循环，退出菜单
                           ;;
+
                       *)
-                          echo "无效的输入!"
+                          break  # 跳出循环，退出菜单
                           ;;
                   esac
-                  break_end
-                done
-
-                ;;
-
-            0)
-                # 返回上一级菜单
-                break  # 使用 break 来跳出当前循环，返回上一级
-                ;;
-            00)
-                # 返回主菜单
-                huaniangzi
+              done
               ;;
-            *)
-                echo "无效的输入!"
-                ;;
-        esac
-        break_end
+
+          5)
+              while true; do
+                  clear
+                  echo "Docker网络列表"
+                  echo "------------------------------------------------------------"
+                  docker network ls
+                  echo ""
+
+                  echo "------------------------------------------------------------"
+                  container_ids=$(docker ps -q)
+                  printf "%-25s %-25s %-25s\n" "容器名称" "网络名称" "IP地址"
+
+                  for container_id in $container_ids; do
+                      container_info=$(docker inspect --format '{{ .Name }}{{ range $network, $config := .NetworkSettings.Networks }} {{ $network }} {{ $config.IPAddress }}{{ end }}' "$container_id")
+
+                      container_name=$(echo "$container_info" | awk '{print $1}')
+                      network_info=$(echo "$container_info" | cut -d' ' -f2-)
+
+                      while IFS= read -r line; do
+                          network_name=$(echo "$line" | awk '{print $1}')
+                          ip_address=$(echo "$line" | awk '{print $2}')
+
+                          printf "%-20s %-20s %-15s\n" "$container_name" "$network_name" "$ip_address"
+                      done <<< "$network_info"
+                  done
+
+                  echo ""
+                  echo "网络操作"
+                  echo "------------------------"
+                  echo "1. 创建网络"
+                  echo "2. 加入网络"
+                  echo "3. 退出网络"
+                  echo "4. 删除网络"
+                  echo "------------------------"
+                  echo "0. 返回上一级选单"
+                  echo "------------------------"
+                  read -p "请输入你的选择: " sub_choice
+
+                  case $sub_choice in
+                      1)
+                          read -p "设置新网络名: " dockernetwork
+                          docker network create $dockernetwork
+                          ;;
+                      2)
+                          read -p "加入网络名: " dockernetwork
+                          read -p "那些容器加入该网络: " dockername
+                          docker network connect $dockernetwork $dockername
+                          echo ""
+                          ;;
+                      3)
+                          read -p "退出网络名: " dockernetwork
+                          read -p "那些容器退出该网络: " dockername
+                          docker network disconnect $dockernetwork $dockername
+                          echo ""
+                          ;;
+
+                      4)
+                          read -p "请输入要删除的网络名: " dockernetwork
+                          docker network rm $dockernetwork
+                          ;;
+                      0)
+                          break  # 跳出循环，退出菜单
+                          ;;
+
+                      *)
+                          break  # 跳出循环，退出菜单
+                          ;;
+                  esac
+              done
+              ;;
+
+          6)
+              while true; do
+                  clear
+                  echo "Docker卷列表"
+                  docker volume ls
+                  echo ""
+                  echo "卷操作"
+                  echo "------------------------"
+                  echo "1. 创建新卷"
+                  echo "2. 删除卷"
+                  echo "------------------------"
+                  echo "0. 返回上一级选单"
+                  echo "------------------------"
+                  read -p "请输入你的选择: " sub_choice
+
+                  case $sub_choice in
+                      1)
+                          read -p "设置新卷名: " dockerjuan
+                          docker volume create $dockerjuan
+
+                          ;;
+                      2)
+                          read -p "输入删除卷名: " dockerjuan
+                          docker volume rm $dockerjuan
+
+                          ;;
+                      0)
+                          break  # 跳出循环，退出菜单
+                          ;;
+
+                      *)
+                          break  # 跳出循环，退出菜单
+                          ;;
+                  esac
+              done
+              ;;
+          7)
+              clear
+              read -p "确定清理无用的镜像容器网络吗？(Y/N): " choice
+              case "$choice" in
+                [Yy])
+                  docker system prune -af --volumes
+                  ;;
+                [Nn])
+                  ;;
+                *)
+                  echo "无效的选择，请输入 Y 或 N。"
+                  ;;
+              esac
+              ;;
+          8)
+              clear
+              read -p "确定卸载docker环境吗？(Y/N): " choice
+              case "$choice" in
+                [Yy])
+                  docker rm $(docker ps -a -q) && docker rmi $(docker images -q) && docker network prune
+                  remove docker docker-ce > /dev/null 2>&1
+                  rm -rf /var/lib/docker
+                  ;;
+                [Nn])
+                  ;;
+                *)
+                  echo "无效的选择，请输入 Y 或 N。"
+                  ;;
+              esac
+              ;;
+          0)
+              kejilion
+
+              ;;
+          *)
+              echo "无效的输入!"
+              ;;
+      esac
+      break_end
+
+
     done
+
     ;;
 
   7)
@@ -1985,18 +1295,25 @@ case $choice in
     echo  "------------------------"
     echo  "1. 安装LDNMP环境"
     echo  "------------------------"
+    echo -e "\033[31mLDNMP项目\033[0m"
+    echo  "------------------------"
     echo  "2. 安装WordPress                   3. 安装typecho轻量博客网站"
     echo  "4. 安装Halo博客                    5. 独角数发卡"
     echo  "6. 安装Discuz论坛"
     echo  "------------------------"
-    echo  "21. 仅安装nginx                    22. 站点重定向"
-    echo  "23. 站点反向代理                   24. 自定义静态站点"
+    echo -e "\033[31mDocker项目(自行反代)\033[0m"
     echo  "------------------------"
-    echo  "31. 站点数据管理                   32. 备份全站数据"
-    echo  "33. 定时远程备份                   34. 还原全站数据"
+    echo  "41. Alsit                         42. 简单图床"
+    echo  "43. 碎片化知识卡片                    44. vaultwarden密码管理"
     echo  "------------------------"
-    echo  "35. 站点防御程序                   36. 优化LDNMP环境"
-    echo  "37. 更新LDNMP环境                  38. 卸载LDNMP环境"
+    echo  "81. 仅安装nginx                    82. 站点重定向"
+    echo  "83. 站点反向代理                   84. 自定义静态站点"
+    echo  "------------------------"
+    echo  "85. 站点数据管理                   86. 备份全站数据"
+    echo  "87. 定时远程备份                   88. 还原全站数据"
+    echo  "------------------------"
+    echo  "89. 站点防御程序                   90. 优化LDNMP环境"
+    echo  "91. 更新LDNMP环境                  92. 卸载LDNMP环境"
     echo  "------------------------"
     echo  "0. 返回主菜单"
     echo  "------------------------"
@@ -2195,7 +1512,343 @@ case $choice in
   
           ;;
 
-        21)
+        41)
+            docker_name="alist"
+            docker_img="xhofe/alist:latest"
+            docker_port=5244
+            docker_rum="docker run -d \
+                                --restart=always \
+                                -v /home/docker/alist:/opt/alist/data \
+                                -p 5244:5244 \
+                                -e PUID=0 \
+                                -e PGID=0 \
+                                -e UMASK=022 \
+                                --name="alist" \
+                                xhofe/alist:latest"
+            docker_describe="一个支持多种存储，支持网页浏览和 WebDAV 的文件列表程序，由 gin 和 Solidjs 驱动"
+            docker_url="官网介绍: https://alist.nn.ci/zh/"
+            docker_use="docker exec -it alist ./alist admin random"
+            docker_passwd=""
+
+            docker_app
+
+              ;;
+        42)
+            if docker inspect easyimage &>/dev/null; then
+                clear
+                echo "简单图床已安装，访问地址: "
+                external_ip=$(curl -s ipv4.ip.sb)
+                echo "http:$ip_address:$hua_port"
+                echo ""
+
+                echo "应用操作"
+                echo "------------------------"
+                echo "1. 更新应用             2. 卸载应用"
+                echo "0. 返回上一级菜单"
+                echo "------------------------"
+                read -p "请输入你的选择: " sub_choice
+
+                case $sub_choice in
+                    1)
+                        clear
+                        docker rm -f easyimage
+                        docker rmi -f ddsderek/easyimage:latest
+                        install_docker
+                        get_docker_port
+                        docker run -d \
+                            --name easyimage \
+                            -p $hua_port:80 \
+                            -e TZ=Asia/Shanghai \
+                            -e PUID=1000 \
+                            -e PGID=1000 \
+                            -v /home/docker/easyimage/config:/app/web/config \
+                            -v /home/docker/easyimage/i:/app/web/i \
+                            --restart unless-stopped \
+                            ddsderek/easyimage:latest
+
+                        clear
+                        echo "简单图床已经安装完成"
+                        echo "------------------------"
+                        echo "您可以使用以下地址访问简单图床:"
+                        external_ip=$(curl -s ipv4.ip.sb)
+                        echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
+                        echo ""
+                        ;;
+                    2)
+                        clear
+                        docker rm -f easyimage
+                        docker rmi -f ddsderek/easyimage:latest
+                        rm -rf /home/docker/easyimage
+                        echo "应用已卸载"
+                        ;;
+                    0)
+                        break  # 跳出循环，退出菜单
+                        ;;
+                    *)
+                        break  # 跳出循环，退出菜单
+                        ;;
+                esac
+            else
+                clear
+                echo "安装提示"
+                echo "简单图床是一个简单的图床程序"
+                echo "官网介绍: https://github.com/icret/EasyImages2.0"
+                echo ""
+
+                read -p "确定安装简单图床吗？(Y/N): " choice
+                case "$choice" in
+                    [Yy])
+                        clear
+                        # 根据用户输入的主机端口运行容器并保持容器内部端口为80
+                        docker rm -f easyimage
+                        docker rmi -f ddsderek/easyimage:latest
+                        install_docker
+                        get_docker_port
+                        docker run -d \
+                            --name easyimage \
+                            -p $hua_port:80 \
+                            -e TZ=Asia/Shanghai \
+                            -e PUID=1000 \
+                            -e PGID=1000 \
+                            -v /home/docker/easyimage/config:/app/web/config \
+                            -v /home/docker/easyimage/i:/app/web/i \
+                            --restart unless-stopped \
+                            ddsderek/easyimage:latest
+
+                        clear
+                        echo "简单图床已经安装完成"
+                        echo "------------------------"
+                        echo "您可以使用以下地址访问简单图床:"
+                        external_ip=$(curl -s ipv4.ip.sb)
+                        echo "http:$ip_address:$hua_port"
+                        echo ""
+                        ;;
+                    [Nn])
+                        ;;
+                    *)
+                        ;;
+                esac
+            fi
+              ;;
+        43)
+            if docker inspect memeos &>/dev/null; then
+                clear
+                echo "碎片化知识卡片已安装，访问地址: "
+                external_ip=$(curl -s ipv4.ip.sb)
+                echo "http:$ip_address:$hua_port"
+                echo ""
+
+                echo "应用操作"
+                echo "------------------------"
+                echo "1. 更新应用             2. 卸载应用"
+                echo "0. 返回上一级菜单"
+                echo "------------------------"
+                read -p "请输入你的选择: " sub_choice
+
+                case $sub_choice in
+                    1)
+                        clear
+                        docker rm -f memeos
+                        docker rmi -f neosmemo/memos:latest
+                        install_docker
+                        get_docker_port
+                        docker run -d \
+                            --name memeos \
+                            --hostname memeos \
+                            -p $hua_port:5230 \
+                            -v /home/docker/memos/memos/:/var/opt/memos \
+                            --restart always \
+                            neosmemo/memos:latest
+
+                        echo "碎片化知识卡片已经安装完成"
+                        echo "------------------------"
+                        echo "您可以使用以下地址访问碎片化知识卡片:"
+                        external_ip=$(curl -s ipv4.ip.sb)
+                        echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
+                        echo ""
+                        ;;
+                    2)
+                        clear
+                        docker rm -f memeos
+                        docker rmi -f neosmemo/memos:latest
+                        rm -rf /home/docker/memos
+                        echo "应用已卸载"
+                        ;;
+                    0)
+                        break  # 跳出循环，退出菜单
+                        ;;
+                    *)
+                        break  # 跳出循环，退出菜单
+                        ;;
+                esac
+            else
+                clear
+                echo "安装提示"
+                echo "碎片化知识卡片和一个记事本,备忘录"
+                echo ""
+
+                read -p "确定安装碎片化知识卡片吗？(Y/N): " choice
+                case "$choice" in
+                    [Yy])
+                        clear
+                        docker rm -f easyimage
+                        docker rmi -f ddsderek/easyimage:latest
+                        install_docker
+                        get_docker_port
+                        docker run -d \
+                            --name memeos \
+                            --hostname memeos \
+                            -p $hua_port:5230 \
+                            -v /home/docker/memos/memos/:/var/opt/memos \
+                            --restart always \
+                            neosmemo/memos:latest
+
+                        clear
+                        echo "碎片化知识卡片已经安装完成"
+                        echo "------------------------"
+                        echo "您可以使用以下地址访问碎片化知识卡片:"
+                        external_ip=$(curl -s ipv4.ip.sb)
+                        echo "http:$ip_address:$hua_port"
+                        echo ""
+                        ;;
+                    [Nn])
+                        ;;
+                    *)
+                        ;;
+                esac
+            fi
+              ;;
+        44)
+            docker_name="qbittorrent"
+            docker_img="lscr.io/linuxserver/qbittorrent:4.5.5"
+            docker_port=8081
+            docker_rum="docker run -d \
+                                  --name=qbittorrent \
+                                  -e PUID=1000 \
+                                  -e PGID=1000 \
+                                  -e TZ=Etc/UTC \
+                                  -e WEBUI_PORT=8081 \
+                                  -p 8081:8081 \
+                                  -p 6881:6881 \
+                                  -p 6881:6881/udp \
+                                  -v /home/docker/qbittorrent/config:/config \
+                                  -v /home/docker/qbittorrent/downloads:/downloads \
+                                  --restart unless-stopped \
+                                  lscr.io/linuxserver/qbittorrent:4.5.5"
+            docker_describe="qbittorrent离线BT磁力下载服务"
+            docker_url="官网介绍: https://hub.docker.com/r/linuxserver/qbittorrent"
+            docker_use="echo \"用户名: admin\""
+            docker_passwd="echo \"密码: adminadmin\""
+
+            docker_app
+
+              ;;
+        45)
+            if docker inspect vaultwarden &>/dev/null; then
+                clear
+                echo "vaultwarden密码管理已安装，访问地址: "
+                external_ip=$(curl -s ipv4.ip.sb)
+                echo "http:$ip_address:$hua_port"
+                echo ""
+
+                echo "应用操作"
+                echo "------------------------"
+                echo "1. 更新应用             2. 卸载应用"
+                echo "0. 返回上一级菜单"
+                echo "------------------------"
+                read -p "请输入你的选择: " sub_choice
+
+                case $sub_choice in
+                    1)
+                        clear
+                        docker rm -f vaultwarden
+                        docker rmi -f vaultwarden/server:latest
+                        install_docker
+                        get_docker_port
+                        docker run -d \
+                            --name vaultwarden \
+                            -p $hua_port:80 \
+                            -v /home/docker/vaultwarden/data:/data \
+                            -e LOGIN_RATELIMIT_MAX_BURST=10 \
+                            -e LOGIN_RATELIMIT_SECONDS=60 \
+                            -e ADMIN_RATELIMIT_MAX_BURST=10 \
+                            -e ADMIN_RATELIMIT_SECONDS=60 \
+                            -e ADMIN_SESSION_LIFETIME=20 \
+                            -e ADMIN_TOKEN=hCWqQngEdKJmWGTSHUvhwyVnSmAPUK \
+                            -e SENDS_ALLOWED=true \
+                            -e EMERGENCY_ACCESS_ALLOWED=true \
+                            -e WEB_VAULT_ENABLED=true \
+                            -e SIGNUPS_ALLOWED=true \
+                            vaultwarden/server:latest
+
+                        echo "vaultwarden密码管理已经安装完成"
+                        echo "------------------------"
+                        echo "您可以使用以下地址访问vaultwarden密码管理:"
+                        external_ip=$(curl -s ipv4.ip.sb)
+                        echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
+                        echo ""
+                        ;;
+                    2)
+                        clear
+                        docker rm -f vaultwarden
+                        docker rmi -f vaultwarden/server:latest
+                        rm -rf /home/docker/vaultwarden
+                        echo "应用已卸载"
+                        ;;
+                    0)
+                        break  # 跳出循环，退出菜单
+                        ;;
+                    *)
+                        break  # 跳出循环，退出菜单
+                        ;;
+                esac
+            else
+                clear
+                echo "安装提示"
+                echo "vaultwarden密码管理平台，存放账号密码"
+                echo ""
+
+                read -p "确定安装vaultwarden密码管理吗？(Y/N): " choice
+                case "$choice" in
+                    [Yy])
+                        clear
+                        docker rm -f vaultwarden
+                        docker rmi -f vaultwarden/server:latest
+                        install_docker
+                        get_docker_port
+                        docker run -d \
+                            --name vaultwarden \
+                            -p $hua_port:80 \
+                            -v /home/docker/vaultwarden/data:/data \
+                            -e LOGIN_RATELIMIT_MAX_BURST=10 \
+                            -e LOGIN_RATELIMIT_SECONDS=60 \
+                            -e ADMIN_RATELIMIT_MAX_BURST=10 \
+                            -e ADMIN_RATELIMIT_SECONDS=60 \
+                            -e ADMIN_SESSION_LIFETIME=20 \
+                            -e ADMIN_TOKEN=hCWqQngEdKJmWGTSHUvhwyVnSmAPUK \
+                            -e SENDS_ALLOWED=true \
+                            -e EMERGENCY_ACCESS_ALLOWED=true \
+                            -e WEB_VAULT_ENABLED=true \
+                            -e SIGNUPS_ALLOWED=true \
+                            vaultwarden/server:latest
+
+                        clear
+                        echo "vaultwarden密码管理已经安装完成"
+                        echo "------------------------"
+                        echo "您可以使用以下地址访问vaultwarden密码管理:"
+                        external_ip=$(curl -s ipv4.ip.sb)
+                        echo "http:$ip_address:$hua_port"
+                        echo ""
+                        ;;
+                    [Nn])
+                        ;;
+                    *)
+                        ;;
+                esac
+            fi
+              ;;
+
+        81)
         clear
 
         install_dependency
@@ -2220,7 +1873,7 @@ case $choice in
         echo ""
           ;;
 
-        22)
+        82)
         clear
         ip_address
         add_yuming
@@ -2241,7 +1894,7 @@ case $choice in
 
           ;;
 
-        23)
+        83)
         clear
         ip_address
         add_yuming
@@ -2263,7 +1916,7 @@ case $choice in
         nginx_status
           ;;
 
-        24)
+        84)
         clear
         # wordpress
         external_ip=$(curl -s ipv4.ip.sb)
@@ -2293,7 +1946,7 @@ case $choice in
         nginx_status
           ;;
 
-      31)
+      85)
       while true; do
           clear
           echo "LDNMP环境"
@@ -2416,7 +2069,7 @@ case $choice in
 
         ;;
 
-      32)
+      86)
         clear
         cd /home/ && tar czvf web_$(date +"%Y%m%d%H%M%S").tar.gz web
 
@@ -2451,7 +2104,7 @@ case $choice in
         done
         ;;
 
-      33)
+      87)
         clear
         read -p "输入远程服务器IP: " useip
         read -p "输入远程服务器密码: " usepasswd
@@ -2484,7 +2137,7 @@ case $choice in
 
         ;;
 
-      34)
+      88)
         clear
         cd /home/ && ls -t /home/*.tar.gz | head -1 | xargs -I {} tar -xzf {}
         check_port
@@ -2495,7 +2148,7 @@ case $choice in
 
         ;;
 
-      35)
+      89)
         if [ -x "$(command -v fail2ban-client)" ] && [ -d "/etc/fail2ban" ]; then
             while true; do
                 clear
@@ -2633,7 +2286,7 @@ case $choice in
 
           ;;
 
-      36)
+      90)
             while true; do
                 clear
                 echo "优化LDNMP环境"
@@ -2703,7 +2356,7 @@ case $choice in
           ;;
 
 
-      37)
+      91)
         clear
         docker rm -f nginx php php74 mysql redis
         docker rmi nginx php:fpm php:7.4.33-fpm mysql redis
@@ -2717,7 +2370,7 @@ case $choice in
 
 
 
-      38)
+      92)
           clear
           read -p "强烈建议先备份全部网站数据，再卸载LDNMP环境。确定删除所有网站数据吗？(Y/N): " choice
           case "$choice" in
