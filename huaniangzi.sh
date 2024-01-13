@@ -1537,7 +1537,8 @@ case $choice in
             if docker inspect easyimage &>/dev/null; then
                 clear
                 echo "简单图床已安装，访问地址: "
-                echo "http:$ipv4_address:$docker_port"
+                external_ip=$(curl -s ipv4.ip.sb)
+                echo "http:$external_ip:$hua_port"
                 echo ""
 
                 echo "应用操作"
@@ -1569,7 +1570,8 @@ case $choice in
                         echo "简单图床已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问简单图床:"
-                        echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
+                        external_ip=$(curl -s ipv4.ip.sb)
+                        echo "http:$external_ip:$hua_port"  # 使用用户输入的端口
                         echo ""
                         ;;
                     2)
@@ -1617,7 +1619,8 @@ case $choice in
                         echo "简单图床已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问简单图床:"
-                        echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
+                        external_ip=$(curl -s ipv4.ip.sb)
+                        echo "http:$external_ip:$hua_port"
                         echo ""
                         ;;
                     [Nn])
@@ -1631,7 +1634,8 @@ case $choice in
             if docker inspect memeos &>/dev/null; then
                 clear
                 echo "碎片化知识卡片已安装，访问地址: "
-                echo "http:$ipv4_address:$docker_port"
+                external_ip=$(curl -s ipv4.ip.sb)
+                echo "http:$external_ip:$hua_port"
                 echo ""
 
                 echo "应用操作"
@@ -1659,7 +1663,8 @@ case $choice in
                         echo "碎片化知识卡片已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问碎片化知识卡片:"
-                        echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
+                        external_ip=$(curl -s ipv4.ip.sb)
+                        echo "http:$external_ip:$hua_port"  # 使用用户输入的端口
                         echo ""
                         ;;
                     2)
@@ -1702,7 +1707,8 @@ case $choice in
                         echo "碎片化知识卡片已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问碎片化知识卡片:"
-                        echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
+                        external_ip=$(curl -s ipv4.ip.sb)
+                        echo "http:$external_ip:$hua_port"
                         echo ""
                         ;;
                     [Nn])
@@ -1741,7 +1747,8 @@ case $choice in
             if docker inspect vaultwarden &>/dev/null; then
                 clear
                 echo "vaultwarden密码管理已安装，访问地址: "
-                echo "http:$ipv4_address:$docker_port"
+                external_ip=$(curl -s ipv4.ip.sb)
+                echo "http:$external_ip:$hua_port"
                 echo ""
 
                 echo "应用操作"
@@ -1777,7 +1784,8 @@ case $choice in
                         echo "vaultwarden密码管理已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问vaultwarden密码管理:"
-                        echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
+                        external_ip=$(curl -s ipv4.ip.sb)
+                        echo "http:$external_ip:$hua_port"  # 使用用户输入的端口
                         echo ""
                         ;;
                     2)
@@ -1828,7 +1836,8 @@ case $choice in
                         echo "vaultwarden密码管理已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问vaultwarden密码管理:"
-                        echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
+                        external_ip=$(curl -s ipv4.ip.sb)
+                        echo "http:$external_ip:$hua_port"
                         echo ""
                         ;;
                     [Nn])
