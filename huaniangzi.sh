@@ -1570,7 +1570,6 @@ case $choice in
                         echo "简单图床已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问简单图床:"
-                        external_ip=$(curl -s ipv4.ip.sb)
                         echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
                         echo ""
                         ;;
@@ -1619,7 +1618,6 @@ case $choice in
                         echo "简单图床已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问简单图床:"
-                        external_ip=$(curl -s ipv4.ip.sb)
                         echo "http:$ip_address:$hua_port"
                         echo ""
                         ;;
@@ -1663,7 +1661,6 @@ case $choice in
                         echo "碎片化知识卡片已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问碎片化知识卡片:"
-                        external_ip=$(curl -s ipv4.ip.sb)
                         echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
                         echo ""
                         ;;
@@ -1707,7 +1704,6 @@ case $choice in
                         echo "碎片化知识卡片已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问碎片化知识卡片:"
-                        external_ip=$(curl -s ipv4.ip.sb)
                         echo "http:$ip_address:$hua_port"
                         echo ""
                         ;;
@@ -1784,7 +1780,6 @@ case $choice in
                         echo "vaultwarden密码管理已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问vaultwarden密码管理:"
-                        external_ip=$(curl -s ipv4.ip.sb)
                         echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
                         echo ""
                         ;;
@@ -1836,7 +1831,6 @@ case $choice in
                         echo "vaultwarden密码管理已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问vaultwarden密码管理:"
-                        external_ip=$(curl -s ipv4.ip.sb)
                         echo "http:$ip_address:$hua_port"
                         echo ""
                         ;;
