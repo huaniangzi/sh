@@ -1141,8 +1141,7 @@ case $choice in
             6)
                 clear
                 while true; do
-                echo -e "\033[31m▶ Docker-compose项目\033[0m"
-                echo -e "提示:目录项目只支持在这里拆卸"
+                echo -e "\033[31m▶ Docker项目\033[0m"
                 echo  "------------------------"
                 echo  "1. 安装npm反向代理"
                 echo  "2. 安装Alsit"
@@ -1157,11 +1156,11 @@ case $choice in
 
                 case $sub_choice in
                     1)
-                        if docker inspect nginx-proxy-manager &>/dev/null; then
+                        if docker inspect easyimage &>/dev/null; then
                             clear
                             echo "npm反向代理已安装，访问地址: "
                             external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$ip_address:81"
+                            echo "http:$ip_address:$hua_port"
                             echo ""
 
                             echo "应用操作"
@@ -1174,15 +1173,25 @@ case $choice in
                             case $sub_choice in
                                 1)
                                     clear
-                                    docker-compose pull
-                                    docker-compose up -d
-                                    docker image prune -f
-                                    clear
+                                    docker rm -f nginx-proxy-manager
+                                    docker rmi -f jc21/nginx-proxy-manager:latest
+                                    install_docker
+                                    get_docker_port
+                                    docker run -d \
+                                        --name nginx-proxy-manager \
+                                        -p 80:80 \
+                                        -p $hua_port:81 \
+                                        -p 443:443 \
+                                        -v /home/docker/npm/data:/data \
+                                        -v /home/docker/npm/letsencrypt:/etc/letsencrypt \
+                                        --restart unless-stopped \
+                                        jc21/nginx-proxy-manager:latest
+
                                     echo "npm反向代理已经安装完成"
                                     echo "------------------------"
                                     echo "您可以使用以下地址访问npm反向代理:"
                                     external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$ip_address:81"  # 使用用户输入的端口
+                                    echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
                                     echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装npm！"
                                     echo "官网介绍: https://nginxproxymanager.com/"
                                     echo "echo \"初始用户名: admin@example.com\""
@@ -1191,9 +1200,9 @@ case $choice in
                                     ;;
                                 2)
                                     clear
-                                    cd /home/docker/npm && docker-compose down
-                                    cd ~ && rm -rf /home/docker/npm
-                                    docker image prune -f
+                                    docker rm -f nginx-proxy-manager
+                                    docker rmi -f jc21/nginx-proxy-manager:latest
+                                    rm -rf /home/docker/npm
                                     echo "应用已卸载"
                                     ;;
                                 0)
@@ -1214,18 +1223,23 @@ case $choice in
                                 [Yy])
                                     clear
                                     install_docker
-                                    mkdir -p /home/docker/npm
-                                    cd /home/docker/npm
-                                    cat > docker-compose.yml << EOF
-$(curl -sSL https://raw.githubusercontent.com/huaniangzi/docker-compose/main/nginx-proxy-manager)
-EOF
-                                    docker-compose up -d
+                                    get_docker_port
+                                    docker run -d \
+                                        --name nginx-proxy-manager \
+                                        -p 80:80 \
+                                        -p $hua_port:81 \
+                                        -p 443:443 \
+                                        -v /home/docker/npm/data:/data \
+                                        -v /home/docker/npm/letsencrypt:/etc/letsencrypt \
+                                        --restart unless-stopped \
+                                        jc21/nginx-proxy-manager:latest
+
                                     clear
                                     echo "npm反向代理已经安装完成"
                                     echo "------------------------"
                                     echo "您可以使用以下地址访问npm反向代理:"
                                     external_ip=$(curl -s ipv4.ip.sb)
-                                    echo "http:$ip_address:81"
+                                    echo "http:$ip_address:$hua_port"
                                     echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装npm！"
                                     echo "官网介绍: https://nginxproxymanager.com/"
                                     echo "echo \"初始用户名: admin@example.com\""
@@ -1265,7 +1279,7 @@ EOF
                             clear
                             echo "简单图床已安装，访问地址: "
                             external_ip=$(curl -s ipv4.ip.sb)
-                            echo "http:$ip_address:2001"
+                            echo "http:$ip_address:$hua_port"
                             echo ""
 
                             echo "应用操作"
@@ -1277,27 +1291,35 @@ EOF
 
                             case $sub_choice in
                                 1)
+                                    clear
+                                    docker rm -f easyimage
+                                    docker rmi -f ddsderek/easyimage:latest
                                     install_docker
-                                    mkdir -p /home/docker/npm
-                                    cd /home/docker/npm
-                                    cat > docker-compose.yml << EOF
-$(curl -sSL https://raw.githubusercontent.com/huaniangzi/docker-compose/main/easyimage)
-EOF
+                                    get_docker_port
+                                    docker run -d \
+                                        --name easyimage \
+                                        -p $hua_port:80 \
+                                        -e TZ=Asia/Shanghai \
+                                        -e PUID=1000 \
+                                        -e PGID=1000 \
+                                        -v /home/docker/easyimage/config:/app/web/config \
+                                        -v /home/docker/easyimage/i:/app/web/i \
+                                        --restart unless-stopped \
+                                        ddsderek/easyimage:latest
+
                                     clear
                                     echo "简单图床已经安装完成"
                                     echo "------------------------"
-                                    # 获取外部 IP 地址
-                                    ip_address
-                                    echo "您可以使用以下地址访问:"
-                                    echo "http:$ip_address:2021"
-                                    $docker_use
-                                    $docker_passwd
+                                    echo "您可以使用以下地址访问简单图床:"
+                                    external_ip=$(curl -s ipv4.ip.sb)
+                                    echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
+                                    echo ""
                                     ;;
                                 2)
                                     clear
-                                    cd /home/docker/easyimage && docker-compose down
-                                    cd ~ && rm -rf /home/docker/easyimage
-                                    docker image prune -f
+                                    docker rm -f easyimage
+                                    docker rmi -f ddsderek/easyimage:latest
+                                    rm -rf /home/docker/easyimage
                                     echo "应用已卸载"
                                     ;;
                                 0)
@@ -1317,21 +1339,30 @@ EOF
                             read -p "确定安装简单图床吗？(Y/N): " choice
                             case "$choice" in
                                 [Yy])
+                                    clear
+                                    # 根据用户输入的主机端口运行容器并保持容器内部端口为80
+                                    docker rm -f easyimage
+                                    docker rmi -f ddsderek/easyimage:latest
                                     install_docker
-                                    mkdir -p /home/docker/npm
-                                    cd /home/docker/npm
-                                    cat > docker-compose.yml << EOF
-$(curl -sSL https://raw.githubusercontent.com/huaniangzi/docker-compose/main/easyimage)
-EOF
+                                    get_docker_port
+                                    docker run -d \
+                                        --name easyimage \
+                                        -p $hua_port:80 \
+                                        -e TZ=Asia/Shanghai \
+                                        -e PUID=1000 \
+                                        -e PGID=1000 \
+                                        -v /home/docker/easyimage/config:/app/web/config \
+                                        -v /home/docker/easyimage/i:/app/web/i \
+                                        --restart unless-stopped \
+                                        ddsderek/easyimage:latest
+
                                     clear
                                     echo "简单图床已经安装完成"
                                     echo "------------------------"
-                                    # 获取外部 IP 地址
-                                    ip_address
-                                    echo "您可以使用以下地址访问:"
-                                    echo "http:$ip_address:2021"
-                                    $docker_use
-                                    $docker_passwd
+                                    echo "您可以使用以下地址访问简单图床:"
+                                    external_ip=$(curl -s ipv4.ip.sb)
+                                    echo "http:$ip_address:$hua_port"
+                                    echo ""
                                     ;;
                                 [Nn])
                                     ;;
