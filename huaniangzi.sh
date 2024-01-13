@@ -4,7 +4,7 @@ ln -sf ~/huaniangzi.sh /usr/local/bin/hua
 
 
 ip_address() {
-ip_address=$(curl -s ipv4.ip.sb)
+ipv4_address=$(curl -s ipv4.ip.sb)
 ipv6_address=$(curl -s --max-time 1 ipv6.ip.sb)
 }
 
@@ -1570,7 +1570,7 @@ case $choice in
                         echo "简单图床已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问简单图床:"
-                        echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
+                        echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
                         echo ""
                         ;;
                     2)
@@ -1618,7 +1618,7 @@ case $choice in
                         echo "简单图床已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问简单图床:"
-                        echo "http:$ip_address:$hua_port"
+                        echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
                         echo ""
                         ;;
                     [Nn])
@@ -1661,7 +1661,7 @@ case $choice in
                         echo "碎片化知识卡片已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问碎片化知识卡片:"
-                        echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
+                        echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
                         echo ""
                         ;;
                     2)
@@ -1704,7 +1704,7 @@ case $choice in
                         echo "碎片化知识卡片已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问碎片化知识卡片:"
-                        echo "http:$ip_address:$hua_port"
+                        echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
                         echo ""
                         ;;
                     [Nn])
@@ -1780,7 +1780,7 @@ case $choice in
                         echo "vaultwarden密码管理已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问vaultwarden密码管理:"
-                        echo "http:$ip_address:$hua_port"  # 使用用户输入的端口
+                        echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
                         echo ""
                         ;;
                     2)
@@ -1831,7 +1831,7 @@ case $choice in
                         echo "vaultwarden密码管理已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问vaultwarden密码管理:"
-                        echo "http:$ip_address:$hua_port"
+                        echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
                         echo ""
                         ;;
                     [Nn])
