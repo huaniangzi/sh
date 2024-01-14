@@ -3551,8 +3551,7 @@ case $choice in
         echo "1.開啓 SWAP虛擬内存               2.開啓 BBR"
         echo "3.WARP 01                         4.WARP 02"
         echo "5.解除GitHub限制                  6.DisneyPlus檢測"
-        echo "7.Netflix檢測                     8.融合怪VPS評測 "
-        echo "9.iptables一键转发脚本            10.Reality 一键脚本"
+        echo "7.Netflix檢測"
         echo -e "\033[91m▼ 系统工具 ▼\033[0m"
         echo "------------------------"
         echo "20.LXC開小鷄(Ubuntu/Debian)       21.安裝極光面板 "
@@ -3561,7 +3560,7 @@ case $choice in
         echo "41.安裝X-UI                       42.安裝XrayR"
         echo "43.安裝ArgoX                      44.安裝3X-UI"
         echo "45.搭建TG代理                     46.搭建V2ray-Agent"
-        echo "47.Shadowsocks Go版"
+        echo "47.Shadowsocks Go版              48.Reality 一键脚本"
         echo "------------------------"
         echo "0. 返回主菜单"
         echo "------------------------"
@@ -3603,18 +3602,6 @@ case $choice in
             7)
               clear
               wget -O nf https://github.com/sjlleo/netflix-verify/releases/download/2.01/nf_2.01_linux_amd64 && chmod +x nf && clear && ./nf
-              ;;
-            8)
-              clear
-              curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
-              ;;
-            9)
-              clear
-              wget -O dp https://github.com/sjlleo/VerifyDisneyPlus/releases/download/1.01/dp_1.01_linux_amd64 && chmod +x dp && clear && ./dp
-              ;;
-            10)
-              clear
-              wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 700 /root/install.sh && /root/install.sh
               ;;
             20)
               clear
@@ -3661,6 +3648,10 @@ case $choice in
             47)
               clear
               wget -N --no-check-certificate https://raw.githubusercontent.com/ToyoDAdoubiBackup/doubi/master/ss-go.sh && chmod +x ss-go.sh && bash ss-go.sh
+              ;;
+            48)
+              clear
+              wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 700 /root/install.sh && /root/install.sh
               ;;
             0)
                 huaniangzi
