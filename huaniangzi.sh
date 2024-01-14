@@ -410,7 +410,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.5.6 （支持Ubuntu，Debian，Centos系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.5.7 （支持Ubuntu，Debian，Centos系统）\033[0m"
 echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本-\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
@@ -3546,8 +3546,20 @@ case $choice in
       while true; do
         echo -e "\033[31m▶ 外面的世界\033[0m"
         echo "------------------------"
-        echo "1. x-ui面板             2. ArgoX"
-        echo "3. Hysteria1            4. Hysteria2"
+        echo "快捷工具"
+        echo "------------------------"
+        echo "1.開啓 SWAP虛擬内存               2.開啓 BBR"
+        echo "3.WARP 01                       4.WARP 02"
+        echo "5.解除GitHub限制                  6.DisneyPlus檢測"
+        echo "7.Netflix檢測                    8.融合怪VPS評測 "
+        echo "9.iptables一键转发脚本             10.Reality 一键脚本"
+        echo "------------------------"
+        echo "20.LXC開小鷄(Ubuntu/Debian)       21.安裝極光面板 "
+        echo "------------------------"
+        echo "41.安裝X-UI                       42.安裝XrayR"
+        echo "43.安裝ArgoX                      44.安裝3X-UI"
+        echo "45.搭建TG代理                      46.搭建V2ray-Agent"
+        echo "47.Shadowsocks Go版"
         echo "------------------------"
         echo "0. 返回主菜单"
         echo "------------------------"
@@ -3556,20 +3568,98 @@ case $choice in
         case $sub_choice in
             1)
                 clear
-                bash <(curl -Ls https://raw.githubusercontent.com/FranzKafkaYu/x-ui/master/install.sh)
+                wget https://raw.githubusercontent.com/ChellyL/swap_change/main/swap.sh && bash swap.sh
                 ;;
             2)
                 clear
-                bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/argox/main/argox.sh)
+                wget -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
                 ;;
             3)
                 clear
-                wget -N --no-check-certificate https://raw.githubusercontent.com/Misaka-blog/hysteria-install/main/hy2/hysteria.sh && bash hysteria.sh
+                wget -N https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh && bash menu.sh
                 ;;
             4)
                 clear
-                wget -N --no-check-certificate https://raw.githubusercontent.com/Misaka-blog/hysteria-install/main/hy1/hysteria.sh && bash hysteria.sh
+                wget -N https://gitlab.com/Misaka-blog/warp-script/-/raw/main/warp.sh && bash warp.sh
                 ;;
+            5)
+                clear
+                echo "2a01:4f8:c010:d56::2 github.com
+                2a01:4f8:c010:d56::3 api.github.com
+                2a01:4f8:c010:d56::4 codeload.github.com
+                2a01:4f8:c010:d56::5 objects.githubusercontent.com
+                2a01:4f8:c010:d56::6 ghcr.io
+                2a01:4f8:c010:d56::7 pkg.github.com npm.pkg.github.com maven.pkg.github.com
+                nuget.pkg.github.com rubygems.pkg.github.com" | tee -a /etc/hosts
+                clear
+                echo "已解除限制。"
+                ;;
+            6)
+              clear
+              wget -O dp https://github.com/sjlleo/VerifyDisneyPlus/releases/download/1.01/dp_1.01_linux_amd64 && chmod +x dp && clear && ./dp
+              ;;
+            7)
+              clear
+              wget -O nf https://github.com/sjlleo/netflix-verify/releases/download/2.01/nf_2.01_linux_amd64 && chmod +x nf && clear && ./nf
+              ;;
+            8)
+              clear
+              curl -L https://gitlab.com/spiritysdx/za/-/raw/main/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
+              ;;
+            9)
+              clear
+              wget -O dp https://github.com/sjlleo/VerifyDisneyPlus/releases/download/1.01/dp_1.01_linux_amd64 && chmod +x dp && clear && ./dp
+              ;;
+            10)
+              clear
+              wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 700 /root/install.sh && /root/install.sh
+              ;;
+            20)
+              clear
+              if [ "$OS_TYPE" = "debian" ]; then
+                  echo "This is a Debian system"
+                  wget -N --no-check-certificate https://raw.githubusercontent.com/MXCCO/lxdpro/main/lxdpro.sh && bash lxdpro.sh
+              else
+                  echo "脚本僅支持：Ubuntu/Debian"
+              fi
+              ;;
+            21)
+              clear
+              bash <(curl -fsSL https://raw.githubusercontent.com/Aurora-Admin-Panel/deploy/main/install.sh)
+              ;;
+            41)
+              clear
+              bash <(curl -Ls https://raw.githubusercontent.com/vaxilu/x-ui/master/install.sh)
+              ;;
+            42)
+              clear
+              bash <(curl -Ls https://raw.githubusercontent.com/XrayR-project/XrayR-release/master/install.sh)
+              ;;
+            43)
+              clear
+              bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/argox/main/argox.sh)
+              ;;
+            44)
+              clear
+              bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
+              ;;
+            45)
+              clear
+              ## 新建目录
+              echo "自動創建TG代理目錄：/home/mtproxy"
+              mkdir /home/mtproxy && cd /home/mtproxy
+
+              ## 开始安装
+              curl -s -o mtproxy.sh https://raw.githubusercontent.com/sunpma/mtp/master/mtproxy.sh && chmod +x mtproxy.sh && bash mtproxy.sh
+              ;;
+            46)
+              clear
+              wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 700 /root/install.sh && /root/install.sh
+              ;;
+            47)
+              clear
+              wget -N --no-check-certificate https://raw.githubusercontent.com/ToyoDAdoubiBackup/doubi/master/ss-go.sh && chmod +x ss-go.sh && bash ss-go.sh
+              ;;
             0)
                 huaniangzi
                 ;;
