@@ -3560,7 +3560,7 @@ case $choice in
         echo "41.安裝X-UI                       42.安裝XrayR"
         echo "43.安裝ArgoX                      44.安裝3X-UI"
         echo "45.搭建TG代理                     46.搭建V2ray-Agent"
-        echo "47.Shadowsocks Go版              48.Reality 一键脚本"
+        echo "47.Shadowsocks Go版               48.Reality 一键脚本"
         echo "------------------------"
         echo "0. 返回主菜单"
         echo "------------------------"
