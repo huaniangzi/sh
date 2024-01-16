@@ -322,7 +322,7 @@ if docker inspect "$docker_name" &>/dev/null; then
     echo "------------------------"
     echo "1. 更新应用             2. 卸载应用"
     echo "------------------------"
-    echo "0. 返回上一级选单"
+    echo "0. 返回上一级菜单"
     echo "------------------------"
     read -p "请输入你的选择: " sub_choice
 
@@ -606,7 +606,7 @@ case $choice in
         echo "3. 常用环境管理 ▶"
         echo "4. WARP管理 ▶ 解锁ChatGPT Netflix"
         echo "------------------------"
-        echo "0. 返回上一级菜单"
+        echo "0. 返回上一级菜单菜单"
         echo "------------------------"
         read -p "请输入你的选择: " sub_choice
 
@@ -644,7 +644,7 @@ case $choice in
                     echo -e "41. 安装指定工具 \033[33mNEW\033[0m"
                     echo -e "42. 卸载指定工具 \033[33mNEW\033[0m"
                     echo "------------------------"
-                    echo "0. 返回主菜单"
+                    echo "0. 返回上一级菜单"
                     echo "------------------------"
                     read -p "请输入你的选择: " sub_choice
 
@@ -803,7 +803,8 @@ case $choice in
                             ;;
 
                         0)
-                            huaniangzi
+                            # 返回上一级菜单菜单
+                            break  # 使用 break 来跳出当前循环，返回上一级菜单
                             ;;
 
                         *)
@@ -1320,8 +1321,9 @@ case $choice in
                         ;;
 
                         0)
-                            huaniangzi
-                        ;;
+                          # 返回上一级菜单菜单
+                          break  # 使用 break 来跳出当前循环，返回上一级菜单
+                          ;;
 
                         *)
                         echo -e "无效的输入!"
@@ -1347,8 +1349,8 @@ case $choice in
                 wget -N https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh && bash menu.sh [option] [lisence/url/token]
                 ;;
             0)
-                # 返回上一级菜单
-                break  # 使用 break 来跳出当前循环，返回上一级
+                # 返回上一级菜单菜单
+                break  # 使用 break 来跳出当前循环，返回上一级菜单
                 ;;
             00)
                 # 返回主菜单
@@ -1500,7 +1502,7 @@ case $choice in
                   echo "------------------------"
                   echo "11. 进入指定容器           12. 查看容器日志           13. 查看容器网络"
                   echo "------------------------"
-                  echo "0. 返回上一级选单"
+                  echo "0. 返回上一级菜单"
                   echo "------------------------"
                   read -p "请输入你的选择: " sub_choice
 
@@ -1603,7 +1605,7 @@ case $choice in
                   echo "1. 获取指定镜像             3. 删除指定镜像"
                   echo "2. 更新指定镜像             4. 删除所有镜像"
                   echo "------------------------"
-                  echo "0. 返回上一级选单"
+                  echo "0. 返回上一级菜单"
                   echo "------------------------"
                   read -p "请输入你的选择: " sub_choice
 
@@ -1679,7 +1681,7 @@ case $choice in
                   echo "3. 退出网络"
                   echo "4. 删除网络"
                   echo "------------------------"
-                  echo "0. 返回上一级选单"
+                  echo "0. 返回上一级菜单"
                   echo "------------------------"
                   read -p "请输入你的选择: " sub_choice
 
@@ -1727,7 +1729,7 @@ case $choice in
                   echo "1. 创建新卷"
                   echo "2. 删除卷"
                   echo "------------------------"
-                  echo "0. 返回上一级选单"
+                  echo "0. 返回上一级菜单"
                   echo "------------------------"
                   read -p "请输入你的选择: " sub_choice
 
@@ -2053,7 +2055,7 @@ case $choice in
                 echo "应用操作"
                 echo "------------------------"
                 echo "1. 更新应用             2. 卸载应用"
-                echo "0. 返回上一级菜单"
+                echo "0. 返回上一级菜单菜单"
                 echo "------------------------"
                 read -p "请输入你的选择: " sub_choice
 
@@ -2150,7 +2152,7 @@ case $choice in
                 echo "应用操作"
                 echo "------------------------"
                 echo "1. 更新应用             2. 卸载应用"
-                echo "0. 返回上一级菜单"
+                echo "0. 返回上一级菜单菜单"
                 echo "------------------------"
                 read -p "请输入你的选择: " sub_choice
 
@@ -2263,7 +2265,7 @@ case $choice in
                 echo "应用操作"
                 echo "------------------------"
                 echo "1. 更新应用             2. 卸载应用"
-                echo "0. 返回上一级菜单"
+                echo "0. 返回上一级菜单菜单"
                 echo "------------------------"
                 read -p "请输入你的选择: " sub_choice
 
@@ -2511,7 +2513,7 @@ case $choice in
           echo "------------------------"
           echo "7. 删除指定站点                    8. 删除指定数据库"
           echo "------------------------"
-          echo "0. 返回上一级选单"
+          echo "0. 返回上一级菜单"
           echo "------------------------"
           read -p "请输入你的选择: " sub_choice
           case $sub_choice in
@@ -2941,7 +2943,7 @@ case $choice in
                 echo "------------------------"
                 echo "1. 管理宝塔面板           2. 卸载宝塔面板"
                 echo "------------------------"
-                echo "0. 返回上一级选单"
+                echo "0. 返回上一级菜单"
                 echo "------------------------"
                 read -p "请输入你的选择: " sub_choice
 
@@ -3025,7 +3027,7 @@ case $choice in
                 echo "------------------------"
                 echo "1. 管理aaPanel           2. 卸载aaPanel"
                 echo "------------------------"
-                echo "0. 返回上一级选单"
+                echo "0. 返回上一级菜单"
                 echo "------------------------"
                 read -p "请输入你的选择: " sub_choice
 
@@ -3108,7 +3110,7 @@ case $choice in
                 echo "------------------------"
                 echo "1. 查看1Panel信息           2. 卸载1Panel"
                 echo "------------------------"
-                echo "0. 返回上一级选单"
+                echo "0. 返回上一级菜单"
                 echo "------------------------"
                 read -p "请输入你的选择: " sub_choice
 
@@ -3297,7 +3299,7 @@ case $choice in
                     echo "------------------------"
                     echo "1. 更新应用             2. 卸载应用"
                     echo "------------------------"
-                    echo "0. 返回上一级选单"
+                    echo "0. 返回上一级菜单"
                     echo "------------------------"
                     read -p "请输入你的选择: " sub_choice
 
@@ -3428,7 +3430,7 @@ case $choice in
                     echo "------------------------"
                     echo "1. 更新应用             2. 卸载应用"
                     echo "------------------------"
-                    echo "0. 返回上一级选单"
+                    echo "0. 返回上一级菜单"
                     echo "------------------------"
                     read -p "请输入你的选择: " sub_choice
 
@@ -3559,7 +3561,7 @@ case $choice in
                     echo "------------------------"
                     echo "1. 更新应用             2. 卸载应用"
                     echo "------------------------"
-                    echo "0. 返回上一级选单"
+                    echo "0. 返回上一级菜单"
                     echo "------------------------"
                     read -p "请输入你的选择: " sub_choice
 
@@ -3748,7 +3750,7 @@ case $choice in
                     echo "------------------------"
                     echo "1. 更新应用             2. 卸载应用"
                     echo "------------------------"
-                    echo "0. 返回上一级选单"
+                    echo "0. 返回上一级菜单"
                     echo "------------------------"
                     read -p "请输入你的选择: " sub_choice
 
@@ -3889,7 +3891,7 @@ case $choice in
                 echo "1. 更新应用             2. 卸载应用"
                 echo "3. 修改config           4. 修改tokens"
                 echo "------------------------"
-                echo "0. 返回上一级选单"
+                echo "0. 返回上一级菜单"
                 echo "------------------------"
                 read -p "请输入你的选择: " sub_choice
 
@@ -4066,12 +4068,12 @@ case $choice in
         echo "20.安裝極光面板 "
         echo "------------------------"
         echo -e "\033[91m▼ 一条龙服务 ▼\033[0m"
-        echo "40.安裝X-UI                      41.安裝3X-UI"
+        echo "40.安裝X-UI                       41.安裝3X-UI"
         echo "42.搭建TG代理                     43.Shadowsocks Go版"
-        echo "44.F佬ArgoX                      5.F佬sing-box"
-        echo "46.suoha一键argo                 57.M佬Juicity"
-        echo "48.小绵羊reality+vmess+hy2       49.V2ray-agent八合一"
-        echo "50.OpenVPN                      51.M佬Hysteria2"
+        echo "44.F佬ArgoX                       5.F佬sing-box"
+        echo "46.suoha一键argo                  57.M佬Juicity"
+        echo "48.小绵羊reality+vmess+hy2        49.V2ray-agent八合一"
+        echo "50.OpenVPN                        51.M佬Hysteria2"
         echo "52.老王nodejs-argo节点+哪吒+订阅"
         echo "------------------------"
         echo "0. 返回主菜单"
@@ -4294,7 +4296,7 @@ case $choice in
         echo "6.开设Docker小鸡"
         echo "7.删除所有Docker容器"
         echo "------------------------"
-        echo "0.返回上一级菜单"
+        echo "0.返回上一级菜单菜单"
         echo "------------------------"
         while :; do
             echo
@@ -4956,7 +4958,7 @@ case $choice in
                   echo "------------------------"
                   echo "5. 删除账号"
                   echo "------------------------"
-                  echo "0. 返回上一级菜单"
+                  echo "0. 返回上一级菜单菜单"
                   echo "------------------------"
                   read -p "请输入你的选择: " sub_choice
 
@@ -5146,7 +5148,7 @@ case $choice in
                   echo "23. 加拿大时间               24. 墨西哥时间"
                   echo "25. 巴西时间                 26. 阿根廷时间"
                   echo "------------------------"
-                  echo "0. 返回上一级菜单"
+                  echo "0. 返回上一级菜单菜单"
                   echo "------------------------"
                   read -p "请输入你的选择: " sub_choice
 
@@ -5237,7 +5239,7 @@ case $choice in
                   echo "------------------------"
                   echo "1. 更新BBRv3内核              2. 卸载BBRv3内核"
                   echo "------------------------"
-                  echo "0. 返回上一级菜单"
+                  echo "0. 返回上一级菜单菜单"
                   echo "------------------------"
                   read -p "请输入你的选择: " sub_choice
 
@@ -5368,7 +5370,7 @@ EOF
                   echo "------------------------"
                   echo "9. 卸载防火墙"
                   echo "------------------------"
-                  echo "0. 返回上一级菜单"
+                  echo "0. 返回上一级菜单菜单"
                   echo "------------------------"
                   read -p "请输入你的选择: " sub_choice
 
@@ -5697,7 +5699,7 @@ EOF
               echo "3. 备份当前更新源"
               echo "4. 还原初始更新源"
               echo "------------------------"
-              echo "0. 返回上一级"
+              echo "0. 返回上一级菜单"
               echo "------------------------"
               read -p "请选择操作: " choice
 
@@ -5784,7 +5786,7 @@ EOF
               echo "------------------------"
               echo "1. 添加定时任务              2. 删除定时任务"
               echo "------------------------"
-              echo "0. 返回上一级选单"
+              echo "0. 返回上一级菜单"
               echo "------------------------"
               read -p "请输入你的选择: " sub_choic
               case $sub_choice in
@@ -5834,7 +5836,7 @@ EOF
               echo "1. ipv4"
               echo "2. ipv6"
               echo "------------------------"
-              echo "0. 返回上一级选单"
+              echo "0. 返回上一级菜单"
               echo "------------------------"
               read -p $'\033[1;91m请输入你的选择: \033[0m' sub_choice
 
@@ -5951,7 +5953,7 @@ EOF
                 echo "3. 一键限制流量1T，流量达到1T自动关机"
                 echo "4. CPU99%、内存99%、流量5T统一限制"
                 echo "------------------------"
-                echo "0. 返回上一级选单"
+                echo "0. 返回上一级菜单"
                 echo "------------------------"
                 read -p $'\033[1;91m请输入你的选择: \033[0m' sub_choice
 
