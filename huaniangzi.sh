@@ -823,7 +823,7 @@ case $choice in
                 ./tcpx.sh
                 ;;
 
-            15)
+            3)
                 while true; do
                     clear
                     echo "▶ 常用环境管理"
@@ -1330,7 +1330,7 @@ case $choice in
                 done
                 ;;
 
-            3)
+            4)
                 clear
                 # 检查并安装 wget（如果需要）
                 if ! command -v wget &>/dev/null; then
@@ -4277,7 +4277,7 @@ case $choice in
       done
       ;;
 
-  16)
+  10)
     while true; do
         clear
         echo "▶ 开设NAT小鸡"
