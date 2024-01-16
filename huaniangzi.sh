@@ -423,6 +423,7 @@ echo -e "\033[33m7. LDNMP建站 ▶ \033[0m"
 echo "8. 常用面板工具 ▶ "
 echo "9. 外面的世界 ▶ "
 echo "10. 系统工具 ▶ "
+echo "11. 系统工具 ▶ "
 echo "------------------------"
 echo "00. 脚本更新"
 echo "0. 退出脚本"
@@ -600,9 +601,10 @@ case $choice in
     while true; do
         echo -e "\033[31m▶ 常用工具\033[0m"
         echo "------------------------"
-        echo "1. 命令行工具和软件"
+        echo "1. 命令行工具和软件 ▶"
         echo "2. BBR管理 ▶"
-        echo "3. WARP管理 ▶ 解锁ChatGPT Netflix"
+        echo "3. 常用环境管理 ▶"
+        echo "4. WARP管理 ▶ 解锁ChatGPT Netflix"
         echo "------------------------"
         echo "0. 返回上一级菜单"
         echo "------------------------"
@@ -819,6 +821,513 @@ case $choice in
                 wget --no-check-certificate -O tcpx.sh https://raw.githubusercontent.com/ylx2016/Linux-NetSpeed/master/tcpx.sh
                 chmod +x tcpx.sh
                 ./tcpx.sh
+                ;;
+
+            15)
+                while true; do
+                    clear
+                    echo "▶ 常用环境管理"
+                    echo "------------------------"
+                    echo "1. 一键安装Python最新版"
+                    echo "2. 一键安装Nodejs最新版"
+                    echo "3. 一键安装Golang最新版"
+                    echo "4. 一键安装Java最新版"
+                    echo "------------------------"
+                    echo -e "5. 一键卸载Python"
+                    echo -e "6. 一键卸载Nodejs"
+                    echo -e "7. 一键卸载Golang"
+                    echo -e "8. 一键卸载Java"
+                    echo "------------------------"
+                    echo -e "${skyblue}0. 返回主菜单"
+                    echo "------------------------"
+                    read -p $'\033[1;91m请输入你的选择: \033[0m' sub_choice
+
+                    case $sub_choice in
+                        1)
+                         clear
+                            # 系统检测
+                            OS=$(cat /etc/os-release | grep -o -E "Debian|Ubuntu|CentOS" | head -n 1)
+
+                            if [[ $OS == "Debian" || $OS == "Ubuntu" || $OS == "CentOS" || $OS == "Alpine" ]]; then
+                                echo -e "检测到你的系统是 ${OS}"
+                            else
+                                echo -e "很抱歉，你的系统不受支持！"
+                                exit 1
+                            fi
+
+                            # 检测安装Python3的版本
+                            VERSION=$(python3 -V 2>&1 | awk '{print $2}')
+
+                            # 获取最新Python3版本
+                            PY_VERSION=$(curl -s https://www.python.org/ | grep "downloads/release" | grep -o 'Python [0-9.]*' | grep -o '[0-9.]*')
+
+                            # 卸载Python3旧版本
+                            if [[ $VERSION == "3"* ]]; then
+                                echo -e "你的Python3版本是${VERSION}，最新版本是${PY_VERSION}"
+                                read -p $'\033[1;91m是否确认升级最新版Python3？默认不升级 [y/N]: \033[0m' confirm
+                                if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
+                                    if [[ $OS == "CentOS" ]]; then
+                                        echo ""
+                                        rm-rf /usr/local/python3* >/dev/null 2>&1
+                                    else
+                                        apt --purge remove python3 python3-pip -y
+                                        rm-rf /usr/local/python3*
+                                    fi
+                                else
+                                    echo -e "${yellow}已取消升级Python3"
+                                    exit 1
+                                fi
+                            else
+                                echo -e "检测到没有安装Python3。"
+                                read -p "是否确认安装最新版Python3？默认安装 [Y/n]: "confirm
+                                if [ "$confirm" == "n" ] || [ "$confirm" == "N" ]; then
+                                    echo -e "开始安装最新版Python3..."
+                                else
+                                    echo -e "已取消安装Python3"
+                                    exit 1
+                                fi
+                            fi
+
+                            # 安装相关依赖
+                            if [[ $OS == "CentOS" ]]; then
+                                yum update
+                                yum groupinstall -y "development tools"
+                                yum install wget openssl-devel bzip2-devel libffi-devel zlib-devel -y
+                            else
+                                apt update
+                                apt install wget build-essential libreadline-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev libffi-dev zlib1g-dev -y
+                            fi
+
+                            # 安装python3
+                            cd /root/
+                            wget https://www.python.org/ftp/python/${PY_VERSION}/Python-"$PY_VERSION".tgz
+                            tar -zxf Python-${PY_VERSION}.tgz
+                            cd Python-${PY_VERSION}
+                            ./configure --prefix=/usr/local/python3
+                            make -j $(nproc)
+                            make install
+                            if [ $? -eq 0 ];then
+                                rm -f /usr/local/bin/python3*
+                                rm -f /usr/local/bin/pip3*
+                                ln -sf /usr/local/python3/bin/python3 /usr/bin/python3
+                                ln -sf /usr/local/python3/bin/pip3 /usr/bin/pip3
+                                clear
+                                echo -e "Python3安装成功，版本为: ${PY_VERSION}"
+                                sleep 2
+                            else
+                                clear
+                                echo -e "Python3安装失败！"
+                                exit 1
+                            fi
+                            cd /root/ && rm -rf Python-${PY_VERSION}.tgz && rm -rf Python-${PY_VERSION}
+                        ;;
+
+                        2)
+                         clear
+                            # 检查系统中是否存在nodejs
+                            if command -v node &>/dev/null; then
+                                # 获取当前nodejs版本
+                                current_version=$(node --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+
+                                # 获取最新nodejs版本
+                                install jq
+                                json_data=$(curl -s https://nodejs.org/dist/index.json)
+                                latest_version=$(echo "$json_data" | jq -r '.[] | select(.lts != null) | .version' | head -n 1 | sed 's/^v//')
+                                # echo "$latest_version"
+                                if [ "$current_version" = "$latest_version" ]; then
+                                    echo -e "当前版本$current_version已经是最新版$latest_version，无需更新！"
+                                    sleep 2
+                                    main_menu
+                                else
+                                    # 如果不是最新版本
+                                    echo -e "你的nodejs版本是${current_version}，最新版本是${purple}${latest_version}"
+                                    read -p $'\033[1;91m是否卸载旧版nodejs并安装最新版？[y/n]: \033[0m' confirm
+                                    if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
+
+                                        # 卸载旧版
+                                        remove nodejs
+                                        sleep 1
+
+                                        # 安装最新版本的nodjs
+                                        curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && install nodejs
+
+                                        if [ $? -eq 0 ]; then
+
+                                            echo -e "nodejs安装成功，版本：${purple}${latest_version}"
+                                            sleep 2
+                                        else
+                                            echo -e "nodejs安装失败，尝试为你再次安装"
+
+                                            curl -fsSL https://rpm.nodesource.com/setup_21.x | sudo bash - && install nodejs
+                                            sleep 2
+                                        fi
+                                    else
+                                        main_menu
+                                    fi
+                                fi
+
+                            else
+                                echo -e "系统中未安装nodejs，正在安装最新版nodejs..."
+
+
+
+                                # 安装最新版本的nodejs
+                                curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && install nodejs
+
+                                if [ $? -eq 0 ]; then
+
+                                    echo -e "nodejs安装成功!"
+                                    break_end
+                                else
+                                    echo -e "nodejs安装失败，尝试为你再次安装"
+
+                                    curl -fsSL https://rpm.nodesource.com/setup_21.x | sudo bash - && install nodejs
+                                    break_end
+                                fi
+
+                            fi
+
+                        ;;
+
+                        3)
+                        clear
+                            # 获取最新版Go的版本
+                            html=$(curl -s https://go.dev/dl/)
+                            latest_version=$(echo "$html" | grep -oP 'go[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
+
+                            # 根据系统架构选择不同的下载链接
+                            architecture=$(uname -m)
+                            case "$architecture" in
+                                x86_64|amd64)
+                                    latest_version_url="https://golang.org/dl/${latest_version}.linux-amd64.tar.gz"
+                                    ;;
+                                x86)
+                                    latest_version_url="https://golang.org/dl/${latest_version}.linux-386.tar.gz"
+                                    ;;
+                                arm64|aarch64)
+                                    latest_version_url="https://golang.org/dl/${latest_version}.linux-arm64.tar.gz"
+                                    ;;
+                                *)
+                                    echo -e "暂不支持的系统架构：$architecture"
+                                    sleep 2
+                                    main_menu
+                                    ;;
+                            esac
+
+                            # 检查是否已安装Go
+                            if command -v go &> /dev/null; then
+                                # 获取当前已安装的Go版本
+                                installed_version=$(go version | grep -oE 'go[0-9]+\.[0-9]+\.[0-9]+')
+                                echo -e "当前已安装的Go版本：${red}$installed_version"
+
+                                # 比较已安装版本与最新版本
+                                if [ "$installed_version" = "$latest_version" ]; then
+                                    echo -e "当前Go已经是最新版本，无需更新。"
+                                    main_menu
+
+                                elif [ "$(printf "$installed_version\n$latest_version" | sort -V | head -n 1)" != "$installed_version" ]; then
+                                    echo -e "发现新版本：$latest_version。"
+                                    read -p $'\033[1;91m需要卸载当前版本 $installed_version 并安装新版本 $latest_version 吗 [y/n]: \033[0m' confirm
+
+                                    if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
+                                        echo "卸载旧版Go：$installed_version"
+                                        sudo rm -rf /usr/local/go
+
+                                    else
+                                        echo -e "退出更新。"
+                                        sleep 2
+                                        break_end
+                                    fi
+                                fi
+                            else
+                                echo -e "系统中未安装Go，正在为你安装最新版Go..."
+                            fi
+                          # 下载并安装最新版Go
+                          wget -O go_latest.tar.gz "$latest_version_url"
+                          sudo tar -C /usr/local -xzf go_latest.tar.gz
+
+                          # 设置环境变量
+                          echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+                          echo 'export GOPATH=$HOME/go' >> ~/.bashrc
+                          echo 'export PATH=$PATH:$GOPATH/bin' >> ~/.bashrc
+
+                          export PATH=$PATH:/usr/local/go/bin
+                          rm go_latest.tar.gz
+                          echo -e "GO安装完成，当前Go版本：$(go version | grep -oE 'go[0-9]+\.[0-9]+\.[0-9]+' | cut -c 3-)"
+                          read -p $'\033[1;91m重启服务器配置才可生效，需要立即重启吗 [y/n]: \033[0m' confirm
+
+                          if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
+                            sleep 1
+                            reboot
+                          else
+                            main_menu
+                          fi
+                          sleep 5
+                        ;;
+
+                        4)
+                          clear
+                            latest_version="17.0.9"
+                            if command -v java &>/dev/null; then
+                                installed_version=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
+                                echo -e "当前Java版本是${installed_version},最新版本是${latest_version}"
+
+                                if [ "$installed_version" == "$latest_version" ]; then
+                                    echo -e "当前已安装Java最新版：${latest_version},无需更新"
+                                    sleep 2
+                                    main_menu
+                                else
+                                    echo -e "${red}"
+                                    read -p "是否卸载旧版java并安装最新版？[y/n]: " confirm
+                                    if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
+                                        # 卸载旧版java
+                                        remove java
+                                        break_end
+                                        # 安装java
+                                        install_java() {
+                                            local install_status=0
+
+                                            if command -v apt &>/dev/null; then
+                                                sudo apt install -y openjdk-17-jdk
+                                            elif command -v yum &>/dev/null; then
+                                                sudo yum install -y java
+                                            elif command -v dnf &>/dev/null; then
+                                                sudo dnf install -y java
+                                            elif command -v apk &>/dev/null; then
+                                                sudo apk add openjdk17
+                                            else
+                                                echo -e "暂不支持你的系统！"
+                                                exit 1
+                                            fi
+
+                                            # 检查是否安装成功
+                                            if [ $install_status -eq 0 ]; then
+                                                echo -e "Java安装成功，版本：${purple}${latest_version}"
+                                                break_end
+                                            else
+                                                echo -e "Java安装失败，请更新系统后重试！"
+                                                break_end
+                                            fi
+                                        }
+                                        install_java
+
+                                    else
+                                        main_menu
+
+                                    fi
+                                fi
+
+                            else
+                                echo -e "系统中未安装Java，正在为你安装..."
+
+                                install_java() {
+                                    local install_status=0
+
+                                    if command -v apt &>/dev/null; then
+                                        sudo apt update -y && sudo apt install -y openjdk-17-jdk
+                                    elif command -v yum &>/dev/null; then
+                                        sudo yum install -y java
+                                    elif command -v dnf &>/dev/null; then
+                                        sudo dnf install -y java
+                                    elif command -v apk &>/dev/null; then
+                                        sudo apk add openjdk17
+                                    else
+                                        echo -e "暂不支持你的系统！"
+                                        exit 1
+                                    fi
+
+                                    install_status=$?
+
+                                    if [ $install_status -eq 0 ]; then
+                                        echo -e "Java安装成功。"
+                                        java -version
+                                        sleep 2
+                                    else
+                                        echo -e "Java安装失败，请检查网络连接或更新系统后重试！"
+                                        return 1
+                                    fi
+
+                                    return 0
+                                }
+                                install_java
+
+                            fi
+                        ;;
+
+                        5)
+                         clear
+                            if command -v python3 &>/dev/null; then
+                                # 获取当前安装的python版本
+                                current_version=$(python3 --version 2>&1 | awk '{print $2}')
+
+                                echo -e "${yellow}当前已安装python${red}${current_version}"
+
+                                read -p $'\033[1;91m确定卸载python？[y/n]: \033[0m' confirm
+                                if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
+
+
+                                    # 卸载python3
+                                    remove python3
+
+                                    # 清理缓存配置文件
+                                    rm -rf /usr/bin/pip3
+                                    rm -rf /usr/bin/python3
+                                    rm -rf /usr/share/python3
+                                    rm -rf /usr/local/python3
+                                    rm -rf /usr/share/man/man1/python3.1.gz
+                                    rm -rf /usr/local/bin/python
+                                    rm -rf /usr/local/lib/python*
+                                    rm -rf /usr/local/bin/python*
+
+                                    echo -e "python已卸载"
+                                    break_end
+                                else
+                                    main_menu
+                                fi
+                            else
+                                echo -e "系统中未安装python，无需卸载"
+                                sleep 2
+                            fi
+                        ;;
+
+                        6)
+                         clear
+                            if command -v node &>/dev/null; then
+                                # 获取当前安装的nodjs版本
+                                current_version=$(node --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+
+                                echo -e "当前已安装nodejs$current_version"
+
+                                read -p $'\033[1;91m确定卸载nodejs？[y/n]: \033[0m' confirm
+                                if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
+
+
+                                    # 卸载
+                                    remove nodejs npm
+
+                                    # 清理缓存配置文件
+                                    rm -rf ~/.npm
+                                    rm -rf ~/.nvm
+                                    rm -rf /usr/local/bin/node
+                                    rm -rf /usr/local/lib/node_modules
+
+                                    echo -e "nodejs已卸载"
+                                    break_end
+                                else
+                                    main_menu
+                                fi
+                            else
+                                echo -e "系统中未安装nodejs，无需卸载"
+                                sleep 2
+                            fi
+                        ;;
+
+                        7)
+                         clear
+                            if command -v go &> /dev/null; then
+                                # 获取当前安装的Go版本
+                                installed_version=$(go version | grep -oE 'go[0-9]+\.[0-9]+\.[0-9]+' | cut -c 3-)
+
+                                echo -e "当前已安装Go：$installed_version"
+
+                                read -p $'\033[1;91m确定卸载Go？[y/n]: \033[0m' confirm
+                                if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
+
+                                    rm -rf /usr/local/go
+
+                                    # 清理环境变量
+                                    export PATH=$PATH:/usr/local/go/bin
+                                    export GOPATH=$HOME/go
+                                    export PATH=$PATH:$GOPATH/bin
+                                    source ~/.bashrc
+
+                                    echo -e "Go已卸载"
+                                    sleep 1
+                                    echo -e ""
+                                    read -p "重启服务器配置才可生效，需要立即重启吗 [y/n]: " confirm
+
+                                    if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
+                                        sleep 1
+                                        reboot
+                                    else
+                                        main_menu
+                                    fi
+
+                                else
+                                    main_menu
+                                fi
+                            else
+                                echo -e "系统中未安装Go，无需卸载"
+                                sleep 2
+                            fi
+                        ;;
+
+                        8)
+                         clear
+                            if command -v java &> /dev/null; then
+                                # 获取当前安装的Java版本
+                                installed_version=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
+                                echo -e "你的Java版本：${installed_version}"
+
+                                read -p $'\033[1;91m确定卸载Java？[y/n]: \033[0m' confirm
+                                if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
+
+                                    remove_java() {
+                                        local remove_status=0
+
+                                        if command -v apt &>/dev/null; then
+                                            sudo apt remove -y openjdk-17-jdk && sudo apt autoremove -y openjdk-17-jdk
+                                        elif command -v yum &>/dev/null; then
+                                            sudo yum remove -y java && sudo yum autoremove -y java
+                                        elif command -v dnf &>/dev/null; then
+                                            sudo dnf remove -y java && sudo dnf autoremove -y java
+                                        elif command -v apk &>/dev/null; then
+                                            sudo apk del openjdk17
+                                        else
+                                            echo -e "暂不支持你的系统！"
+                                            exit 1
+                                        fi
+                                        # 检查是否安装成功，如果没有成功则重新
+                                        if [ $remove_status -eq 0 ]; then
+                                            echo -e "Java卸载成功！"
+                                        else
+                                            echo -e "Java卸载失败，请重试!"
+                                            break_end
+                                        fi
+                                    }
+                                    remove_java
+
+                                    rm -rf /usr/lib/jvm/java-*
+                                    rm -rf /usr/local/java
+                                    rm -rf /opt/java
+                                    echo -e "${red}"
+                                    read -p $'\033[1;91m重启服务器配置才可生效，需要立即重启吗 [y/n]: \033[0m' confirm
+
+                                    if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
+                                        sleep 1
+                                        reboot
+                                    else
+                                        main_menu
+                                    fi
+
+                                else
+                                    main_menu
+                                fi
+                            else
+                                echo -e "系统中未安装Java，无需卸载"
+                                sleep 2
+                            fi
+                        ;;
+
+                        0)
+                            huaniangzi
+                        ;;
+
+                        *)
+                        echo -e "无效的输入!"
+                        ;;
+                    esac
+                done
                 ;;
 
             3)
@@ -3554,13 +4063,16 @@ case $choice in
         echo "7.Netflix檢測"
         echo -e "\033[91m▼ 系统工具 ▼\033[0m"
         echo "------------------------"
-        echo "20.LXC開小鷄(Ubuntu/Debian)       21.安裝極光面板 "
+        echo "20.安裝極光面板 "
         echo "------------------------"
         echo -e "\033[91m▼ 一条龙服务 ▼\033[0m"
-        echo "41.安裝X-UI                       42.安裝XrayR"
-        echo "43.安裝ArgoX                      44.安裝3X-UI"
-        echo "45.搭建TG代理                     46.搭建V2ray-Agent"
-        echo "47.Shadowsocks Go版               48.Reality 一键脚本"
+        echo "40.安裝X-UI                      41.安裝3X-UI"
+        echo "42.搭建TG代理                     43.Shadowsocks Go版"
+        echo "44.F佬ArgoX                      5.F佬sing-box"
+        echo "46.suoha一键argo                 57.M佬Juicity"
+        echo "48.小绵羊reality+vmess+hy2       49.V2ray-agent八合一"
+        echo "50.OpenVPN                      51.M佬Hysteria2"
+        echo "52.老王nodejs-argo节点+哪吒+订阅"
         echo "------------------------"
         echo "0. 返回主菜单"
         echo "------------------------"
@@ -3605,34 +4117,17 @@ case $choice in
               ;;
             20)
               clear
-              if [ "$OS_TYPE" = "debian" ]; then
-                  echo "This is a Debian system"
-                  wget -N --no-check-certificate https://raw.githubusercontent.com/MXCCO/lxdpro/main/lxdpro.sh && bash lxdpro.sh
-              else
-                  echo "脚本僅支持：Ubuntu/Debian"
-              fi
-              ;;
-            21)
-              clear
               bash <(curl -fsSL https://raw.githubusercontent.com/Aurora-Admin-Panel/deploy/main/install.sh)
               ;;
-            41)
+            40)
               clear
               bash <(curl -Ls https://raw.githubusercontent.com/vaxilu/x-ui/master/install.sh)
               ;;
-            42)
-              clear
-              bash <(curl -Ls https://raw.githubusercontent.com/XrayR-project/XrayR-release/master/install.sh)
-              ;;
-            43)
-              clear
-              bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/argox/main/argox.sh)
-              ;;
-            44)
+            41)
               clear
               bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
               ;;
-            45)
+            42)
               clear
               ## 新建目录
               echo "自動創建TG代理目錄：/home/mtproxy"
@@ -3641,18 +4136,136 @@ case $choice in
               ## 开始安装
               curl -s -o mtproxy.sh https://raw.githubusercontent.com/sunpma/mtp/master/mtproxy.sh && chmod +x mtproxy.sh && bash mtproxy.sh
               ;;
-            46)
-              clear
-              wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 700 /root/install.sh && /root/install.sh
-              ;;
-            47)
+            43)
               clear
               wget -N --no-check-certificate https://raw.githubusercontent.com/ToyoDAdoubiBackup/doubi/master/ss-go.sh && chmod +x ss-go.sh && bash ss-go.sh
               ;;
+            44)
+              clear
+              bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/argox/main/argox.sh)
+              ;;
+            45)
+              clear
+              bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sing-box/main/sing-box.sh)
+              ;;
+            46)
+              clear
+              curl https://www.baipiao.eu.org/suoha.sh -o suoha.sh && bash suoha.sh
+              ;;
+            47)
+              clear
+              wget -N https://raw.githubusercontent.com/Misaka-blog/juicity-script/main/juicity.sh && bash juicity.sh
+              ;;
             48)
               clear
-              wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 700 /root/install.sh && /root/install.sh
+              bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/beta.sh)
               ;;
+            49)
+              clear
+              wget -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 777 install.sh && bash install.sh
+              ;;
+            50)
+              clear
+              wget https://git.io/vpn -O openvpn-install.sh && bash openvpn-install.sh
+              ;;
+            51)
+              clear
+              wget -N --no-check-certificate https://raw.githubusercontent.com/Misaka-blog/hysteria-install/main/hy2/hysteria.sh && bash hysteria.sh
+              ;;
+            52)
+              clear
+                # 检查系统中是否安装screen
+                if command -v screen &>/dev/null; then
+                    echo -e "Screen已经安装"
+                else
+                    # 如果系统中未安装screen，则根据对应系统安装
+                    install screen
+                fi
+
+                # 检查系统中是否存在nodejs
+                if command -v node &>/dev/null; then
+                    echo -e "Nodejs已经安装"
+
+                else
+                    echo -e "系统中未安装nodejs，正在安装nodejs..."
+
+                    # 根据对应系统安装最新版本的nodejs
+                    curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo bash - && install nodejs
+
+                    clear
+                    if [ $? -eq 0 ]; then
+                        echo -e "nodejs安装成功!"
+                    else
+                        echo -e "nodejs安装失败，将为你重新安装"
+                        curl -fsSL https://rpm.nodesource.com/setup_21.x | sudo bash - && install nodejs
+                    fi
+                fi
+                # 提示输入订阅端口
+                echo -e "注意：NAT小鸡需输入指定端口范围内的端口，否则无法使用订阅功能"
+                while true; do
+                    read -p $'\033[1;35m请输入节点订阅端口: \033[0m' port
+
+                    if [[ $port =~ ^[0-9]+$ ]]; then
+                        # 检查输入是否为正整数
+                        if [ "$port" -gt 0 ] 2>/dev/null; then
+                            # 输入有效，跳出循环
+                            break
+                        else
+                            echo -e "端口输入错误，端口应为数字且为正整数"
+                        fi
+                    else
+                        echo -e "端口输入错误，端口应为数字且为正整数"
+                    fi
+                done
+
+                echo -e "正在开放端口中..."
+                    open_port() {
+                        if command -v iptables &> /dev/null; then
+                            iptables -A INPUT -p tcp --dport $port -j ACCEPT
+                            echo -e "${port}端口已开放"
+                        else
+                            echo "iptables未安装，尝试安装..."
+
+                            install iptables
+
+                            if [ $? -eq 0 ]; then
+                                clear
+                                echo -e "iptables安装成功"
+                                iptables -A INPUT -p tcp --dport $port -j ACCEPT
+                                echo -e "${port}端口已开放"
+                            else
+                                echo -e "iptables安装失败，尝试关闭防火墙"
+                                sudo systemctl stop ufw.service && sudo systemctl disable ufw.service && (sudo ufw status | grep -q 'Status: inactive' && echo "防火墙已关闭成功" || echo "防火墙已关闭失败，请手动关闭")
+                            fi
+                        fi
+                    }
+                    open_port
+
+                ipv4=$(curl -s ipv4.ip.sb)
+
+                echo -e "你的节点订阅链接为：http://$ipv4:$port/sub"
+
+                # 判断是否要安装哪吒
+                read -p $'\033[1;33m是否需要一起安装哪吒探针？(y/n): \033[0m' nezha
+
+                if [ "$nezha" == "y" ] || [ "$nezha" == "Y" ]; then
+
+                    # 提示输入哪吒域名
+                    read -p $'\033[1;35m请输入哪吒客户端的域名: \033[0m' nezha_server
+
+                    # 提示输入哪吒端口
+                    read -p $'\033[1;35m请输入哪吒端口: \033[0m' nezha_port
+
+                    # 提示输入哪吒密钥
+                    read -p $'\033[1;35m请输入哪吒客户端密钥: \033[0m' nezha_key
+
+                    curl -O https://raw.githubusercontent.com/eooce/ssh_tool/main/index.js && curl -O https://raw.githubusercontent.com/eooce/nodejs-argo/main/package.json && npm install && chmod +x index.js && PORT=$port NEZHA_SERVER=$nezha_server NEZHA_PORT=$nezha_port NEZHA_KEY=$nezha_key CFIP=www.adfilt.xyz CFPORT=8889 screen node index.js
+
+                else
+
+                    curl -O https://raw.githubusercontent.com/eooce/ssh_tool/main/index.js && curl -O https://raw.githubusercontent.com/eooce/nodejs-argo/main/package.json && npm install && chmod +x index.js && PORT=$port CFIP=www.adfilt.xyz CFPORT=8889 screen node index.js
+                fi
+                ;;
             0)
                 huaniangzi
                 ;;
@@ -3664,7 +4277,233 @@ case $choice in
       done
       ;;
 
-  10)
+  16)
+    while true; do
+        clear
+        echo "▶ 开设NAT小鸡"
+        echo "------------------------"
+        ech "开设kvm小鸡分两步，请依次执行，如果第一步失败，提示服务器不符合要求，请选择LXC或Docker方式开设小鸡"
+        echo "------------------------"
+        echo "1.开设KVM小鸡(第1步)"
+        echo "2.开设KVM小鸡(第2步)"
+        echo "3.删除所有KVM小鸡"
+        echo "------------------------"
+        echo "4.开设LXC小鸡"
+        echo "5.删除所有LXC小鸡"
+        echo "------------------------"
+        echo "6.开设Docker小鸡"
+        echo "7.删除所有Docker容器"
+        echo "------------------------"
+        echo "0.返回上一级菜单"
+        echo "------------------------"
+        while :; do
+            echo
+            read -p $'\033[1;91m请输入你的选择: \033[0m' sub_choice
+            if ! [[ "$sub_choice" =~ ^[0-9]+$ ]]; then
+                echo -e "输入错误, 请输入0~7的数字!"
+                continue
+            fi
+            if [ $sub_choice -ge 0 -a $sub_choice -le 7 ]; then
+                break
+            else
+                echo -e "输入错误, 请输入0~7的数字!"
+            fi
+        done
+        case $sub_choice in
+            1)
+                clear
+                echo -e "开始进行环境检测..."
+                install wget
+                output=$(bash <(wget -qO- --no-check-certificate https://raw.githubusercontent.com/spiritLHLS/pve/main/scripts/check_kernal.sh))
+
+                if echo "$output" | grep -q "CPU不支持硬件虚拟化，无法嵌套虚拟化KVM服务器，但可以开LXC服务器(CT)"; then
+
+                    echo -e "你的服务器不支持开设KVM小鸡，正在退出..."
+                    rm -rf /root/check_kernal.sh
+                    sleep 2
+                    main_menu
+
+                elif echo "$output" | grep -q "本机符合要求：可以使用PVE虚拟化KVM服务器，并可以在开出来的KVM服务器选项中开启KVM硬件虚拟化"; then
+                    echo -e "本机符合开设kvm小鸡的要求"
+                    read -p $'\033[1;96m确定要开设kvm小鸡吗？ [y/n]: \033[0m' confirm
+                    sleep 1
+                    if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
+                        echo ""
+                        echo ""
+                        echo ""
+                        echo -e "开设虚拟内存(Swap),请先输入2移除原来的配置，会自动重新执行一次，再输入1添加虚拟内存"
+                        curl -L https://raw.githubusercontent.com/spiritLHLS/addswap/main/addswap.sh -o addswap.sh && chmod +x addswap.sh && bash addswap.sh
+                        sleep 1
+                        curl -L https://raw.githubusercontent.com/spiritLHLS/addswap/main/addswap.sh -o addswap.sh && chmod +x addswap.sh && bash addswap.sh
+                        echo -e "开始进行PVE主体安装"
+                        curl -L https://raw.githubusercontent.com/spiritLHLS/pve/main/scripts/install_pve.sh -o install_pve.sh && chmod +x install_pve.sh && bash install_pve.sh
+                        sleep 1
+                        echo -e "请等待20秒后重启后运行第2步"
+                        read -p $'\033[1;96m需要立即重启吗？ [y/n]: \033[0m' confirm
+                        if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
+                            sleep 1
+                            reboot
+                        else
+                            main_menu
+                        fi
+                    else
+                        main_menu
+                    fi
+
+                else
+                    echo -e "暂不能判定你的服务器状态，无法开设kvm小鸡，可以考虑使用LXC模式开小鸡，正在退出..."
+                    rm -rf /root/check_kernal.sh
+                    sleep 2
+                    main_menu
+                fi
+                ;;
+
+            2)
+                clear
+
+                read -p $'\033[1;96m确认你已执行完第1步，是否继续 [y/n]: \033[0m' confirm
+                if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
+
+                    sleep 1
+                    curl -L https://raw.githubusercontent.com/spiritLHLS/pve/main/scripts/install_pve.sh -o install_pve.sh && chmod +x install_pve.sh && bash install_pve.sh
+                    sleep 1
+                    echo -e "开始配置环境..."
+                    bash <(wget -qO- --no-check-certificate https://raw.githubusercontent.com/spiritLHLS/pve/main/scripts/build_backend.sh)
+                    sleep 1
+                    echo -e "开始自动配置宿主机的网关..."
+                    bash <(wget -qO- --no-check-certificate https://raw.githubusercontent.com/spiritLHLS/pve/main/scripts/build_nat_network.sh)
+                    sleep 1
+                    echo -e "KVM虚拟化开设出的虚拟机，默认生成的用户名不是root，请确保你已在root下运行及修改root密码"
+
+                    while true; do
+                        read -p $'\033[1;96m你需要单独开设kvm小鸡还是批量开设kvm小鸡？(1：单独开设  2：批量开设) \033[0m' choose
+
+                        if [ "$choose" == "1" ]; then
+                            sleep 1
+                            curl -L https://raw.githubusercontent.com/spiritLHLS/pve/main/scripts/buildvm.sh -o buildvm.sh && chmod +x buildvm.sh
+                            sleep 2
+                            break_end
+                            break  # 跳出循环
+                        elif [ "$choose" == "2" ]; then
+                            sleep 1
+                            echo -e "注意: KVM开设出的NAT小鸡，默认生成的用户名不是root，默认的root密码是password,需要sudo -i手动切换为root"
+                            sleep 2
+                            curl -L https://raw.githubusercontent.com/spiritLHLS/pve/main/scripts/create_vm.sh -o create_vm.sh && chmod +x create_vm.sh && bash create_vm.sh
+                            sleep 2
+                            break_end
+                            break  # 跳出循环
+                        else
+                            echo -e "输入错误，请输入1或2"
+                        fi
+                    done
+                else
+                    break_end
+                fi
+                ;;
+
+            3)
+                clear
+                for vmid in $(qm list | awk '{if(NR>1) print $1}'); do qm stop $vmid; qm destroy $vmid; rm -rf /var/lib/vz/images/$vmid*; done
+                iptables -t nat -F
+                iptables -t filter -F
+                service networking restart
+                systemctl restart networking.service
+                systemctl restart ndpresponder.service
+                iptables-save | awk '{if($1=="COMMIT"){delete x}}$1=="-A"?!x[$0]++:1' | iptables-restore
+                iptables-save > /etc/iptables/rules.v4
+                rm -rf vmlog
+                rm -rf vm*
+                sleep 2
+                break_end
+                ;;
+
+            4)
+                clear
+                install wget
+                wget -N --no-check-certificate https://raw.githubusercontent.com/eooce/lxdpro/main/lxdpro.sh && chmod +x lxdpro.sh && bash lxdpro.sh
+
+                break_end
+
+                ;;
+
+            5)
+                clear
+                # 删除所有LXC容器
+                incus list -c n --format csv | xargs -I {} incus delete -f {}
+                # 删除无用日志
+                sudo apt-get autoremove
+                sudo apt-get clean
+                sudo find /var/log -type f -delete
+                sudo find /var/tmp -type f -delete
+                sudo find /tmp -type f -delete
+                sudo find /var/cache/apt/archives -type f -delete
+                # 删除原始配置脚本
+                rm -rf /usr/local/bin/ssh_sh.sh
+                rm -rf /usr/local/bin/config.sh
+                rm -rf /usr/local/bin/ssh_bash.sh
+                rm -rf /usr/local/bin/check-dns.sh
+                rm -rf /root/ssh_sh.sh
+                rm -rf /root/config.sh
+                rm -rf /root/ssh_bash.sh
+                rm -rf /root/buildone.sh
+                rm -rf /root/add_more.sh
+                rm -rf /root/build_ipv6_network.sh
+
+                sleep 2
+                break_end
+                ;;
+
+            6)
+                clear
+                echo -e "开设虚拟内存(Swap),请先输入2移除原来的，会重新执行一次，再输入1添加虚拟内存"
+                curl -L https://raw.githubusercontent.com/spiritLHLS/addswap/main/addswap.sh -o addswap.sh && chmod +x addswap.sh && bash addswap.sh
+                sleep 1
+                curl -L https://raw.githubusercontent.com/spiritLHLS/addswap/main/addswap.sh -o addswap.sh && chmod +x addswap.sh && bash addswap.sh
+                sleep 1
+                echo -e "开始安装docker配置环境"
+                curl -L https://raw.githubusercontent.com/spiritLHLS/docker/main/scripts/dockerinstall.sh -o dockerinstall.sh && chmod +x dockerinstall.sh && bash dockerinstall.sh
+                sleep 2
+
+                while true; do
+                    read -p $'\033[1;96m你需要单独开设Docker小鸡还是批量开设Docker小鸡？(1：单独开设  2：批量开设) \033[0m' choose
+
+                    if [ "$choose" == "1" ]; then
+                        sleep 1
+                        curl -L https://raw.githubusercontent.com/spiritLHLS/docker/main/scripts/onedocker.sh -o onedocker.sh && chmod +x onedocker.sh
+                        sleep 2
+                        break_end
+                        break  # 跳出循环
+                    elif [ "$choose" == "2" ]; then
+                        sleep 1
+                        curl -L https://raw.githubusercontent.com/spiritLHLS/docker/main/scripts/create_docker.sh -o create_docker.sh && chmod +x create_docker.sh && bash create_docker.sh
+                        sleep 2
+                        break_end
+                        break  # 跳出循环
+                    else
+                        echo -e "输入错误，请输入1或2"
+                    fi
+                done
+                ;;
+
+            7)
+                clear
+                docker ps -aq --format '{{.Names}}' | grep -E '^ndpresponder' | xargs -r docker rm -f
+                docker images -aq --format '{{.Repository}}:{{.Tag}}' | grep -E '^ndpresponder' | xargs -r docker rmi
+                rm -rf dclog
+                ls
+
+                sleep 2
+                break_end
+                ;;
+
+            0)
+                huaniangzi
+                ;;
+        esac
+    done
+    ;;
+
+  11)
   clear
     while true; do
       echo -e "\033[31m▶ 系统工具\033[0m"
@@ -3690,6 +4529,8 @@ case $choice in
       echo "18. 修改主机名"
       echo "19. 切换系统更新源"
       echo -e "20. 定时任务管理 \033[33mNEW\033[0m"
+      echo -e "21. ip端口扫描 \033[33mNEW\033[0m"
+      echo -e "22. 服务器资源限制 \033[33mNEW\033[0m"
       echo "------------------------"
       echo "99. 重启服务器"
       echo "------------------------"
@@ -4983,6 +5824,181 @@ EOF
               esac
           done
               ;;
+
+          21)
+
+          while true; do
+              clear
+              echo "ip端口扫描"
+              echo "------------------------"
+              echo "1. ipv4"
+              echo "2. ipv6"
+              echo "------------------------"
+              echo "0. 返回上一级选单"
+              echo "------------------------"
+              read -p $'\033[1;91m请输入你的选择: \033[0m' sub_choice
+
+              case $sub_choice in
+                  1)
+                      clear
+                      # 检查是否已安装 nmap
+                      if command -v nmap &> /dev/null; then
+                          # nmap 已安装
+                          echo -e "nmap已存在，无需安装"
+                          while true; do
+                              read -p "请输入你想要扫描的ipv4: " ip4
+                              if [[ $ip4 =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
+                                  break
+                              else
+                                  echo -e "无效的IPv4地址，请重新输入"
+                              fi
+                          done
+                          sleep 1
+                          echo -e "开始扫描${ip4}开放的端口，请稍等..."
+                          nmap -sS -p 1-65535 $ip4
+                          echo -e "${ip4}端口已扫描完"
+
+                      else
+                          # nmap 未安装，使用相应的包管理工具进行安装
+                          echo -e "}nmap不存在. 开始安装nmap..."
+                          install "nmap"
+                          sleep 1
+                          clear
+                          while true; do
+                              read -p "请输入你想要扫描的ipv4: " ip4
+                              if [[ $ip4 =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
+                                  break
+                              else
+                                  echo -e "无效的IPv4地址，请重新输入"
+                              fi
+                          done
+                          sleep 1
+                          echo -e "开始扫描${ip4}开放的端口，请稍等..."
+                          nmap -sS -p 1-65535 $ip4
+                          echo -e "${ip4}端口已扫描完"
+
+                      fi
+                          break_end
+
+                      ;;
+
+                  2)
+                      clear
+                      # 检查是否已安装 nmap
+                      if command -v nmap &> /dev/null; then
+                          # nmap 已安装
+                          echo -e "nmap已存在，无需安装"
+                          while true; do
+                              read -p "请输入你想要扫描的ipv6: " ip6
+                              if [[ $ip6 =~ ^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::([0-9a-fA-F]{1,4}:){0,5}[0-9a-fA-F]{1,4}$|^([0-9a-fA-F]{1,4}:){1,6}:$|^([0-9a-fA-F]{1,4}:){1,6}::([0-9a-fA-F]{1,4}:){0,4}[0-9a-fA-F]{1,4}$ ]]; then
+                                  break
+                              else
+                                  echo -e "无效的IPv6地址，请重新输入"
+                              fi
+                          done
+                          sleep 1
+                          echo -e "开始扫描${ip6}开放的端口，请稍等..."
+                          nmap -6 -sS -p 1-65535 $ip6
+                          echo -e "${ip6}端口已扫描完"
+
+                      else
+                          # nmap 未安装，使用相应的包管理工具进行安装
+                          echo -e "nmap不存在. 开始安装nmap..."
+                          install "nmap"
+                          sleep 1
+                          while true; do
+                              read -p "请输入你想要扫描的ipv6: " ip6
+                              if [[ $ip6 =~ ^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::([0-9a-fA-F]{1,4}:){0,5}[0-9a-fA-F]{1,4}$|^([0-9a-fA-F]{1,4}:){1,6}:$|^([0-9a-fA-F]{1,4}:){1,6}::([0-9a-fA-F]{1,4}:){0,4}[0-9a-fA-F]{1,4}$ ]]; then
+                                  break
+                              else
+                                  echo -e "无效的IPv6地址，请重新输入"
+                              fi
+                          done
+                          sleep 1
+                          echo -e "开始扫描${ip6}开放的端口，请稍等..."
+                          nmap -6 -sS -p 1-65535 $ip6
+                          echo -e "${ip6}端口已扫描完"
+
+                      fi
+                          break_end
+                      ;;
+                  0)
+                      break  # 跳出循环，退出菜单
+                  ;;
+
+                  *)
+                      break  # 跳出循环，退出菜单
+                  ;;
+              esac
+          done
+          ;;
+
+          22)
+            # 检查依赖包
+            check_packages() {
+                install net-tools bc sysstat
+            }
+            check_packages
+
+            while true; do
+                clear
+                echo -e "服务器资源控制"
+                echo "------------------------"
+                echo -e "当CPU或内存或流量达到设置的阈值将采取关机操作"
+                echo "------------------------"
+                echo "1. 一键限制CPU，当CPU达到99%自动关机"
+                echo "2. 一键限制内存，内存达到99%自动关机"
+                echo "3. 一键限制流量1T，流量达到1T自动关机"
+                echo "4. CPU99%、内存99%、流量5T统一限制"
+                echo "------------------------"
+                echo "0. 返回上一级选单"
+                echo "------------------------"
+                read -p $'\033[1;91m请输入你的选择: \033[0m' sub_choice
+
+                case $sub_choice in
+                    1)
+                        curl https://raw.githubusercontent.com/eooce/ssh_tool/main/check_cpu.sh -o check_cpu.sh && chmod +x check_cpu.sh && bash check_cpu.sh
+
+                        # 添加Cron任务
+                        (crontab -l 2>/dev/null; echo "*/10 * * * * /bin/bash /root/check_cpu.sh >> /root/check_cpu.log 2>&1") | crontab -
+                        echo -e "Cron任务已添加"
+                        break_end
+                    ;;
+                    2)
+                        curl https://raw.githubusercontent.com/eooce/ssh_tool/main/check_memory.sh -o check_memory.sh && chmod +x check_memory.sh && bash check_memory.sh
+
+                        # 添加Cron任务
+                        (crontab -l 2>/dev/null; echo "*/10 * * * * /bin/bash /root/check_memory.sh >> /root/check_cpu.log 2>&1") | crontab -
+                        echo -e "Cron任务已添加"
+                        break_end
+                    ;;
+                    3)
+                        curl https://raw.githubusercontent.com/eooce/ssh_tool/main/check_traffic.sh -o check_traffic.sh && chmod +x check_traffic.sh && bash check_traffic.sh
+
+                        # 添加Cron任务
+                        (crontab -l 2>/dev/null; echo "*/10 * * * * /bin/bash /root/check_traffic.sh >> /root/check_traffic.log 2>&1") | crontab -
+                        echo -e "Cron任务已添加"
+                        break_end
+                    ;;
+                    4)
+                        curl https://raw.githubusercontent.com/eooce/ssh_tool/main/check.sh -o check.sh && chmod +x check.sh && bash check.sh
+
+                        # 添加Cron任务
+                        (crontab -l 2>/dev/null; echo "*/10 * * * * /bin/bash /root/check.sh >> /root/check.log 2>&1") | crontab -
+                        echo -e "Cron任务已添加"
+                        break_end
+                    ;;
+
+                    0)
+                        break  # 跳出循环，退出菜单
+                    ;;
+
+                    *)
+                        break  # 跳出循环，退出菜单
+                    ;;
+                esac
+            done
+            ;;
 
           99)
               clear
