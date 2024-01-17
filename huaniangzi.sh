@@ -72,7 +72,7 @@ huaniangzi() {
 
 check_port() {
     # 定义要检测的端口
-    PORT=80
+    PORT=443
 
     # 检查端口占用情况
     result=$(ss -tulpn | grep ":$PORT")
@@ -154,8 +154,7 @@ install_ldnmp() {
           "docker exec nginx chmod -R 777 /var/www/html"
           "docker exec php chmod -R 777 /var/www/html"
           "docker exec php74 chmod -R 777 /var/www/html"
-        #   "docker restart mysql > /dev/null 2>&1"
-        #   "docker restart redis > /dev/null 2>&1"
+
           "docker restart php > /dev/null 2>&1"
           "docker restart php74 > /dev/null 2>&1"
           "docker restart nginx > /dev/null 2>&1"
@@ -277,7 +276,7 @@ nginx_status() {
 
 add_yuming() {
       ip_address
-      echo -e "先将域名解析到本机IP: \033[33m$ip_address  $ipv6_address\033[0m"
+      echo -e "先将域名解析到本机IP: \033[33m$ipv4_address  $ipv6_address\033[0m"
       read -p "请输入你解析的域名: " yuming
 }
 
@@ -294,10 +293,10 @@ add_db() {
 
 reverse_proxy() {
       ip_address
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/reverse-proxy.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/kejilion/nginx/main/reverse-proxy.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
-      sed -i "s/0.0.0.0/$ip_address/g" /home/web/conf.d/$yuming.conf
-      sed -i "s/0000/3099/g" /home/web/conf.d/$yuming.conf
+      sed -i "s/0.0.0.0/$ipv4_address/g" /home/web/conf.d/$yuming.conf
+      sed -i "s/0000/$duankou/g" /home/web/conf.d/$yuming.conf
       docker restart nginx
 }
 
@@ -316,7 +315,7 @@ if docker inspect "$docker_name" &>/dev/null; then
     clear
     echo "$docker_name 已安装，访问地址: "
     ip_address
-    echo "http:$ip_address:$docker_port"
+    echo "http:$ipv4_address:$docker_port"
     echo ""
     echo "应用操作"
     echo "------------------------"
@@ -331,8 +330,7 @@ if docker inspect "$docker_name" &>/dev/null; then
             clear
             docker rm -f "$docker_name"
             docker rmi -f "$docker_img"
-            # 安装 Docker（请确保有 install_docker 函数）
-            install_docker
+
             $docker_rum
             clear
             echo "$docker_name 已经安装完成"
@@ -340,7 +338,7 @@ if docker inspect "$docker_name" &>/dev/null; then
             # 获取外部 IP 地址
             ip_address
             echo "您可以使用以下地址访问:"
-            echo "http:$ip_address:$docker_port"
+            echo "http:$ipv4_address:$docker_port"
             $docker_use
             $docker_passwd
             ;;
@@ -379,7 +377,7 @@ else
             # 获取外部 IP 地址
             ip_address
             echo "您可以使用以下地址访问:"
-            echo "http:$ip_address:$docker_port"
+            echo "http:$ipv4_address:$docker_port"
             $docker_use
             $docker_passwd
             ;;
@@ -399,6 +397,12 @@ get_docker_port() {
     # 可以在这里加入对端口号的验证逻辑
 }
 
+cluster_python3() {
+    cd ~/cluster/
+    curl -sS -O https://raw.githubusercontent.com/huaniangzi/python-for-vps/main/cluster/$py_task
+    python3 ~/cluster/$py_task
+}
+
 #---------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------
 
@@ -410,7 +414,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.5.8 （支持Ubuntu，Debian，Centos系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.6.0 （支持Ubuntu，Debian，Centos系统）\033[0m"
 echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本-\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
@@ -423,7 +427,8 @@ echo -e "\033[33m7. LDNMP建站 ▶ \033[0m"
 echo "8. 常用面板工具 ▶ "
 echo "9. 外面的世界 ▶ "
 echo "10. 开设NAT小鸡 ▶ "
-echo "11. 系统工具 ▶ "
+echo -e "11. VPS集群控制 ▶ \033[36mBeta\033[0m"
+echo "12. 系统工具 ▶ "
 echo "------------------------"
 echo "00. 脚本更新"
 echo "0. 退出脚本"
@@ -537,7 +542,7 @@ case $choice in
     echo "------------------------"
     echo "网络拥堵算法: $congestion_algorithm $queue_algorithm"
     echo "------------------------"
-    echo "公网IPv4地址: $ip_address"
+    echo "公网IPv4地址: $ipv4_address"
     echo "公网IPv6地址: $ipv6_address"
     echo "------------------------"
     echo "地理位置: $country $city"
@@ -553,7 +558,7 @@ case $choice in
 
     # Update system on Debian-based systems
     if [ -f "/etc/debian_version" ]; then
-        apt update -y && apt full-upgrade -y
+        apt update -y && DEBIAN_FRONTEND=noninteractive apt full-upgrade -y
     fi
 
     # Update system on Red Hat-based systems
@@ -1834,6 +1839,7 @@ case $choice in
         1)
         clear
 
+        check_port
         nstall_dependency
         install_docker
         install_certbot
@@ -2360,444 +2366,435 @@ case $choice in
               ;;
 
         81)
-        clear
-
-        install_dependency
-        install_docker
-        install_certbot
-
-        cd /home && mkdir -p web/html web/mysql web/certs web/conf.d web/redis web/log/nginx && touch web/docker-compose.yml
-
-        wget -O /home/web/nginx.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/nginx10.conf
-        wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/default10.conf
-        default_server_ssl
-
-        docker rm -f nginx >/dev/null 2>&1
-        docker rmi nginx >/dev/null 2>&1
-        docker run -d --name nginx --restart always -p 80:80 -p 443:443 -v /home/web/nginx.conf:/etc/nginx/nginx.conf -v /home/web/conf.d:/etc/nginx/conf.d -v /home/web/certs:/etc/nginx/certs -v /home/web/html:/var/www/html -v /home/web/log/nginx:/var/log/nginx nginx
-
-        clear
-        nginx_version=$(docker exec nginx nginx -v 2>&1)
-        nginx_version=$(echo "$nginx_version" | grep -oP "nginx/\K[0-9]+\.[0-9]+\.[0-9]+")
-        echo "nginx已安装完成"
-        echo "当前版本: v$nginx_version"
-        echo ""
-          ;;
-
-        82)
-        clear
-        ip_address
-        add_yuming
-        read -p "请输入跳转域名: " reverseproxy
-
-        install_ssltls
-
-        wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/rewrite.conf
-        sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
-        sed -i "s/baidu.com/$reverseproxy/g" /home/web/conf.d/$yuming.conf
-
-        docker restart nginx
-
-        clear
-        echo "您的重定向网站做好了！"
-        echo "https://$yuming"
-        nginx_status
-
-          ;;
-
-        83)
-        clear
-        ip_address
-        add_yuming
-        read -p "请输入你的反代IP: " reverseproxy
-        read -p "请输入你的反代端口: " port
-
-        install_ssltls
-
-        wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/reverse-proxy.conf
-        sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
-        sed -i "s/0.0.0.0/$reverseproxy/g" /home/web/conf.d/$yuming.conf
-        sed -i "s/0000/$port/g" /home/web/conf.d/$yuming.conf
-
-        docker restart nginx
-
-        clear
-        echo "您的反向代理网站做好了！"
-        echo "https://$yuming"
-        nginx_status
-          ;;
-
-        84)
-        clear
-        # wordpress
-        external_ip=$(curl -s ipv4.ip.sb)
-        echo -e "先将域名解析到本机IP: \033[33m$ip_address\033[0m"
-        read -p "请输入你解析的域名: " yuming
-        install_ssltls
-
-        wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/html.conf
-        sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
-
-        cd /home/web/html
-        mkdir $yuming
-        cd $yuming
-
-        install lrzsz
-        clear
-        echo -e "目前只允许上传\033[33mindex.html\033[0m文件，请提前准备好，按任意键继续..."
-        read -n 1 -s -r -p ""
-        rz
-
-        docker exec nginx chmod -R 777 /var/www/html
-        docker restart nginx
-
-        clear
-        echo "您的静态网站搭建好了！"
-        echo "https://$yuming"
-        nginx_status
-          ;;
-
-      85)
-      while true; do
-          clear
-          echo "LDNMP环境"
-          echo "------------------------"
-          # 获取nginx版本
-          nginx_version=$(docker exec nginx nginx -v 2>&1)
-          nginx_version=$(echo "$nginx_version" | grep -oP "nginx/\K[0-9]+\.[0-9]+\.[0-9]+")
-          echo -n "nginx : v$nginx_version"
-          # 获取mysql版本
-          dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
-          mysql_version=$(docker exec mysql mysql -u root -p"$dbrootpasswd" -e "SELECT VERSION();" 2>/dev/null | tail -n 1)
-          echo -n "            mysql : v$mysql_version"
-          # 获取php版本
-          php_version=$(docker exec php php -v 2>/dev/null | grep -oP "PHP \K[0-9]+\.[0-9]+\.[0-9]+")
-          echo -n "            php : v$php_version"
-          # 获取redis版本
-          redis_version=$(docker exec redis redis-server -v 2>&1 | grep -oP "v=+\K[0-9]+\.[0-9]+")
-          echo "            redis : v$redis_version"
-          echo "------------------------"
-          echo ""
-
-
-          # ls -t /home/web/conf.d | sed 's/\.[^.]*$//'
-          echo "站点信息                      证书到期时间"
-          echo "------------------------"
-          for cert_file in /home/web/certs/*_cert.pem; do
-            domain=$(basename "$cert_file" | sed 's/_cert.pem//')
-            if [ -n "$domain" ]; then
-              expire_date=$(openssl x509 -noout -enddate -in "$cert_file" | awk -F'=' '{print $2}')
-              formatted_date=$(date -d "$expire_date" '+%Y-%m-%d')
-              printf "%-30s%s\n" "$domain" "$formatted_date"
-            fi
-          done
-
-          echo "------------------------"
-          echo ""
-          echo "数据库信息"
-          echo "------------------------"
-          dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
-          docker exec mysql mysql -u root -p"$dbrootpasswd" -e "SHOW DATABASES;" 2> /dev/null | grep -Ev "Database|information_schema|mysql|performance_schema|sys"
-
-          echo "------------------------"
-          echo ""
-          echo "站点目录"
-          echo "------------------------"
-          echo -e "数据 \e[37m/home/web/html\e[0m     证书 \e[37m/home/web/certs\e[0m     配置 \e[37m/home/web/conf.d\e[0m"
-          echo "------------------------"echo "------------------------"
-          echo ""
-          echo "操作"
-          echo "------------------------"
-          echo "1. 申请/更新域名证书               2. 更换站点域名"
-          echo -e "3. 清理站点缓存                    4. 查看站点分析报告 \033[33mNEW\033[0m"
-          echo "------------------------"
-          echo "7. 删除指定站点                    8. 删除指定数据库"
-          echo "------------------------"
-          echo "0. 返回上一级菜单"
-          echo "------------------------"
-          read -p "请输入你的选择: " sub_choice
-          case $sub_choice in
-              1)
-                  read -p "请输入你的域名: " yuming
-                  install_ssltls
-
-                  ;;
-
-              2)
-                  read -p "请输入旧域名: " oddyuming
-                  read -p "请输入新域名: " newyuming
-                  mv /home/web/conf.d/$oddyuming.conf /home/web/conf.d/$newyuming.conf
-                  sed -i "s/$oddyuming/$newyuming/g" /home/web/conf.d/$newyuming.conf
-                  mv /home/web/html/$oddyuming /home/web/html/$newyuming
-
-                  rm /home/web/certs/${oddyuming}_key.pem
-                  rm /home/web/certs/${oddyuming}_cert.pem
-                  install_ssltls
-
-                  ;;
-
-
-              3)
-                  docker exec -it nginx rm -rf /var/cache/nginx
-                  docker restart nginx
-                  ;;
-              4)
-                  if ! command -v goaccess &>/dev/null; then
-                      if command -v apt &>/dev/null; then
-                          apt update -y && apt install -y goaccess
-                      elif command -v yum &>/dev/null; then
-                          yum -y update && yum -y install goaccess
-                      else
-                          echo "未知的包管理器!"
-                          break
-                      fi
-                  fi
-                  goaccess --log-format=COMBINED /home/web/log/nginx/access.log
-
-                  ;;
-
-              7)
-                  read -p "请输入你的域名: " yuming
-                  rm -r /home/web/html/$yuming
-                  rm /home/web/conf.d/$yuming.conf
-                  rm /home/web/certs/${yuming}_key.pem
-                  rm /home/web/certs/${yuming}_cert.pem
-                  docker restart nginx
-                  ;;
-              8)
-                  read -p "请输入数据库名: " shujuku
-                  dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
-                  docker exec mysql mysql -u root -p"$dbrootpasswd" -e "DROP DATABASE $shujuku;" 2> /dev/null
-                  ;;
-              0)
-                  break  # 跳出循环，退出菜单
-                  ;;
-              *)
-                  break  # 跳出循环，退出菜单
-                  ;;
-          esac
-      done
-
-        ;;
-
-      86)
-        clear
-        cd /home/ && tar czvf web_$(date +"%Y%m%d%H%M%S").tar.gz web
-
-        while true; do
-          clear
-          read -p "要传送文件到远程服务器吗？(Y/N): " choice
-          case "$choice" in
-            [Yy])
-              read -p "请输入远端服务器IP:  " remote_ip
-              if [ -z "$remote_ip" ]; then
-                echo "错误: 请输入远端服务器IP。"
-                continue
-              fi
-              latest_tar=$(ls -t /home/*.tar.gz | head -1)
-              if [ -n "$latest_tar" ]; then
-                ssh-keygen -f "/root/.ssh/known_hosts" -R "$remote_ip"
-                sleep 2  # 添加等待时间
-                scp -o StrictHostKeyChecking=no "$latest_tar" "root@$remote_ip:/home/"
-                echo "文件已传送至远程服务器home目录。"
-              else
-                echo "未找到要传送的文件。"
-              fi
-              break
-              ;;
-            [Nn])
-              break
-              ;;
-            *)
-              echo "无效的选择，请输入 Y 或 N。"
-              ;;
-          esac
-        done
-        ;;
-
-      87)
-        clear
-        read -p "输入远程服务器IP: " useip
-        read -p "输入远程服务器密码: " usepasswd
-
-        wget -O ${useip}_beifen.sh https://raw.githubusercontent.com/huaniangzi/sh/main/beifen.sh > /dev/null 2>&1
-        chmod +x ${useip}_beifen.sh
-
-        sed -i "s/0.0.0.0/$useip/g" ${useip}_beifen.sh
-        sed -i "s/123456/$usepasswd/g" ${useip}_beifen.sh
-
-        echo "------------------------"
-        echo "1. 每周备份                 2. 每天备份"
-        read -p "请输入你的选择: " dingshi
-
-        case $dingshi in
-            1)
-                read -p "选择每周备份的星期几 (0-6，0代表星期日): " weekday
-                (crontab -l ; echo "0 0 * * $weekday ./${useip}_beifen.sh") | crontab - > /dev/null 2>&1
-                ;;
-            2)
-                read -p "选择每天备份的时间（小时，0-23）: " hour
-                (crontab -l ; echo "0 $hour * * * ./${useip}_beifen.sh") | crontab - > /dev/null 2>&1
-                ;;
-            *)
-                break  # 跳出
-                ;;
-        esac
-
-        install sshpass
-
-        ;;
-
-      88)
-        clear
-        cd /home/ && ls -t /home/*.tar.gz | head -1 | xargs -I {} tar -xzf {}
-        check_port
-        install_dependency
-        install_docker
-        install_certbot
-        install_ldnmp
-
-        ;;
-
-      89)
-        if [ -x "$(command -v fail2ban-client)" ] && [ -d "/etc/fail2ban" ]; then
-            while true; do
-                clear
-                echo "服务器防御程序已启动"
-                echo "------------------------"
-                echo "1. 开启SSH防暴力破解              2. 关闭SSH防暴力破解"
-                echo "3. 开启网站保护                   4. 关闭网站保护"
-                echo "------------------------"
-                echo "5. 查看SSH拦截记录                6. 查看网站拦截记录"
-                echo "7. 查看防御规则列表               8. 查看日志实时监控"
-                echo "------------------------"
-                echo "9. 卸载防御程序"
-                echo "------------------------"
-                echo "0. 退出"
-                echo "------------------------"
-                read -p "请输入你的选择: " sub_choice
-                case $sub_choice in
-                    1)
-                        sed -i 's/false/true/g' /etc/fail2ban/jail.d/sshd.local
-                        systemctl restart fail2ban
-                        sleep 1
-                        fail2ban-client status
-                        ;;
-                    2)
-                        sed -i 's/true/false/g' /etc/fail2ban/jail.d/sshd.local
-                        systemctl restart fail2ban
-                        sleep 1
-                        fail2ban-client status
-                        ;;
-                    3)
-                        sed -i 's/false/true/g' /etc/fail2ban/jail.d/nginx.local
-                        systemctl restart fail2ban
-                        sleep 1
-                        fail2ban-client status
-                        ;;
-                    4)
-                        sed -i 's/true/false/g' /etc/fail2ban/jail.d/nginx.local
-                        systemctl restart fail2ban
-                        sleep 1
-                        fail2ban-client status
-                        ;;
-                    5)
-                        echo "------------------------"
-                        fail2ban-client status sshd
-                        echo "------------------------"
-                        ;;
-                    6)
-                        echo "------------------------"
-                        fail2ban-client status nginx-bad-request
-                        echo "------------------------"
-                        fail2ban-client status nginx-botsearch
-                        echo "------------------------"
-                        fail2ban-client status nginx-http-auth
-                        echo "------------------------"
-                        fail2ban-client status nginx-limit-req
-                        echo "------------------------"
-                        fail2ban-client status php-url-fopen
-                        echo "------------------------"
-                        ;;
-
-                    7)
-                        fail2ban-client status
-                        ;;
-                    8)
-                        tail -f /var/log/fail2ban.log
-
-                        ;;
-                    9)
-                        remove fail2ban
-                      break
-                      ;;
-                    0)
-                        break
-                        ;;
-                    *)
-                        echo "无效的选择，请重新输入。"
-                        ;;
-                esac
-                break_end
-            done
-        else
             clear
-            # 安装Fail2ban
-            if [ -f /etc/debian_version ]; then
-                # Debian/Ubuntu系统
-                apt update -y
-                apt install -y fail2ban
-            elif [ -f /etc/redhat-release ]; then
-                # CentOS系统
-                yum update -y
-                yum install -y epel-release
-                yum install -y fail2ban
-            else
-                echo "不支持的操作系统类型"
-                exit 1
-            fi
 
-            # 启动Fail2ban
-            systemctl start fail2ban
+            install_dependency
+            install_docker
+            install_certbot
 
-            # 设置Fail2ban开机自启
-            systemctl enable fail2ban
-
-            # 配置Fail2ban
-            rm -rf /etc/fail2ban/jail.d/*
-            cd /etc/fail2ban/jail.d/
-            curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/sshd.local
-            systemctl restart fail2ban
-            docker rm -f nginx
+            cd /home && mkdir -p web/html web/mysql web/certs web/conf.d web/redis web/log/nginx && touch web/docker-compose.yml
 
             wget -O /home/web/nginx.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/nginx10.conf
             wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/default10.conf
             default_server_ssl
-            docker run -d --name nginx --restart always --network web_default -p 80:80 -p 443:443 -v /home/web/nginx.conf:/etc/nginx/nginx.conf -v /home/web/conf.d:/etc/nginx/conf.d -v /home/web/certs:/etc/nginx/certs -v /home/web/html:/var/www/html -v /home/web/log/nginx:/var/log/nginx nginx
-            docker exec -it nginx chmod -R 777 /var/www/html
 
-            # 获取宿主机当前时区
-            HOST_TIMEZONE=$(timedatectl show --property=Timezone --value)
+            docker rm -f nginx >/dev/null 2>&1
+            docker rmi nginx >/dev/null 2>&1
+            docker run -d --name nginx --restart always -p 80:80 -p 443:443 -v /home/web/nginx.conf:/etc/nginx/nginx.conf -v /home/web/conf.d:/etc/nginx/conf.d -v /home/web/certs:/etc/nginx/certs -v /home/web/html:/var/www/html -v /home/web/log/nginx:/var/log/nginx nginx
 
-            # 调整多个容器的时区
-            docker exec -it nginx ln -sf "/usr/share/zoneinfo/$HOST_TIMEZONE" /etc/localtime
-            docker exec -it php ln -sf "/usr/share/zoneinfo/$HOST_TIMEZONE" /etc/localtime
-            docker exec -it php74 ln -sf "/usr/share/zoneinfo/$HOST_TIMEZONE" /etc/localtime
-            docker exec -it mysql ln -sf "/usr/share/zoneinfo/$HOST_TIMEZONE" /etc/localtime
-            docker exec -it redis ln -sf "/usr/share/zoneinfo/$HOST_TIMEZONE" /etc/localtime
-            rm -rf /home/web/log/nginx/*
+            clear
+            nginx_version=$(docker exec nginx nginx -v 2>&1)
+            nginx_version=$(echo "$nginx_version" | grep -oP "nginx/\K[0-9]+\.[0-9]+\.[0-9]+")
+            echo "nginx已安装完成"
+            echo "当前版本: v$nginx_version"
+            echo ""
+              ;;
+
+        82)
+            clear
+            ip_address
+            add_yuming
+            read -p "请输入跳转域名: " reverseproxy
+
+            install_ssltls
+
+            wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/rewrite.conf
+            sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
+            sed -i "s/baidu.com/$reverseproxy/g" /home/web/conf.d/$yuming.conf
+
             docker restart nginx
 
-            curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/nginx.local
-            systemctl restart fail2ban
-            sleep 1
-            fail2ban-client status
-            echo "防御程序已开启"
-        fi
+            clear
+            echo "您的重定向网站做好了！"
+            echo "https://$yuming"
+            nginx_status
 
-          ;;
+              ;;
 
-      90)
+        83)
+            clear
+            ip_address
+            add_yuming
+            read -p "请输入你的反代IP: " reverseproxy
+            read -p "请输入你的反代端口: " port
+
+            install_ssltls
+
+            wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/reverse-proxy.conf
+            sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
+            sed -i "s/0.0.0.0/$reverseproxy/g" /home/web/conf.d/$yuming.conf
+            sed -i "s/0000/$port/g" /home/web/conf.d/$yuming.conf
+
+            docker restart nginx
+
+            clear
+            echo "您的反向代理网站做好了！"
+            echo "https://$yuming"
+            nginx_status
+              ;;
+
+        84)
+            clear
+            # wordpress
+            external_ip=$(curl -s ipv4.ip.sb)
+            echo -e "先将域名解析到本机IP: \033[33m$ip_address\033[0m"
+            read -p "请输入你解析的域名: " yuming
+            install_ssltls
+
+            wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/html.conf
+            sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
+
+            cd /home/web/html
+            mkdir $yuming
+            cd $yuming
+
+            install lrzsz
+            clear
+            echo -e "目前只允许上传\033[33mindex.html\033[0m文件，请提前准备好，按任意键继续..."
+            read -n 1 -s -r -p ""
+            rz -y
+
+            docker exec nginx chmod -R 777 /var/www/html
+            docker restart nginx
+
+            clear
+            echo "您的静态网站搭建好了！"
+            echo "https://$yuming"
+            nginx_status
+              ;;
+
+        85)
+            while true; do
+                clear
+                echo "LDNMP环境"
+                echo "------------------------"
+                # 获取nginx版本
+                nginx_version=$(docker exec nginx nginx -v 2>&1)
+                nginx_version=$(echo "$nginx_version" | grep -oP "nginx/\K[0-9]+\.[0-9]+\.[0-9]+")
+                echo -n "nginx : v$nginx_version"
+                # 获取mysql版本
+                dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
+                mysql_version=$(docker exec mysql mysql -u root -p"$dbrootpasswd" -e "SELECT VERSION();" 2>/dev/null | tail -n 1)
+                echo -n "            mysql : v$mysql_version"
+                # 获取php版本
+                php_version=$(docker exec php php -v 2>/dev/null | grep -oP "PHP \K[0-9]+\.[0-9]+\.[0-9]+")
+                echo -n "            php : v$php_version"
+                # 获取redis版本
+                redis_version=$(docker exec redis redis-server -v 2>&1 | grep -oP "v=+\K[0-9]+\.[0-9]+")
+                echo "            redis : v$redis_version"
+                echo "------------------------"
+                echo ""
+
+
+                # ls -t /home/web/conf.d | sed 's/\.[^.]*$//'
+                echo "站点信息                      证书到期时间"
+                echo "------------------------"
+                for cert_file in /home/web/certs/*_cert.pem; do
+                  domain=$(basename "$cert_file" | sed 's/_cert.pem//')
+                  if [ -n "$domain" ]; then
+                    expire_date=$(openssl x509 -noout -enddate -in "$cert_file" | awk -F'=' '{print $2}')
+                    formatted_date=$(date -d "$expire_date" '+%Y-%m-%d')
+                    printf "%-30s%s\n" "$domain" "$formatted_date"
+                  fi
+                done
+
+                echo "------------------------"
+                echo ""
+                echo "数据库信息"
+                echo "------------------------"
+                dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
+                docker exec mysql mysql -u root -p"$dbrootpasswd" -e "SHOW DATABASES;" 2> /dev/null | grep -Ev "Database|information_schema|mysql|performance_schema|sys"
+
+                echo "------------------------"
+                echo ""
+                echo "站点目录"
+                echo "------------------------"
+                echo -e "数据 \e[37m/home/web/html\e[0m     证书 \e[37m/home/web/certs\e[0m     配置 \e[37m/home/web/conf.d\e[0m"
+                echo "------------------------"echo "------------------------"
+                echo ""
+                echo "操作"
+                echo "------------------------"
+                echo "1. 申请/更新域名证书               2. 更换站点域名"
+                echo -e "3. 清理站点缓存                    4. 查看站点分析报告 \033[33mNEW\033[0m"
+                echo "------------------------"
+                echo "7. 删除指定站点                    8. 删除指定数据库"
+                echo "------------------------"
+                echo "0. 返回上一级菜单"
+                echo "------------------------"
+                read -p "请输入你的选择: " sub_choice
+                case $sub_choice in
+                    1)
+                        read -p "请输入你的域名: " yuming
+                        install_ssltls
+
+                        ;;
+
+                    2)
+                        read -p "请输入旧域名: " oddyuming
+                        read -p "请输入新域名: " newyuming
+                        mv /home/web/conf.d/$oddyuming.conf /home/web/conf.d/$newyuming.conf
+                        sed -i "s/$oddyuming/$newyuming/g" /home/web/conf.d/$newyuming.conf
+                        mv /home/web/html/$oddyuming /home/web/html/$newyuming
+
+                        rm /home/web/certs/${oddyuming}_key.pem
+                        rm /home/web/certs/${oddyuming}_cert.pem
+                        install_ssltls
+
+                        ;;
+
+
+                    3)
+                        docker exec -it nginx rm -rf /var/cache/nginx
+                        docker restart nginx
+                        ;;
+                    4)
+                        install goaccess
+                        goaccess --log-format=COMBINED /home/web/log/nginx/access.log
+
+                        ;;
+
+                    7)
+                        read -p "请输入你的域名: " yuming
+                        rm -r /home/web/html/$yuming
+                        rm /home/web/conf.d/$yuming.conf
+                        rm /home/web/certs/${yuming}_key.pem
+                        rm /home/web/certs/${yuming}_cert.pem
+                        docker restart nginx
+                        ;;
+                    8)
+                        read -p "请输入数据库名: " shujuku
+                        dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
+                        docker exec mysql mysql -u root -p"$dbrootpasswd" -e "DROP DATABASE $shujuku;" 2> /dev/null
+                        ;;
+                    0)
+                        break  # 跳出循环，退出菜单
+                        ;;
+                    *)
+                        break  # 跳出循环，退出菜单
+                        ;;
+                esac
+            done
+
+              ;;
+
+        86)
+            clear
+            cd /home/ && tar czvf web_$(date +"%Y%m%d%H%M%S").tar.gz web
+
+            while true; do
+              clear
+              read -p "要传送文件到远程服务器吗？(Y/N): " choice
+              case "$choice" in
+                [Yy])
+                  read -p "请输入远端服务器IP:  " remote_ip
+                  if [ -z "$remote_ip" ]; then
+                    echo "错误: 请输入远端服务器IP。"
+                    continue
+                  fi
+                  latest_tar=$(ls -t /home/*.tar.gz | head -1)
+                  if [ -n "$latest_tar" ]; then
+                    ssh-keygen -f "/root/.ssh/known_hosts" -R "$remote_ip"
+                    sleep 2  # 添加等待时间
+                    scp -o StrictHostKeyChecking=no "$latest_tar" "root@$remote_ip:/home/"
+                    echo "文件已传送至远程服务器home目录。"
+                  else
+                    echo "未找到要传送的文件。"
+                  fi
+                  break
+                  ;;
+                [Nn])
+                  break
+                  ;;
+                *)
+                  echo "无效的选择，请输入 Y 或 N。"
+                  ;;
+              esac
+            done
+            ;;
+
+        87)
+            clear
+            read -p "输入远程服务器IP: " useip
+            read -p "输入远程服务器密码: " usepasswd
+
+            wget -O ${useip}_beifen.sh https://raw.githubusercontent.com/huaniangzi/sh/main/beifen.sh > /dev/null 2>&1
+            chmod +x ${useip}_beifen.sh
+
+            sed -i "s/0.0.0.0/$useip/g" ${useip}_beifen.sh
+            sed -i "s/123456/$usepasswd/g" ${useip}_beifen.sh
+
+            echo "------------------------"
+            echo "1. 每周备份                 2. 每天备份"
+            read -p "请输入你的选择: " dingshi
+
+            case $dingshi in
+                1)
+                    read -p "选择每周备份的星期几 (0-6，0代表星期日): " weekday
+                    (crontab -l ; echo "0 0 * * $weekday ./${useip}_beifen.sh") | crontab - > /dev/null 2>&1
+                    ;;
+                2)
+                    read -p "选择每天备份的时间（小时，0-23）: " hour
+                    (crontab -l ; echo "0 $hour * * * ./${useip}_beifen.sh") | crontab - > /dev/null 2>&1
+                    ;;
+                *)
+                    break  # 跳出
+                    ;;
+            esac
+
+            install sshpass
+
+            ;;
+
+        88)
+            clear
+            cd /home/ && ls -t /home/*.tar.gz | head -1 | xargs -I {} tar -xzf {}
+            check_port
+            install_dependency
+            install_docker
+            install_certbot
+            install_ldnmp
+
+            ;;
+
+        89)
+            if [ -x "$(command -v fail2ban-client)" ] && [ -d "/etc/fail2ban" ]; then
+                while true; do
+                    clear
+                    echo "服务器防御程序已启动"
+                    echo "------------------------"
+                    echo "1. 开启SSH防暴力破解              2. 关闭SSH防暴力破解"
+                    echo "3. 开启网站保护                   4. 关闭网站保护"
+                    echo "------------------------"
+                    echo "5. 查看SSH拦截记录                6. 查看网站拦截记录"
+                    echo "7. 查看防御规则列表               8. 查看日志实时监控"
+                    echo "------------------------"
+                    echo "9. 卸载防御程序"
+                    echo "------------------------"
+                    echo "0. 退出"
+                    echo "------------------------"
+                    read -p "请输入你的选择: " sub_choice
+                    case $sub_choice in
+                        1)
+                            sed -i 's/false/true/g' /etc/fail2ban/jail.d/sshd.local
+                            systemctl restart fail2ban
+                            sleep 1
+                            fail2ban-client status
+                            ;;
+                        2)
+                            sed -i 's/true/false/g' /etc/fail2ban/jail.d/sshd.local
+                            systemctl restart fail2ban
+                            sleep 1
+                            fail2ban-client status
+                            ;;
+                        3)
+                            sed -i 's/false/true/g' /etc/fail2ban/jail.d/nginx.local
+                            systemctl restart fail2ban
+                            sleep 1
+                            fail2ban-client status
+                            ;;
+                        4)
+                            sed -i 's/true/false/g' /etc/fail2ban/jail.d/nginx.local
+                            systemctl restart fail2ban
+                            sleep 1
+                            fail2ban-client status
+                            ;;
+                        5)
+                            echo "------------------------"
+                            fail2ban-client status sshd
+                            echo "------------------------"
+                            ;;
+                        6)
+                            echo "------------------------"
+                            fail2ban-client status nginx-bad-request
+                            echo "------------------------"
+                            fail2ban-client status nginx-botsearch
+                            echo "------------------------"
+                            fail2ban-client status nginx-http-auth
+                            echo "------------------------"
+                            fail2ban-client status nginx-limit-req
+                            echo "------------------------"
+                            fail2ban-client status php-url-fopen
+                            echo "------------------------"
+                            ;;
+
+                        7)
+                            fail2ban-client status
+                            ;;
+                        8)
+                            tail -f /var/log/fail2ban.log
+
+                            ;;
+                        9)
+                            remove fail2ban
+                          break
+                          ;;
+                        0)
+                            break
+                            ;;
+                        *)
+                            echo "无效的选择，请重新输入。"
+                            ;;
+                    esac
+                    break_end
+                done
+            else
+                clear
+                # 安装Fail2ban
+                if [ -f /etc/debian_version ]; then
+                    # Debian/Ubuntu系统
+                    apt update -y
+                    apt install -y fail2ban
+                elif [ -f /etc/redhat-release ]; then
+                    # CentOS系统
+                    yum update -y
+                    yum install -y epel-release
+                    yum install -y fail2ban
+                else
+                    echo "不支持的操作系统类型"
+                    exit 1
+                fi
+
+                # 启动Fail2ban
+                systemctl start fail2ban
+
+                # 设置Fail2ban开机自启
+                systemctl enable fail2ban
+
+                # 配置Fail2ban
+                rm -rf /etc/fail2ban/jail.d/*
+                cd /etc/fail2ban/jail.d/
+                curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/sshd.local
+                systemctl restart fail2ban
+                docker rm -f nginx
+
+                wget -O /home/web/nginx.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/nginx10.conf
+                wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/default10.conf
+                default_server_ssl
+                docker run -d --name nginx --restart always --network web_default -p 80:80 -p 443:443 -v /home/web/nginx.conf:/etc/nginx/nginx.conf -v /home/web/conf.d:/etc/nginx/conf.d -v /home/web/certs:/etc/nginx/certs -v /home/web/html:/var/www/html -v /home/web/log/nginx:/var/log/nginx nginx
+                docker exec -it nginx chmod -R 777 /var/www/html
+
+                # 获取宿主机当前时区
+                HOST_TIMEZONE=$(timedatectl show --property=Timezone --value)
+
+                # 调整多个容器的时区
+                docker exec -it nginx ln -sf "/usr/share/zoneinfo/$HOST_TIMEZONE" /etc/localtime
+                docker exec -it php ln -sf "/usr/share/zoneinfo/$HOST_TIMEZONE" /etc/localtime
+                docker exec -it php74 ln -sf "/usr/share/zoneinfo/$HOST_TIMEZONE" /etc/localtime
+                docker exec -it mysql ln -sf "/usr/share/zoneinfo/$HOST_TIMEZONE" /etc/localtime
+                docker exec -it redis ln -sf "/usr/share/zoneinfo/$HOST_TIMEZONE" /etc/localtime
+                rm -rf /home/web/log/nginx/*
+                docker restart nginx
+
+                curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/nginx.local
+                systemctl restart fail2ban
+                sleep 1
+                fail2ban-client status
+                echo "防御程序已开启"
+            fi
+
+              ;;
+
+        90)
             while true; do
                 clear
                 echo "优化LDNMP环境"
@@ -2864,49 +2861,49 @@ case $choice in
                 esac
                 break_end
             done
-          ;;
+            ;;
 
 
-      91)
-        clear
-        docker rm -f nginx php php74 mysql redis
-        docker rmi nginx php:fpm php:7.4.33-fpm mysql redis
-        check_port
+        91)
+            clear
+            docker rm -f nginx php php74 mysql redis
+            docker rmi nginx php:fpm php:7.4.33-fpm mysql redis
+            check_port
 
-        install_dependency
-        install_docker
-        install_certbot
-        install_ldnmp
-        ;;
+            install_dependency
+            install_docker
+            install_certbot
+            install_ldnmp
+            ;;
 
 
 
-      92)
-          clear
-          read -p "强烈建议先备份全部网站数据，再卸载LDNMP环境。确定删除所有网站数据吗？(Y/N): " choice
-          case "$choice" in
-            [Yy])
-              docker rm -f nginx php php74 mysql redis
-              docker rmi nginx php:fpm php:7.4.33-fpm mysql redis
-              rm -r /home/web
-              ;;
-            [Nn])
+        92)
+            clear
+            read -p "强烈建议先备份全部网站数据，再卸载LDNMP环境。确定删除所有网站数据吗？(Y/N): " choice
+            case "$choice" in
+              [Yy])
+                docker rm -f nginx php php74 mysql redis
+                docker rmi nginx php:fpm php:7.4.33-fpm mysql redis
+                rm -rf /home/web
+                ;;
+              [Nn])
 
-              ;;
-            *)
-              echo "无效的选择，请输入 Y 或 N。"
-              ;;
-          esac
-          ;;
+                ;;
+              *)
+                echo "无效的选择，请输入 Y 或 N。"
+                ;;
+            esac
+            ;;
 
-      0)
-          huaniangzi
-          ;;
+        0)
+            huaniangzi
+            ;;
 
-      *)
-          echo "无效的输入!"
-      esac
-      break_end
+        *)
+            echo "无效的输入!"
+        esac
+        break_end
     done
         ;;
 
@@ -2929,6 +2926,7 @@ case $choice in
       echo "23. Memos网页备忘录                     24. pandoranext潘多拉GPT镜像站"
       echo "25. Nextcloud网盘                       26. QD-Today定时任务管理框架"
       echo "27. Dockge容器堆栈管理面板              28. LibreSpeed测速工具"
+      echo "29. searxng聚合搜索站"
       echo "------------------------"
       echo "0. 返回主菜单"
       echo "------------------------"
@@ -3262,7 +3260,7 @@ case $choice in
           8)
 
             docker_name="qbittorrent"
-            docker_img="lscr.io/linuxserver/qbittorrent:4.5.5"
+            docker_img="lscr.io/linuxserver/qbittorrent:latest"
             docker_port=8081
             docker_rum="docker run -d \
                                   --name=qbittorrent \
@@ -3276,11 +3274,11 @@ case $choice in
                                   -v /home/docker/qbittorrent/config:/config \
                                   -v /home/docker/qbittorrent/downloads:/downloads \
                                   --restart unless-stopped \
-                                  lscr.io/linuxserver/qbittorrent:4.5.5"
+                                  lscr.io/linuxserver/qbittorrent:latest"
             docker_describe="qbittorrent离线BT磁力下载服务"
             docker_url="官网介绍: https://hub.docker.com/r/linuxserver/qbittorrent"
-            docker_use="echo \"用户名: admin\""
-            docker_passwd="echo \"密码: adminadmin\""
+            docker_use="sleep 3"
+            docker_passwd="docker logs qbittorrent"
 
             docker_app
 
@@ -3377,7 +3375,7 @@ case $choice in
                     echo "------------------------"
                     ip_address
                     echo "先解析这些DNS记录"
-                    echo "A           mail            $ip_address"
+                    echo "A           mail            $ipv4_address"
                     echo "CNAME       imap            $yuming"
                     echo "CNAME       pop             $yuming"
                     echo "CNAME       smtp            $yuming"
@@ -3423,7 +3421,7 @@ case $choice in
                     clear
                     echo "rocket.chat已安装，访问地址: "
                     ip_address
-                    echo "http:$ip_address:3897"
+                    echo "http:$ipv4_address:3897"
                     echo ""
 
                     echo "应用操作"
@@ -3448,7 +3446,7 @@ case $choice in
                             echo "rocket.chat已经安装完成"
                             echo "------------------------"
                             echo "多等一会，您可以使用以下地址访问rocket.chat:"
-                            echo "http:$ip_address:3897"
+                            echo "http:$ipv4_address:3897"
                             echo ""
                             ;;
                         2)
@@ -3496,7 +3494,7 @@ case $choice in
                     echo "rocket.chat已经安装完成"
                     echo "------------------------"
                     echo "多等一会，您可以使用以下地址访问rocket.chat:"
-                    echo "http:$ip_address:3897"
+                    echo "http:$ipv4_address:3897"
                     echo ""
 
                         ;;
@@ -4038,6 +4036,24 @@ case $choice in
             docker_app
               ;;
 
+          29)
+            docker_name="searxng"
+            docker_img="alandoyle/searxng:latest"
+            docker_port=8700
+            docker_rum="docker run --name=searxng \
+                            -d --init \
+                            --restart=unless-stopped \
+                            -v /home/docker/searxng/config:/etc/searxng \
+                            -v /home/docker/searxng/templates:/usr/local/searxng/searx/templates/simple \
+                            -v /home/docker/searxng/theme:/usr/local/searxng/searx/static/themes/simple \
+                            -p 8700:8080/tcp \
+                            alandoyle/searxng:latest"
+            docker_describe="searxng是一个私有且隐私的搜索引擎站点"
+            docker_url="官网介绍: https://hub.docker.com/r/alandoyle/searxng"
+            docker_use=""
+            docker_passwd=""
+            docker_app
+              ;;
 
           0)
               huaniangzi
@@ -4506,6 +4522,185 @@ case $choice in
     ;;
 
   11)
+    clear
+    while true; do
+      clear
+      echo "▶ VPS集群控制"
+      echo "你可以远程操控多台VPS一起执行任务（仅支持Ubuntu/Debian）"
+      echo "------------------------"
+      echo "1. 安装集群环境"
+      echo "------------------------"
+      echo "2. 集群控制中心"
+      echo "------------------------"
+      echo "7. 备份集群环境"
+      echo "8. 还原集群环境"
+      echo "9. 卸载集群环境"
+      echo "------------------------"
+      echo "0. 返回主菜单"
+      echo "------------------------"
+      read -p "请输入你的选择: " sub_choice
+
+      case $sub_choice in
+          1)
+            clear
+            install python3 python3-paramiko speedtest-cli lrzsz
+            mkdir cluster && cd cluster
+            touch servers.py
+
+            cat > ./servers.py << EOF
+servers = [
+
+]
+EOF
+
+              ;;
+          2)
+
+              while true; do
+                  clear
+                  echo "集群服务器列表"
+                  cat ~/cluster/servers.py
+
+                  echo ""
+                  echo "操作"
+                  echo "------------------------"
+                  echo "1. 添加服务器                2. 删除服务器             3. 编辑服务器"
+                  echo "------------------------"
+                  echo "11. 安装科技lion脚本         12. 更新系统              13. 清理系统"
+                  echo "14. 安装docker               15. 安装BBR3              16. 设置1G虚拟内存"
+                  echo "17. 设置时区到上海           18. 开放所有端口"
+                  echo "------------------------"
+                  echo "51. 自定义指令"
+                  echo "------------------------"
+                  echo "0. 返回上一级选单"
+                  echo "------------------------"
+                  read -p "请输入你的选择: " sub_choice
+
+                  case $sub_choice in
+                      1)
+                          read -p "服务器名称: " server_name
+                          read -p "服务器IP: " server_ip
+                          read -p "服务器端口（22）: " server_port
+                          server_port=${server_port:-22}
+                          read -p "服务器用户名（root）: " server_username
+                          server_username=${server_username:-root}
+                          read -p "服务器用户密码: " server_password
+
+                          sed -i "/servers = \[/a\    {\"name\": \"$server_name\", \"hostname\": \"$server_ip\", \"port\": $server_port, \"username\": \"$server_username\", \"password\": \"$server_password\", \"remote_path\": \"/home/\"}," ~/cluster/servers.py
+
+                          ;;
+                      2)
+                          read -p "请输入需要删除的关键字: " rmserver
+                          sed -i "/$rmserver/d" ~/cluster/servers.py
+                          ;;
+                      3)
+                          install nano
+                          nano ~/cluster/servers.py
+                          ;;
+                      11)
+                          py_task=install_kejilion.py
+                          cluster_python3
+                          ;;
+                      12)
+                          py_task=update.py
+                          cluster_python3
+                          ;;
+                      13)
+                          py_task=clean.py
+                          cluster_python3
+                          ;;
+                      14)
+                          py_task=install_docker.py
+                          cluster_python3
+                          ;;
+                      15)
+                          py_task=install_bbr3.py
+                          cluster_python3
+                          ;;
+                      16)
+                          py_task=swap1024.py
+                          cluster_python3
+                          ;;
+                      17)
+                          py_task=time_shanghai.py
+                          cluster_python3
+                          ;;
+                      18)
+                          py_task=firewall_close.py
+                          cluster_python3
+                          ;;
+                      51)
+
+                          read -p "请输入批量执行的命令: " mingling
+                          py_task=custom_tasks.py
+                          cd ~/cluster/
+                          curl -sS -O https://raw.githubusercontent.com/kejilion/python-for-vps/main/cluster/$py_task
+                          sed -i "s#Customtasks#$mingling#g" ~/cluster/$py_task
+                          python3 ~/cluster/$py_task
+                          ;;
+                      0)
+                          break  # 跳出循环，退出菜单
+                          ;;
+                      0)
+                          break  # 跳出循环，退出菜单
+                          ;;
+
+                      *)
+                          break  # 跳出循环，退出菜单
+                          ;;
+                  esac
+              done
+
+              ;;
+          7)
+            clear
+            echo "将下载服务器列表数据，按任意键下载！"
+            read -n 1 -s -r -p ""
+            sz -y ~/cluster/servers.py
+
+              ;;
+
+          8)
+            clear
+            echo "请上传您的servers.py，按任意键开始上传！"
+            read -n 1 -s -r -p ""
+            cd ~/cluster/
+            rz -y
+              ;;
+
+          9)
+
+            clear
+            read -p "请先备份环境，确定要卸载集群控制环境吗？(Y/N): " choice
+            case "$choice" in
+              [Yy])
+                remove python3-paramiko speedtest-cli lrzsz
+                rm -rf ~/cluster/
+                ;;
+              [Nn])
+                echo "已取消"
+                ;;
+              *)
+                echo "无效的选择，请输入 Y 或 N。"
+                ;;
+            esac
+
+              ;;
+
+          0)
+              kejilion
+              ;;
+          *)
+              echo "无效的输入!"
+              ;;
+      esac
+      break_end
+
+    done
+
+    ;;
+
+  12)
   clear
     while true; do
       echo -e "\033[31m▶ 系统工具\033[0m"
@@ -4783,13 +4978,7 @@ case $choice in
               done
 
               read -p "请输入你重装后的密码: " vpspasswd
-              if command -v apt &>/dev/null; then
-                  apt update -y && apt install -y wget
-              elif command -v yum &>/dev/null; then
-                  yum -y update && yum -y install wget
-              else
-                  echo "未知的包管理器!"
-              fi
+              install wget
               bash <(wget --no-check-certificate -qO- 'https://raw.githubusercontent.com/MoeClub/Note/master/InstallNET.sh') $xitong -v 64 -p $vpspasswd -port 22
               ;;
             [Nn])
@@ -4804,15 +4993,7 @@ case $choice in
 
           9)
             clear
-            if ! command -v sudo &>/dev/null; then
-                if command -v apt &>/dev/null; then
-                    apt update -y && apt install -y sudo
-                elif command -v yum &>/dev/null; then
-                    yum -y update && yum -y install sudo
-                else
-                    exit 1
-                fi
-            fi
+            install sudo
 
             # 提示用户输入新用户名
             read -p "请输入新用户名: " new_username
@@ -4938,6 +5119,8 @@ case $choice in
           13)
               while true; do
                 clear
+                install sudo
+                clear
                 # 显示所有用户、用户权限、用户组和是否在sudoers中
                 echo "用户列表"
                 echo "----------------------------------------------------------------------------"
@@ -4964,16 +5147,6 @@ case $choice in
 
                   case $sub_choice in
                       1)
-                       if ! command -v sudo &>/dev/null; then
-                           if command -v apt &>/dev/null; then
-                               apt update -y && apt install -y sudo
-                           elif command -v yum &>/dev/null; then
-                               yum -y update && yum -y install sudo
-                           else
-                               echo ""
-                           fi
-                       fi
-
                        # 提示用户输入新用户名
                        read -p "请输入新用户名: " new_username
 
@@ -4985,16 +5158,6 @@ case $choice in
                           ;;
 
                       2)
-                       if ! command -v sudo &>/dev/null; then
-                           if command -v apt &>/dev/null; then
-                               apt update -y && apt install -y sudo
-                           elif command -v yum &>/dev/null; then
-                               yum -y update && yum -y install sudo
-                           else
-                               echo ""
-                           fi
-                       fi
-
                        # 提示用户输入新用户名
                        read -p "请输入新用户名: " new_username
 
@@ -5009,49 +5172,20 @@ case $choice in
 
                           ;;
                       3)
-                       if ! command -v sudo &>/dev/null; then
-                           if command -v apt &>/dev/null; then
-                               apt update -y && apt install -y sudo
-                           elif command -v yum &>/dev/null; then
-                               yum -y update && yum -y install sudo
-                           else
-                               echo ""
-                           fi
-                       fi
-
                        read -p "请输入用户名: " username
                        # 赋予新用户sudo权限
                        echo "$username ALL=(ALL:ALL) ALL" | sudo tee -a /etc/sudoers
                           ;;
                       4)
-                       if ! command -v sudo &>/dev/null; then
-                           if command -v apt &>/dev/null; then
-                               apt update -y && apt install -y sudo
-                           elif command -v yum &>/dev/null; then
-                               yum -y update && yum -y install sudo
-                           else
-                               echo ""
-                           fi
-                       fi
                        read -p "请输入用户名: " username
                        # 从sudoers文件中移除用户的sudo权限
                        sudo sed -i "/^$username\sALL=(ALL:ALL)\sALL/d" /etc/sudoers
 
                           ;;
                       5)
-                       if ! command -v sudo &>/dev/null; then
-                           if command -v apt &>/dev/null; then
-                               apt update -y && apt install -y sudo
-                           elif command -v yum &>/dev/null; then
-                               yum -y update && yum -y install sudo
-                           else
-                               echo ""
-                           fi
-                       fi
                        read -p "请输入要删除的用户名: " username
                        # 删除用户及其主目录
                        sudo userdel -r "$username"
-
                           ;;
 
                       0)
@@ -5064,7 +5198,6 @@ case $choice in
                   esac
               done
               ;;
-
 
           14)
             clear
@@ -5153,78 +5286,31 @@ case $choice in
                   read -p "请输入你的选择: " sub_choice
 
                   case $sub_choice in
-                      1)
-                        timedatectl set-timezone Asia/Shanghai
-                          ;;
-
-                      2)
-                        timedatectl set-timezone Asia/Hong_Kong
-                          ;;
-                      3)
-                        timedatectl set-timezone Asia/Tokyo
-                          ;;
-                      4)
-                        timedatectl set-timezone Asia/Seoul
-                          ;;
-                      5)
-                        timedatectl set-timezone Asia/Singapore
-                          ;;
-                      6)
-                        timedatectl set-timezone Asia/Kolkata
-                          ;;
-                      7)
-                        timedatectl set-timezone Asia/Dubai
-                          ;;
-                      8)
-                        timedatectl set-timezone Australia/Sydney
-                          ;;
-                      11)
-                        timedatectl set-timezone Europe/London
-                          ;;
-                      12)
-                        timedatectl set-timezone Europe/Paris
-                          ;;
-                      13)
-                        timedatectl set-timezone Europe/Berlin
-                          ;;
-                      14)
-                        timedatectl set-timezone Europe/Moscow
-                          ;;
-                      15)
-                        timedatectl set-timezone Europe/Amsterdam
-                          ;;
-                      16)
-                        timedatectl set-timezone Europe/Madrid
-                          ;;
-                      21)
-                        timedatectl set-timezone America/Los_Angeles
-                          ;;
-                      22)
-                        timedatectl set-timezone America/New_York
-                          ;;
-                      23)
-                        timedatectl set-timezone America/Vancouver
-                          ;;
-                      24)
-                        timedatectl set-timezone America/Mexico_City
-                          ;;
-                      25)
-                        timedatectl set-timezone America/Sao_Paulo
-                          ;;
-                      26)
-                        timedatectl set-timezone America/Argentina/Buenos_Aires
-                          ;;
-                      0)
-                          break  # 跳出循环，退出菜单
-                          ;;
-
-                      *)
-                          break  # 跳出循环，退出菜单
-                          ;;
+                      1) timedatectl set-timezone Asia/Shanghai ;;
+                      2) timedatectl set-timezone Asia/Hong_Kong ;;
+                      3) timedatectl set-timezone Asia/Tokyo ;;
+                      4) timedatectl set-timezone Asia/Seoul ;;
+                      5) timedatectl set-timezone Asia/Singapore ;;
+                      6) timedatectl set-timezone Asia/Kolkata ;;
+                      7) timedatectl set-timezone Asia/Dubai ;;
+                      8) timedatectl set-timezone Australia/Sydney ;;
+                      11) timedatectl set-timezone Europe/London ;;
+                      12) timedatectl set-timezone Europe/Paris ;;
+                      13) timedatectl set-timezone Europe/Berlin ;;
+                      14) timedatectl set-timezone Europe/Moscow ;;
+                      15) timedatectl set-timezone Europe/Amsterdam ;;
+                      16) timedatectl set-timezone Europe/Madrid ;;
+                      21) timedatectl set-timezone America/Los_Angeles ;;
+                      22) timedatectl set-timezone America/New_York ;;
+                      23) timedatectl set-timezone America/Vancouver ;;
+                      24) timedatectl set-timezone America/Mexico_City ;;
+                      25) timedatectl set-timezone America/Sao_Paulo ;;
+                      26) timedatectl set-timezone America/Argentina/Buenos_Aires ;;
+                      0) break ;; # 跳出循环，退出菜单
+                      *) break ;; # 跳出循环，退出菜单
                   esac
               done
-
-              ;;
+                ;;
 
           16)
           if dpkg -l | grep -q 'linux-xanmod'; then
@@ -5314,8 +5400,7 @@ case $choice in
               break
             fi
 
-            apt update -y
-            apt install -y wget gnupg
+            install wget gnupg
 
             # wget -qO - https://dl.xanmod.org/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
             wget -qO - https://raw.githubusercontent.com/huaniangzi/sh/main/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
@@ -5555,11 +5640,11 @@ EOF
                   echo "主机名已更改为: $new_hostname"
 
                   # 获取当前机器的 IPv4 地址
-                  ip_address
+                  ipv4_address
 
                   # 修改 /etc/hosts 文件，将新的主机名映射到获取的 IPv4 地址
-                  sed -i "/localhost/a $ip_address $new_hostname" /etc/hosts
-                  echo "主机名 $new_hostname 已映射到 IP 地址 $ip_address"
+                  sed -i "/localhost/a $ipv4_address $new_hostname" /etc/hosts
+                  echo "主机名 $new_hostname 已映射到 IP 地址 $ipv4_address"
               else
                   echo "无效的主机名。未更改主机名。"
                   exit 1
@@ -5612,14 +5697,14 @@ EOF
           backup_sources() {
               case "$ID" in
                   ubuntu)
-                      sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
+                      cp /etc/apt/sources.list /etc/apt/sources.list.bak
                       ;;
                   debian)
-                      sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
+                      cp /etc/apt/sources.list /etc/apt/sources.list.bak
                       ;;
                   centos)
                       if [ ! -f /etc/yum.repos.d/CentOS-Base.repo.bak ]; then
-                          sudo cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
+                          cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
                       else
                           echo "备份已存在，无需重复备份"
                       fi
@@ -5636,13 +5721,13 @@ EOF
           restore_initial_source() {
               case "$ID" in
                   ubuntu)
-                      sudo cp /etc/apt/sources.list.bak /etc/apt/sources.list
+                      cp /etc/apt/sources.list.bak /etc/apt/sources.list
                       ;;
                   debian)
-                      sudo cp /etc/apt/sources.list.bak /etc/apt/sources.list
+                      cp /etc/apt/sources.list.bak /etc/apt/sources.list
                       ;;
                   centos)
-                      sudo cp /etc/yum.repos.d/CentOS-Base.repo.bak /etc/yum.repos.d/CentOS-Base.repo
+                      cp /etc/yum.repos.d/CentOS-Base.repo.bak /etc/yum.repos.d/CentOS-Base.repo
                       ;;
                   *)
                       echo "未知系统，无法执行还原操作"
@@ -5656,13 +5741,13 @@ EOF
           switch_source() {
               case "$ID" in
                   ubuntu)
-                      sudo sed -i 's|'"$initial_ubuntu_source"'|'"$1"'|g' /etc/apt/sources.list
+                      sed -i 's|'"$initial_ubuntu_source"'|'"$1"'|g' /etc/apt/sources.list
                       ;;
                   debian)
-                      sudo sed -i 's|'"$initial_debian_source"'|'"$1"'|g' /etc/apt/sources.list
+                      sed -i 's|'"$initial_debian_source"'|'"$1"'|g' /etc/apt/sources.list
                       ;;
                   centos)
-                      sudo sed -i "s|^baseurl=.*$|baseurl=$1|g" /etc/yum.repos.d/CentOS-Base.repo
+                      sed -i "s|^baseurl=.*$|baseurl=$1|g" /etc/yum.repos.d/CentOS-Base.repo
                       ;;
                   *)
                       echo "未知系统，无法执行切换操作"
@@ -6025,11 +6110,8 @@ EOF
     echo ""
     curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi.sh && chmod +x huaniangzi.sh
     echo "脚本已更新到最新版本！"
-    echo -e "\033[0;32m操作完成\033[0m"
-    echo "按任意键继续..."
-    read -n 1 -s -r -p ""
-    echo ""
-    huaniangzi
+    break_end
+    kejilion
     ;;
 
   0)
@@ -6039,7 +6121,7 @@ EOF
 
   *)
     echo "无效的输入!"
-
+    ;;
 esac
-  break_end
+    break_end
 done
