@@ -412,7 +412,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.6.0 （支持Ubuntu，Debian，Centos系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.6.1 （支持Ubuntu，Debian，Centos系统）\033[0m"
 echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本-\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
@@ -424,7 +424,7 @@ echo "6. Docker管理 ▶ "
 echo -e "\033[33m7. LDNMP建站 ▶ \033[0m"
 echo "8. 常用面板工具 ▶ "
 echo "9. 外面的世界 ▶ "
-echo "10. 开设NAT小鸡 ▶ "
+echo "10. LXC開小鷄 ▶"
 echo -e "11. VPS集群控制 ▶ \033[36mBeta\033[0m"
 echo "12. 系统工具 ▶ "
 echo "------------------------"
@@ -4294,229 +4294,12 @@ case $choice in
       ;;
 
   10)
-    while true; do
-        clear
-        echo "▶ 开设NAT小鸡"
-        echo "------------------------"
-        echo "开设kvm小鸡分两步，请依次执行，如果第一步失败，提示服务器不符合要求，请选择LXC或Docker方式开设小鸡"
-        echo "------------------------"
-        echo "1.开设KVM小鸡(第1步)"
-        echo "2.开设KVM小鸡(第2步)"
-        echo "3.删除所有KVM小鸡"
-        echo "------------------------"
-        echo "4.开设LXC小鸡"
-        echo "5.删除所有LXC小鸡"
-        echo "------------------------"
-        echo "6.开设Docker小鸡"
-        echo "7.删除所有Docker容器"
-        echo "------------------------"
-        echo "0.返回上一级菜单菜单"
-        echo "------------------------"
-        while :; do
-            echo
-            read -p $'\033[1;91m请输入你的选择: \033[0m' sub_choice
-            if ! [[ "$sub_choice" =~ ^[0-9]+$ ]]; then
-                echo -e "输入错误, 请输入0~7的数字!"
-                continue
-            fi
-            if [ $sub_choice -ge 0 -a $sub_choice -le 7 ]; then
-                break
-            else
-                echo -e "输入错误, 请输入0~7的数字!"
-            fi
-        done
-        case $sub_choice in
-            1)
-                clear
-                echo -e "开始进行环境检测..."
-                install wget
-                output=$(bash <(wget -qO- --no-check-certificate https://raw.githubusercontent.com/spiritLHLS/pve/main/scripts/check_kernal.sh))
-
-                if echo "$output" | grep -q "CPU不支持硬件虚拟化，无法嵌套虚拟化KVM服务器，但可以开LXC服务器(CT)"; then
-
-                    echo -e "你的服务器不支持开设KVM小鸡，正在退出..."
-                    rm -rf /root/check_kernal.sh
-                    sleep 2
-                    main_menu
-
-                elif echo "$output" | grep -q "本机符合要求：可以使用PVE虚拟化KVM服务器，并可以在开出来的KVM服务器选项中开启KVM硬件虚拟化"; then
-                    echo -e "本机符合开设kvm小鸡的要求"
-                    read -p $'\033[1;96m确定要开设kvm小鸡吗？ [y/n]: \033[0m' confirm
-                    sleep 1
-                    if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
-                        echo ""
-                        echo ""
-                        echo ""
-                        echo -e "开设虚拟内存(Swap),请先输入2移除原来的配置，会自动重新执行一次，再输入1添加虚拟内存"
-                        curl -L https://raw.githubusercontent.com/spiritLHLS/addswap/main/addswap.sh -o addswap.sh && chmod +x addswap.sh && bash addswap.sh
-                        sleep 1
-                        curl -L https://raw.githubusercontent.com/spiritLHLS/addswap/main/addswap.sh -o addswap.sh && chmod +x addswap.sh && bash addswap.sh
-                        echo -e "开始进行PVE主体安装"
-                        curl -L https://raw.githubusercontent.com/spiritLHLS/pve/main/scripts/install_pve.sh -o install_pve.sh && chmod +x install_pve.sh && bash install_pve.sh
-                        sleep 1
-                        echo -e "请等待20秒后重启后运行第2步"
-                        read -p $'\033[1;96m需要立即重启吗？ [y/n]: \033[0m' confirm
-                        if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
-                            sleep 1
-                            reboot
-                        else
-                            main_menu
-                        fi
-                    else
-                        main_menu
-                    fi
-
-                else
-                    echo -e "暂不能判定你的服务器状态，无法开设kvm小鸡，可以考虑使用LXC模式开小鸡，正在退出..."
-                    rm -rf /root/check_kernal.sh
-                    sleep 2
-                    main_menu
-                fi
-                ;;
-
-            2)
-                clear
-
-                read -p $'\033[1;96m确认你已执行完第1步，是否继续 [y/n]: \033[0m' confirm
-                if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
-
-                    sleep 1
-                    curl -L https://raw.githubusercontent.com/spiritLHLS/pve/main/scripts/install_pve.sh -o install_pve.sh && chmod +x install_pve.sh && bash install_pve.sh
-                    sleep 1
-                    echo -e "开始配置环境..."
-                    bash <(wget -qO- --no-check-certificate https://raw.githubusercontent.com/spiritLHLS/pve/main/scripts/build_backend.sh)
-                    sleep 1
-                    echo -e "开始自动配置宿主机的网关..."
-                    bash <(wget -qO- --no-check-certificate https://raw.githubusercontent.com/spiritLHLS/pve/main/scripts/build_nat_network.sh)
-                    sleep 1
-                    echo -e "KVM虚拟化开设出的虚拟机，默认生成的用户名不是root，请确保你已在root下运行及修改root密码"
-
-                    while true; do
-                        read -p $'\033[1;96m你需要单独开设kvm小鸡还是批量开设kvm小鸡？(1：单独开设  2：批量开设) \033[0m' choose
-
-                        if [ "$choose" == "1" ]; then
-                            sleep 1
-                            curl -L https://raw.githubusercontent.com/spiritLHLS/pve/main/scripts/buildvm.sh -o buildvm.sh && chmod +x buildvm.sh
-                            sleep 2
-                            break_end
-                            break  # 跳出循环
-                        elif [ "$choose" == "2" ]; then
-                            sleep 1
-                            echo -e "注意: KVM开设出的NAT小鸡，默认生成的用户名不是root，默认的root密码是password,需要sudo -i手动切换为root"
-                            sleep 2
-                            curl -L https://raw.githubusercontent.com/spiritLHLS/pve/main/scripts/create_vm.sh -o create_vm.sh && chmod +x create_vm.sh && bash create_vm.sh
-                            sleep 2
-                            break_end
-                            break  # 跳出循环
-                        else
-                            echo -e "输入错误，请输入1或2"
-                        fi
-                    done
-                else
-                    break_end
-                fi
-                ;;
-
-            3)
-                clear
-                for vmid in $(qm list | awk '{if(NR>1) print $1}'); do qm stop $vmid; qm destroy $vmid; rm -rf /var/lib/vz/images/$vmid*; done
-                iptables -t nat -F
-                iptables -t filter -F
-                service networking restart
-                systemctl restart networking.service
-                systemctl restart ndpresponder.service
-                iptables-save | awk '{if($1=="COMMIT"){delete x}}$1=="-A"?!x[$0]++:1' | iptables-restore
-                iptables-save > /etc/iptables/rules.v4
-                rm -rf vmlog
-                rm -rf vm*
-                sleep 2
-                break_end
-                ;;
-
-            4)
-                clear
-                install wget
-                wget -N --no-check-certificate https://raw.githubusercontent.com/eooce/lxdpro/main/lxdpro.sh && chmod +x lxdpro.sh && bash lxdpro.sh
-
-                break_end
-
-                ;;
-
-            5)
-                clear
-                # 删除所有LXC容器
-                incus list -c n --format csv | xargs -I {} incus delete -f {}
-                # 删除无用日志
-                sudo apt-get autoremove
-                sudo apt-get clean
-                sudo find /var/log -type f -delete
-                sudo find /var/tmp -type f -delete
-                sudo find /tmp -type f -delete
-                sudo find /var/cache/apt/archives -type f -delete
-                # 删除原始配置脚本
-                rm -rf /usr/local/bin/ssh_sh.sh
-                rm -rf /usr/local/bin/config.sh
-                rm -rf /usr/local/bin/ssh_bash.sh
-                rm -rf /usr/local/bin/check-dns.sh
-                rm -rf /root/ssh_sh.sh
-                rm -rf /root/config.sh
-                rm -rf /root/ssh_bash.sh
-                rm -rf /root/buildone.sh
-                rm -rf /root/add_more.sh
-                rm -rf /root/build_ipv6_network.sh
-
-                sleep 2
-                break_end
-                ;;
-
-            6)
-                clear
-                echo -e "开设虚拟内存(Swap),请先输入2移除原来的，会重新执行一次，再输入1添加虚拟内存"
-                curl -L https://raw.githubusercontent.com/spiritLHLS/addswap/main/addswap.sh -o addswap.sh && chmod +x addswap.sh && bash addswap.sh
-                sleep 1
-                curl -L https://raw.githubusercontent.com/spiritLHLS/addswap/main/addswap.sh -o addswap.sh && chmod +x addswap.sh && bash addswap.sh
-                sleep 1
-                echo -e "开始安装docker配置环境"
-                curl -L https://raw.githubusercontent.com/spiritLHLS/docker/main/scripts/dockerinstall.sh -o dockerinstall.sh && chmod +x dockerinstall.sh && bash dockerinstall.sh
-                sleep 2
-
-                while true; do
-                    read -p $'\033[1;96m你需要单独开设Docker小鸡还是批量开设Docker小鸡？(1：单独开设  2：批量开设) \033[0m' choose
-
-                    if [ "$choose" == "1" ]; then
-                        sleep 1
-                        curl -L https://raw.githubusercontent.com/spiritLHLS/docker/main/scripts/onedocker.sh -o onedocker.sh && chmod +x onedocker.sh
-                        sleep 2
-                        break_end
-                        break  # 跳出循环
-                    elif [ "$choose" == "2" ]; then
-                        sleep 1
-                        curl -L https://raw.githubusercontent.com/spiritLHLS/docker/main/scripts/create_docker.sh -o create_docker.sh && chmod +x create_docker.sh && bash create_docker.sh
-                        sleep 2
-                        break_end
-                        break  # 跳出循环
-                    else
-                        echo -e "输入错误，请输入1或2"
-                    fi
-                done
-                ;;
-
-            7)
-                clear
-                docker ps -aq --format '{{.Names}}' | grep -E '^ndpresponder' | xargs -r docker rm -f
-                docker images -aq --format '{{.Repository}}:{{.Tag}}' | grep -E '^ndpresponder' | xargs -r docker rmi
-                rm -rf dclog
-                ls
-
-                sleep 2
-                break_end
-                ;;
-
-            0)
-                huaniangzi
-                ;;
-        esac
-    done
+    if [ "$OS_TYPE" = "debian" ]; then
+        echo "This is a Debian system"
+        wget -N --no-check-certificate https://raw.githubusercontent.com/MXCCO/lxdpro/main/lxdpro.sh && bash lxdpro.sh
+    else
+        echo "脚本僅支持：Ubuntu/Debian"
+    fi
     ;;
 
   11)
