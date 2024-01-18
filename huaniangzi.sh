@@ -4298,7 +4298,6 @@ case $choice in
       wget -N --no-check-certificate https://raw.githubusercontent.com/MXCCO/lxdpro/main/lxdpro.sh && bash lxdpro.sh
       huaniangzi
       ;;
-      ;;
 
   11)
     clear
