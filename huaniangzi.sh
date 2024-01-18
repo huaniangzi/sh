@@ -4294,13 +4294,9 @@ case $choice in
       ;;
 
   10)
-    if [ "$OS_TYPE" = "debian" ]; then
-        echo "This is a Debian system"
-        wget -N --no-check-certificate https://raw.githubusercontent.com/MXCCO/lxdpro/main/lxdpro.sh && bash lxdpro.sh
-    else
-        echo "脚本僅支持：Ubuntu/Debian"
-    fi
-    ;;
+      clear
+      wget -N --no-check-certificate https://raw.githubusercontent.com/MXCCO/lxdpro/main/lxdpro.sh && bash lxdpro.sh
+      ;;
 
   11)
     clear
