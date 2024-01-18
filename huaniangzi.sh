@@ -1,5 +1,4 @@
 #!/bin/bash
-# 判断是否已经存在 alias
 ln -sf ~/huaniangzi.sh /usr/local/bin/hua
 
 
@@ -7,7 +6,6 @@ ip_address() {
 ipv4_address=$(curl -s ipv4.ip.sb)
 ipv6_address=$(curl -s --max-time 1 ipv6.ip.sb)
 }
-
 
 install() {
     if [ $# -eq 0 ]; then
@@ -293,7 +291,7 @@ add_db() {
 
 reverse_proxy() {
       ip_address
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/kejilion/nginx/main/reverse-proxy.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/reverse-proxy.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
       sed -i "s/0.0.0.0/$ipv4_address/g" /home/web/conf.d/$yuming.conf
       sed -i "s/0000/$duankou/g" /home/web/conf.d/$yuming.conf
@@ -1790,7 +1788,7 @@ case $choice in
               esac
               ;;
           0)
-              kejilion
+              huaniangzi
 
               ;;
           *)
@@ -2054,8 +2052,8 @@ case $choice in
             if docker inspect easyimage &>/dev/null; then
                 clear
                 echo "简单图床已安装，访问地址: "
-                external_ip=$(curl -s ipv4.ip.sb)
-                echo "http:$external_ip:$hua_port"
+                ip_address
+                echo "http:$ipv4_address:$hua_port"
                 echo ""
 
                 echo "应用操作"
@@ -2087,8 +2085,8 @@ case $choice in
                         echo "简单图床已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问简单图床:"
-                        external_ip=$(curl -s ipv4.ip.sb)
-                        echo "http:$external_ip:$hua_port"  # 使用用户输入的端口
+                        ip_address
+                        echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
                         echo ""
                         ;;
                     2)
@@ -2136,8 +2134,8 @@ case $choice in
                         echo "简单图床已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问简单图床:"
-                        external_ip=$(curl -s ipv4.ip.sb)
-                        echo "http:$external_ip:$hua_port"
+                        ip_address
+                        echo "http:$ipv4_address:$hua_port"
                         echo ""
                         ;;
                     [Nn])
@@ -2151,8 +2149,8 @@ case $choice in
             if docker inspect memeos &>/dev/null; then
                 clear
                 echo "碎片化知识卡片已安装，访问地址: "
-                external_ip=$(curl -s ipv4.ip.sb)
-                echo "http:$external_ip:$hua_port"
+                ip_address
+                echo "http:$ipv4_address:$hua_port"
                 echo ""
 
                 echo "应用操作"
@@ -2180,8 +2178,8 @@ case $choice in
                         echo "碎片化知识卡片已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问碎片化知识卡片:"
-                        external_ip=$(curl -s ipv4.ip.sb)
-                        echo "http:$external_ip:$hua_port"  # 使用用户输入的端口
+                        ip_address
+                        echo "http:$ipv4_address:$hua_port"  # 使用用户输入的端口
                         echo ""
                         ;;
                     2)
@@ -2224,8 +2222,8 @@ case $choice in
                         echo "碎片化知识卡片已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问碎片化知识卡片:"
-                        external_ip=$(curl -s ipv4.ip.sb)
-                        echo "http:$external_ip:$hua_port"
+                        ip_address
+                        echo "http:$ipv4_address:$hua_port"
                         echo ""
                         ;;
                     [Nn])
@@ -2264,8 +2262,8 @@ case $choice in
             if docker inspect vaultwarden &>/dev/null; then
                 clear
                 echo "vaultwarden密码管理已安装，访问地址: "
-                external_ip=$(curl -s ipv4.ip.sb)
-                echo "http:$external_ip:$hua_port"
+                ip_address
+                echo "http:$ipv4_address:$hua_port"
                 echo ""
 
                 echo "应用操作"
@@ -2301,8 +2299,8 @@ case $choice in
                         echo "vaultwarden密码管理已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问vaultwarden密码管理:"
-                        external_ip=$(curl -s ipv4.ip.sb)
-                        echo "http:$external_ip:$hua_port"  # 使用用户输入的端口
+                        ip_address
+                        echo "http:$ipv4_address:$hua_port" # 使用用户输入的端口
                         echo ""
                         ;;
                     2)
@@ -2353,8 +2351,8 @@ case $choice in
                         echo "vaultwarden密码管理已经安装完成"
                         echo "------------------------"
                         echo "您可以使用以下地址访问vaultwarden密码管理:"
-                        external_ip=$(curl -s ipv4.ip.sb)
-                        echo "http:$external_ip:$hua_port"
+                        ip_address
+                        echo "http:$ipv4_address:$hua_port"
                         echo ""
                         ;;
                     [Nn])
@@ -4598,7 +4596,7 @@ EOF
                           nano ~/cluster/servers.py
                           ;;
                       11)
-                          py_task=install_kejilion.py
+                          py_task=install_huaniangzi.py
                           cluster_python3
                           ;;
                       12)
@@ -4634,7 +4632,7 @@ EOF
                           read -p "请输入批量执行的命令: " mingling
                           py_task=custom_tasks.py
                           cd ~/cluster/
-                          curl -sS -O https://raw.githubusercontent.com/kejilion/python-for-vps/main/cluster/$py_task
+                          curl -sS -O https://raw.githubusercontent.com/huaniangzi/python-for-vps/main/cluster/$py_task
                           sed -i "s#Customtasks#$mingling#g" ~/cluster/$py_task
                           python3 ~/cluster/$py_task
                           ;;
@@ -4688,7 +4686,7 @@ EOF
               ;;
 
           0)
-              kejilion
+              huaniangzi
               ;;
           *)
               echo "无效的输入!"
@@ -6111,7 +6109,7 @@ EOF
     curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi.sh && chmod +x huaniangzi.sh
     echo "脚本已更新到最新版本！"
     break_end
-    kejilion
+    huaniangzi
     ;;
 
   0)
