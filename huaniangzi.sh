@@ -412,7 +412,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.6.1 （支持Ubuntu，Debian，Centos系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.6.2 （支持Ubuntu，Debian，Centos系统）\033[0m"
 echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本-\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
@@ -2924,7 +2924,8 @@ case $choice in
       echo "23. Memos网页备忘录                     24. pandoranext潘多拉GPT镜像站"
       echo "25. Nextcloud网盘                       26. QD-Today定时任务管理框架"
       echo "27. Dockge容器堆栈管理面板              28. LibreSpeed测速工具"
-      echo "29. searxng聚合搜索站"
+      echo "29. searxng聚合搜索站                   30. PhotoPrism私有相册系统"
+      echo "31. StirlingPDF工具大全"
       echo "------------------------"
       echo "0. 返回主菜单"
       echo "------------------------"
@@ -4048,6 +4049,50 @@ case $choice in
                             alandoyle/searxng:latest"
             docker_describe="searxng是一个私有且隐私的搜索引擎站点"
             docker_url="官网介绍: https://hub.docker.com/r/alandoyle/searxng"
+            docker_use=""
+            docker_passwd=""
+            docker_app
+              ;;
+
+            30)
+            docker_name="photoprism"
+            docker_img="photoprism/photoprism:latest"
+            docker_port=2342
+            rootpasswd=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c16)
+            docker_rum="docker run -d \
+                            --name photoprism \
+                            --restart always \
+                            --security-opt seccomp=unconfined \
+                            --security-opt apparmor=unconfined \
+                            -p 2342:2342 \
+                            -e PHOTOPRISM_UPLOAD_NSFW="true" \
+                            -e PHOTOPRISM_ADMIN_PASSWORD="$rootpasswd" \
+                            -v /home/docker/photoprism/storage:/photoprism/storage \
+                            -v /home/docker/photoprism/Pictures:/photoprism/originals \
+                            photoprism/photoprism"
+            docker_describe="photoprism非常强大的私有相册系统"
+            docker_url="官网介绍: https://www.photoprism.app/"
+            docker_use="echo \"账号: admin  密码: $rootpasswd\""
+            docker_passwd=""
+            docker_app
+              ;;
+
+
+          31)
+            docker_name="s-pdf"
+            docker_img="frooodle/s-pdf:latest"
+            docker_port=8020
+            docker_rum="docker run -d \
+                            --name s-pdf \
+                            --restart=always \
+                             -p 8020:8080 \
+                             -v /home/docker/s-pdf/trainingData:/usr/share/tesseract-ocr/5/tessdata \
+                             -v /home/docker/s-pdf/extraConfigs:/configs \
+                             -v /home/docker/s-pdf/logs:/logs \
+                             -e DOCKER_ENABLE_SECURITY=false \
+                             frooodle/s-pdf:latest"
+            docker_describe="这是一个强大的本地托管基于 Web 的 PDF 操作工具，使用 docker，允许您对 PDF 文件执行各种操作，例如拆分合并、转换、重新组织、添加图像、旋转、压缩等。"
+            docker_url="官网介绍: https://github.com/Stirling-Tools/Stirling-PDF"
             docker_use=""
             docker_passwd=""
             docker_app
