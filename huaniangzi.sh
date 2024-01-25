@@ -19,6 +19,8 @@ install() {
                 apt update -y && apt install -y "$package"
             elif command -v yum &>/dev/null; then
                 yum -y update && yum -y install "$package"
+            elif command -v apk &>/dev/null; then
+                apk update && apk add "$package"
             else
                 echo "未知的包管理器!"
                 return 1
@@ -45,6 +47,8 @@ remove() {
             apt purge -y "$package"
         elif command -v yum &>/dev/null; then
             yum remove -y "$package"
+        elif command -v apk &>/dev/null; then
+            apk del "$package"
         else
             echo "未知的包管理器!"
             return 1
@@ -125,38 +129,62 @@ install_ldnmp() {
 
       # 定义要执行的命令
       commands=(
+          "docker exec nginx chmod -R 777 /var/www/html"
+          "docker restart nginx > /dev/null 2>&1"
+
           "docker exec php apt update > /dev/null 2>&1"
-          "docker exec php apt install -y libmariadb-dev-compat libmariadb-dev libzip-dev libmagickwand-dev imagemagick > /dev/null 2>&1"
-          "docker exec php docker-php-ext-install mysqli pdo_mysql zip exif gd intl bcmath opcache > /dev/null 2>&1"
-          "docker exec php pecl install imagick > /dev/null 2>&1"
-          "docker exec php sh -c 'echo \"extension=imagick.so\" > /usr/local/etc/php/conf.d/imagick.ini' > /dev/null 2>&1"
-          "docker exec php pecl install redis > /dev/null 2>&1"
-          "docker exec php sh -c 'echo \"extension=redis.so\" > /usr/local/etc/php/conf.d/docker-php-ext-redis.ini' > /dev/null 2>&1"
-          "docker exec php sh -c 'echo \"upload_max_filesize=50M \\n post_max_size=50M\" > /usr/local/etc/php/conf.d/uploads.ini' > /dev/null 2>&1"
+          "docker exec php apk update > /dev/null 2>&1"
+          "docker exec php74 apt update > /dev/null 2>&1"
+          "docker exec php74 apk update > /dev/null 2>&1"
+
+          # php安装包管理
+          "curl -sL https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions -o /usr/local/bin/install-php-extensions > /dev/null 2>&1"
+          "docker exec php mkdir -p /usr/local/bin/ > /dev/null 2>&1"
+          "docker exec php74 mkdir -p /usr/local/bin/ > /dev/null 2>&1"
+          "docker cp /usr/local/bin/install-php-extensions php:/usr/local/bin/ > /dev/null 2>&1"
+          "docker cp /usr/local/bin/install-php-extensions php74:/usr/local/bin/ > /dev/null 2>&1"
+          "docker exec php chmod +x /usr/local/bin/install-php-extensions > /dev/null 2>&1"
+          "docker exec php74 chmod +x /usr/local/bin/install-php-extensions > /dev/null 2>&1"
+
+          # php安装扩展
+          "docker exec php install-php-extensions mysqli > /dev/null 2>&1"
+          "docker exec php install-php-extensions pdo_mysql > /dev/null 2>&1"
+          "docker exec php install-php-extensions gd intl zip > /dev/null 2>&1"
+          "docker exec php install-php-extensions exif > /dev/null 2>&1"
+          "docker exec php install-php-extensions bcmath > /dev/null 2>&1"
+          "docker exec php install-php-extensions opcache > /dev/null 2>&1"
+          "docker exec php install-php-extensions imagick redis > /dev/null 2>&1"
+
+          # php配置参数
+          "docker exec php sh -c 'echo \"upload_max_filesize=50M \" > /usr/local/etc/php/conf.d/uploads.ini' > /dev/null 2>&1"
+          "docker exec php sh -c 'echo \"post_max_size=50M \" > /usr/local/etc/php/conf.d/post.ini' > /dev/null 2>&1"
           "docker exec php sh -c 'echo \"memory_limit=256M\" > /usr/local/etc/php/conf.d/memory.ini' > /dev/null 2>&1"
           "docker exec php sh -c 'echo \"max_execution_time=1200\" > /usr/local/etc/php/conf.d/max_execution_time.ini' > /dev/null 2>&1"
           "docker exec php sh -c 'echo \"max_input_time=600\" > /usr/local/etc/php/conf.d/max_input_time.ini' > /dev/null 2>&1"
 
-          "docker exec php74 apt update > /dev/null 2>&1"
-          "docker exec php74 apt install -y libmariadb-dev-compat libmariadb-dev libzip-dev libmagickwand-dev imagemagick > /dev/null 2>&1"
-          "docker exec php74 docker-php-ext-install mysqli pdo_mysql zip gd intl bcmath opcache > /dev/null 2>&1"
-          "docker exec php74 pecl install imagick > /dev/null 2>&1"
-          "docker exec php74 sh -c 'echo \"extension=imagick.so\" > /usr/local/etc/php/conf.d/imagick.ini' > /dev/null 2>&1"
-          "docker exec php74 pecl install redis > /dev/null 2>&1"
-          "docker exec php74 sh -c 'echo \"extension=redis.so\" > /usr/local/etc/php/conf.d/docker-php-ext-redis.ini' > /dev/null 2>&1"
-          "docker exec php74 sh -c 'echo \"upload_max_filesize=50M \\n post_max_size=50M\" > /usr/local/etc/php/conf.d/uploads.ini' > /dev/null 2>&1"
+          # php重启
+          "docker exec php chmod -R 777 /var/www/html"
+          "docker restart php > /dev/null 2>&1"
+
+          # php7.4安装扩展
+          "docker exec php74 install-php-extensions mysqli > /dev/null 2>&1"
+          "docker exec php74 install-php-extensions pdo_mysql > /dev/null 2>&1"
+          "docker exec php74 install-php-extensions gd intl zip > /dev/null 2>&1"
+          "docker exec php74 install-php-extensions exif > /dev/null 2>&1"
+          "docker exec php74 install-php-extensions bcmath > /dev/null 2>&1"
+          "docker exec php74 install-php-extensions opcache > /dev/null 2>&1"
+          "docker exec php74 install-php-extensions imagick redis > /dev/null 2>&1"
+
+          # php7.4配置参数
+          "docker exec php74 sh -c 'echo \"upload_max_filesize=50M \" > /usr/local/etc/php/conf.d/uploads.ini' > /dev/null 2>&1"
+          "docker exec php74 sh -c 'echo \"post_max_size=50M \" > /usr/local/etc/php/conf.d/post.ini' > /dev/null 2>&1"
           "docker exec php74 sh -c 'echo \"memory_limit=256M\" > /usr/local/etc/php/conf.d/memory.ini' > /dev/null 2>&1"
           "docker exec php74 sh -c 'echo \"max_execution_time=1200\" > /usr/local/etc/php/conf.d/max_execution_time.ini' > /dev/null 2>&1"
           "docker exec php74 sh -c 'echo \"max_input_time=600\" > /usr/local/etc/php/conf.d/max_input_time.ini' > /dev/null 2>&1"
 
-          "docker exec nginx chmod -R 777 /var/www/html"
-          "docker exec php chmod -R 777 /var/www/html"
+          # php7.4重启
           "docker exec php74 chmod -R 777 /var/www/html"
-
-          "docker restart php > /dev/null 2>&1"
           "docker restart php74 > /dev/null 2>&1"
-          "docker restart nginx > /dev/null 2>&1"
-
       )
 
       total_commands=${#commands[@]}  # 计算总命令数
@@ -221,8 +249,19 @@ install_certbot() {
     curl -O https://raw.githubusercontent.com/huaniangzi/sh/main/auto_cert_renewal.sh
     chmod +x auto_cert_renewal.sh
 
-    # 安排每日午夜运行脚本
-    echo "0 0 * * * ~/auto_cert_renewal.sh" | crontab -
+    # 设置定时任务字符串
+    cron_job="0 0 * * * ~/auto_cert_renewal.sh"
+
+    # 检查是否存在相同的定时任务
+    existing_cron=$(crontab -l 2>/dev/null | grep -F "$cron_job")
+
+    # 如果不存在，则添加定时任务
+    if [ -z "$existing_cron" ]; then
+        (crontab -l 2>/dev/null; echo "$cron_job") | crontab -
+        echo "续签任务已添加"
+    else
+        echo "续签任务已存在，无需添加"
+    fi
 }
 
 install_ssltls() {
@@ -412,7 +451,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.6.2 （支持Ubuntu，Debian，Centos系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.6.3 （支持Ubuntu，Debian，Centos系统）\033[0m"
 echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本-\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
@@ -564,6 +603,12 @@ case $choice in
         yum -y update
     fi
 
+    # Update system on Alpine Linux
+    if [ -f "/etc/alpine-release" ]; then
+        apk update && apk upgrade
+    fi
+
+
     ;;
 
   3)
@@ -588,6 +633,15 @@ case $choice in
         yum remove $(rpm -q kernel | grep -v $(uname -r)) -y
     }
 
+    clean_alpine() {
+        apk del --purge $(apk info --installed | awk '{print $1}' | grep -v $(apk info --available | awk '{print $1}'))
+        apk autoremove
+        apk cache clean
+        rm -rf /var/log/*
+        rm -rf /var/cache/apk/*
+
+    }
+
     # Main script
     if [ -f "/etc/debian_version" ]; then
         # Debian-based systems
@@ -595,6 +649,9 @@ case $choice in
     elif [ -f "/etc/redhat-release" ]; then
         # Red Hat-based systems
         clean_redhat
+    elif [ -f "/etc/alpine-release" ]; then
+        # Alpine Linux
+        clean_alpine
     fi
 
     ;;
@@ -1464,9 +1521,22 @@ case $choice in
       case $sub_choice in
           1)
               clear
-              curl -fsSL https://get.docker.com | sh && ln -s /usr/libexec/docker/cli-plugins/docker-compose /usr/local/bin
-              systemctl start docker
-              systemctl enable docker
+
+            if [ -f "/etc/alpine-release" ]; then
+                apk update
+                apk add docker
+                rc-update add docker default
+                service docker start
+                curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                chmod +x /usr/local/bin/docker-compose
+
+            else
+
+                curl -fsSL https://get.docker.com | sh && ln -s /usr/libexec/docker/cli-plugins/docker-compose /usr/local/bin
+                systemctl start docker
+                systemctl enable docker
+            fi
+
               ;;
           2)
               clear
@@ -2378,7 +2448,7 @@ case $choice in
 
             docker rm -f nginx >/dev/null 2>&1
             docker rmi nginx >/dev/null 2>&1
-            docker run -d --name nginx --restart always -p 80:80 -p 443:443 -v /home/web/nginx.conf:/etc/nginx/nginx.conf -v /home/web/conf.d:/etc/nginx/conf.d -v /home/web/certs:/etc/nginx/certs -v /home/web/html:/var/www/html -v /home/web/log/nginx:/var/log/nginx nginx
+            docker run -d --name nginx --restart always -p 80:80 -p 443:443 -p 443:443/udp -v /home/web/nginx.conf:/etc/nginx/nginx.conf -v /home/web/conf.d:/etc/nginx/conf.d -v /home/web/certs:/etc/nginx/certs -v /home/web/html:/var/www/html -v /home/web/log/nginx:/var/log/nginx nginx:alpine
 
             clear
             nginx_version=$(docker exec nginx nginx -v 2>&1)
@@ -2768,7 +2838,7 @@ case $choice in
                 wget -O /home/web/nginx.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/nginx10.conf
                 wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/default10.conf
                 default_server_ssl
-                docker run -d --name nginx --restart always --network web_default -p 80:80 -p 443:443 -v /home/web/nginx.conf:/etc/nginx/nginx.conf -v /home/web/conf.d:/etc/nginx/conf.d -v /home/web/certs:/etc/nginx/certs -v /home/web/html:/var/www/html -v /home/web/log/nginx:/var/log/nginx nginx
+                docker run -d --name nginx --restart always --network web_default -p 80:80 -p 443:443 -p 443:443/udp -v /home/web/nginx.conf:/etc/nginx/nginx.conf -v /home/web/conf.d:/etc/nginx/conf.d -v /home/web/certs:/etc/nginx/certs -v /home/web/html:/var/www/html -v /home/web/log/nginx:/var/log/nginx nginx:alpine
                 docker exec -it nginx chmod -R 777 /var/www/html
 
                 # 获取宿主机当前时区
@@ -2865,12 +2935,11 @@ case $choice in
         91)
             clear
             docker rm -f nginx php php74 mysql redis
-            docker rmi nginx php:fpm php:7.4.33-fpm mysql redis
-            check_port
+            docker rmi nginx nginx:alpine php:fpm php:fpm-alpine php:7.4.33-fpm php:7.4-fpm-alpine mysql redis redis:alpine
 
+            check_port
             install_dependency
             install_docker
-            install_certbot
             install_ldnmp
             ;;
 
@@ -2882,7 +2951,7 @@ case $choice in
             case "$choice" in
               [Yy])
                 docker rm -f nginx php php74 mysql redis
-                docker rmi nginx php:fpm php:7.4.33-fpm mysql redis
+                docker rmi nginx nginx:alpine php:fpm php:fpm-alpine php:7.4.33-fpm php:7.4-fpm-alpine mysql redis redis:alpine
                 rm -rf /home/web
                 ;;
               [Nn])
@@ -4767,50 +4836,107 @@ EOF
               ;;
 
           8)
-          clear
-          echo "请备份数据，将为你重装系统，预计花费15分钟。"
-          read -p "确定继续吗？(Y/N): " choice
-
-          case "$choice" in
-            [Yy])
-              while true; do
-                read -p "请选择要重装的系统:  1. Debian10 丨 2. Debian11 | 3. Debian12 丨 4. Ubuntu20.04: " sys_choice
-
-                case "$sys_choice" in
-                  1)
-                    xitong="-d 10"
-                    break  # 结束循环
-                    ;;
-                  2)
-                    xitong="-d 11"
-                    break  # 结束循环
-                    ;;
-                  3)
-                    xitong="-d 12"
-                    break  # 结束循环
-                    ;;
-                  4)
-                    xitong="-u 20.04"
-                    break  # 结束循环
-                    ;;
-                  *)
-                    echo "无效的选择，请重新输入。"
-                    ;;
-                esac
-              done
-
+            dd_xitong_1() {
               read -p "请输入你重装后的密码: " vpspasswd
               install wget
               bash <(wget --no-check-certificate -qO- 'https://raw.githubusercontent.com/MoeClub/Note/master/InstallNET.sh') $xitong -v 64 -p $vpspasswd -port 22
-              ;;
-            [Nn])
-              echo "已取消"
-              ;;
-            *)
-              echo "无效的选择，请输入 Y 或 N。"
-              ;;
-          esac
-              ;;
+            }
+
+            dd_xitong_2() {
+              install wget
+              wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh
+            }
+
+            clear
+            echo "请备份数据，将为你重装系统，预计花费15分钟。"
+            echo -e "\e[37m感谢MollyLau和MoeClub的脚本支持！\e[0m "
+            read -p "确定继续吗？(Y/N): " choice
+
+            case "$choice" in
+              [Yy])
+                while true; do
+
+                  echo "1. Debian 12"
+                  echo "2. Debian 11"
+                  echo "3. Debian 10"
+                  echo "4. Ubuntu 22.04"
+                  echo "5. Ubuntu 20.04"
+                  echo "6. CentOS 7.9"
+                  echo "7. Alpine 3.19"
+                  echo -e "8. Windows 11 \033[36mBeta\033[0m"
+                  echo "------------------------"
+                  read -p "请选择要重装的系统: " sys_choice
+
+                  case "$sys_choice" in
+                    1)
+                      xitong="-d 12"
+                      dd_xitong_1
+                      exit
+                      reboot
+                      ;;
+
+                    2)
+                      xitong="-d 11"
+                      dd_xitong_1
+                      reboot
+                      exit
+                      ;;
+
+                    3)
+                      xitong="-d 10"
+                      dd_xitong_1
+                      reboot
+                      exit
+                      ;;
+
+                    4)
+                      dd_xitong_2
+                      bash InstallNET.sh -ubuntu
+                      reboot
+                      exit
+                      ;;
+
+                    5)
+                      xitong="-u 20.04"
+                      dd_xitong_1
+                      reboot
+                      exit
+                      ;;
+
+                    6)
+                      dd_xitong_2
+                      bash InstallNET.sh -centos 7
+                      reboot
+                      exit
+                      ;;
+                    7)
+                      dd_xitong_2
+                      bash InstallNET.sh -alpine
+                      reboot
+                      exit
+                      ;;
+
+                    8)
+                      dd_xitong_2
+                      bash InstallNET.sh -windows
+                      reboot
+                      exit
+                      ;;
+
+                    *)
+                      echo "无效的选择，请重新输入。"
+                      ;;
+                  esac
+                done
+                ;;
+              [Nn])
+                echo "已取消"
+                ;;
+              *)
+                echo "无效的选择，请输入 Y 或 N。"
+                ;;
+            esac
+                ;;
 
 
           9)
