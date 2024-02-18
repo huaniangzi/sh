@@ -2272,15 +2272,21 @@ case $choice in
                 echo "碎片化知识卡片和一个记事本,备忘录"
                 echo ""
 
-      10)
-      clear
-      # halo
-      add_yuming
-      install_ssltls
-
-      docker run -d --name halo --restart always --network web_default -p 8010:8090 -v /home/web/html/$yuming/.halo2:/root/.halo2 halohub/halo:2.11
-      duankou=8010
-      reverse_proxy
+                read -p "确定安装碎片化知识卡片吗？(Y/N): " choice
+                case "$choice" in
+                    [Yy])
+                        clear
+                        docker rm -f easyimage
+                        docker rmi -f ddsderek/easyimage:latest
+                        install_docker
+                        get_docker_port
+                        docker run -d \
+                            --name memeos \
+                            --hostname memeos \
+                            -p $hua_port:5230 \
+                            -v /home/docker/memos/memos/:/var/opt/memos \
+                            --restart always \
+                            neosmemo/memos:latest
 
                         clear
                         echo "碎片化知识卡片已经安装完成"
@@ -2297,6 +2303,7 @@ case $choice in
                 esac
             fi
               ;;
+
         44)
             docker_name="qbittorrent"
             docker_img="lscr.io/linuxserver/qbittorrent:4.5.5"
