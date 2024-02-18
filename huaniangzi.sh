@@ -98,12 +98,22 @@ check_port() {
     fi
 }
 
-# 定义安装 Docker 的函数
-install_docker() {
-    if ! command -v docker &>/dev/null; then
+install_add_docker() {
+    if [ -f "/etc/alpine-release" ]; then
+        apk update
+        apk add docker docker-compose
+        rc-update add docker default
+        service docker start
+    else
         curl -fsSL https://get.docker.com | sh && ln -s /usr/libexec/docker/cli-plugins/docker-compose /usr/local/bin
         systemctl start docker
         systemctl enable docker
+    fi
+}
+
+install_docker() {
+    if ! command -v docker &>/dev/null; then
+        install_add_docker
     else
         echo "Docker 已经安装"
     fi
@@ -451,7 +461,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.6.3 （支持Ubuntu，Debian，Centos系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.6.4 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
 echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本-\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
@@ -484,8 +494,14 @@ case $choice in
       cpu_info=$(lscpu | grep 'BIOS Model name' | awk -F': ' '{print $2}' | sed 's/^[ \t]*//')
     fi
 
-    cpu_usage=$(top -bn1 | grep 'Cpu(s)' | awk '{print $2 + $4}')
-    cpu_usage_percent=$(printf "%.2f" "$cpu_usage")%
+    if [ -f /etc/alpine-release ]; then
+        # Alpine Linux 使用以下命令获取 CPU 使用率
+        cpu_usage_percent=$(top -bn1 | grep '^CPU' | awk '{print " "$4}' | cut -c 1-2)
+    else
+        # 其他系统使用以下命令获取 CPU 使用率
+        cpu_usage_percent=$(top -bn1 | grep "Cpu(s)" | awk '{print " "$2}')
+    fi
+
 
     cpu_cores=$(nproc)
 
@@ -1521,21 +1537,7 @@ case $choice in
       case $sub_choice in
           1)
               clear
-
-            if [ -f "/etc/alpine-release" ]; then
-                apk update
-                apk add docker
-                rc-update add docker default
-                service docker start
-                curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                chmod +x /usr/local/bin/docker-compose
-
-            else
-
-                curl -fsSL https://get.docker.com | sh && ln -s /usr/libexec/docker/cli-plugins/docker-compose /usr/local/bin
-                systemctl start docker
-                systemctl enable docker
-            fi
+              install_add_docker
 
               ;;
           2)
@@ -1847,8 +1849,7 @@ case $choice in
               case "$choice" in
                 [Yy])
                   docker rm $(docker ps -a -q) && docker rmi $(docker images -q) && docker network prune
-                  remove docker docker-ce > /dev/null 2>&1
-                  rm -rf /var/lib/docker
+                  remove docker docker-ce docker-compose > /dev/null 2>&1
                   ;;
                 [Nn])
                   ;;
@@ -1906,9 +1907,8 @@ case $choice in
     case $sub_choice in
         1)
         clear
-
         check_port
-        nstall_dependency
+        install_dependency
         install_docker
         install_certbot
 
@@ -2005,11 +2005,11 @@ case $choice in
         # halo
         add_yuming
         install_ssltls
-  
-        docker run -d --name halo --restart always --network web_default -p 8010:8090 -v /home/web/html/$yuming/.halo2:/root/.halo2 halohub/halo:2.9
-  
+
+        docker run -d --name halo --restart always --network web_default -p 8010:8090 -v /home/web/html/$yuming/.halo2:/root/.halo2 halohub/halo:2.11
+        duankou=8010
         reverse_proxy
-  
+
         clear
         echo "您的Halo网站搭建好了！"
         echo "https://$yuming"
@@ -2272,21 +2272,15 @@ case $choice in
                 echo "碎片化知识卡片和一个记事本,备忘录"
                 echo ""
 
-                read -p "确定安装碎片化知识卡片吗？(Y/N): " choice
-                case "$choice" in
-                    [Yy])
-                        clear
-                        docker rm -f easyimage
-                        docker rmi -f ddsderek/easyimage:latest
-                        install_docker
-                        get_docker_port
-                        docker run -d \
-                            --name memeos \
-                            --hostname memeos \
-                            -p $hua_port:5230 \
-                            -v /home/docker/memos/memos/:/var/opt/memos \
-                            --restart always \
-                            neosmemo/memos:latest
+      10)
+      clear
+      # halo
+      add_yuming
+      install_ssltls
+
+      docker run -d --name halo --restart always --network web_default -p 8010:8090 -v /home/web/html/$yuming/.halo2:/root/.halo2 halohub/halo:2.11
+      duankou=8010
+      reverse_proxy
 
                         clear
                         echo "碎片化知识卡片已经安装完成"
@@ -2447,7 +2441,7 @@ case $choice in
             default_server_ssl
 
             docker rm -f nginx >/dev/null 2>&1
-            docker rmi nginx >/dev/null 2>&1
+            docker rmi nginx nginx:alpine >/dev/null 2>&1
             docker run -d --name nginx --restart always -p 80:80 -p 443:443 -p 443:443/udp -v /home/web/nginx.conf:/etc/nginx/nginx.conf -v /home/web/conf.d:/etc/nginx/conf.d -v /home/web/certs:/etc/nginx/certs -v /home/web/html:/var/www/html -v /home/web/log/nginx:/var/log/nginx nginx:alpine
 
             clear
@@ -2794,8 +2788,8 @@ case $choice in
                             ;;
                         9)
                             remove fail2ban
-                          break
-                          ;;
+                            break
+                            ;;
                         0)
                             break
                             ;;
@@ -2994,7 +2988,7 @@ case $choice in
       echo "25. Nextcloud网盘                       26. QD-Today定时任务管理框架"
       echo "27. Dockge容器堆栈管理面板              28. LibreSpeed测速工具"
       echo "29. searxng聚合搜索站                   30. PhotoPrism私有相册系统"
-      echo "31. StirlingPDF工具大全"
+      echo "31. StirlingPDF工具大全                 32. drawio免费的在线图表软件"
       echo "------------------------"
       echo "0. 返回主菜单"
       echo "------------------------"
@@ -4167,6 +4161,19 @@ case $choice in
             docker_app
               ;;
 
+          32)
+            docker_name="drawio"
+            docker_img="jgraph/drawio"
+            docker_port=7080
+            docker_rum="docker run -d --restart=always --name drawio -p 7080:8080 -v /home/docker/drawio:/var/lib/drawio jgraph/drawio"
+            docker_describe="这是一个强大图表绘制软件。思维导图，拓扑图，流程图，都能画"
+            docker_url="官网介绍: https://www.drawio.com/"
+            docker_use=""
+            docker_passwd=""
+            docker_app
+              ;;
+
+
           0)
               huaniangzi
               ;;
@@ -4457,7 +4464,7 @@ EOF
                   echo "------------------------"
                   echo "1. 添加服务器                2. 删除服务器             3. 编辑服务器"
                   echo "------------------------"
-                  echo "11. 安装科技lion脚本         12. 更新系统              13. 清理系统"
+                  echo "11. 安装花娘子脚本         12. 更新系统              13. 清理系统"
                   echo "14. 安装docker               15. 安装BBR3              16. 设置1G虚拟内存"
                   echo "17. 设置时区到上海           18. 开放所有端口"
                   echo "------------------------"
@@ -5051,7 +5058,15 @@ EOF
                 chmod 600 /swapfile
                 mkswap /swapfile
                 swapon /swapfile
-                echo "/swapfile swap swap defaults 0 0" >> /etc/fstab
+
+                if [ -f /etc/alpine-release ]; then
+                    echo "/swapfile swap swap defaults 0 0" >> /etc/fstab
+                    echo "nohup swapon /swapfile" >> /etc/local.d/swap.start
+                    chmod +x /etc/local.d/swap.start
+                    rc-update add local
+                else
+                    echo "/swapfile swap swap defaults 0 0" >> /etc/fstab
+                fi
 
                 echo "虚拟内存大小已调整为${new_swap}MB"
                 ;;
@@ -5578,6 +5593,10 @@ EOF
                       # CentOS
                       hostnamectl set-hostname "$new_hostname"
                       sed -i "s/$current_hostname/$new_hostname/g" /etc/hostname
+                  elif [ -f /etc/alpine-release ]; then
+                      # alpine
+                      echo "$new_hostname" > /etc/hostname
+                      /etc/init.d/hostname restart
                   else
                       echo "未知的发行版，无法更改主机名。"
                       exit 1
@@ -5586,13 +5605,6 @@ EOF
                   # 重启生效
                   systemctl restart systemd-hostnamed
                   echo "主机名已更改为: $new_hostname"
-
-                  # 获取当前机器的 IPv4 地址
-                  ipv4_address
-
-                  # 修改 /etc/hosts 文件，将新的主机名映射到获取的 IPv4 地址
-                  sed -i "/localhost/a $ipv4_address $new_hostname" /etc/hosts
-                  echo "主机名 $new_hostname 已映射到 IP 地址 $ipv4_address"
               else
                   echo "无效的主机名。未更改主机名。"
                   exit 1
@@ -5600,7 +5612,6 @@ EOF
           else
               echo "未更改主机名。"
           fi
-
 
               ;;
 
@@ -6048,7 +6059,9 @@ EOF
               ;;
       esac
       break_end
+
     done
+
     ;;
   
   00)
