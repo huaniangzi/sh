@@ -461,7 +461,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.6.4 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.6.5 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
 echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本-\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
@@ -471,11 +471,12 @@ echo "4. 常用工具 ▶"
 echo "5. 测试脚本合集 ▶ "
 echo "6. Docker管理 ▶ "
 echo -e "\033[33m7. LDNMP建站 ▶ \033[0m"
-echo "8. 常用面板工具 ▶ "
-echo "9. 外面的世界 ▶ "
-echo "10. LXC開小鷄 ▶"
-echo -e "11. VPS集群控制 ▶ \033[36mBeta\033[0m"
-echo "12. 系统工具 ▶ "
+echo "8. 面板工具 ▶ "
+echo "9. 我的工作区 ▶ "
+echo "10. 外面的世界 ▶ "
+echo "11. LXC開小鷄 ▶"
+echo -e "12. VPS集群控制 ▶ \033[36mBeta\033[0m"
+echo "13. 系统工具 ▶ "
 echo "------------------------"
 echo "00. 脚本更新"
 echo "0. 退出脚本"
@@ -893,12 +894,56 @@ case $choice in
                   ;;
 
             2)
-                clear
-                install wget
-                wget --no-check-certificate -O tcpx.sh https://raw.githubusercontent.com/ylx2016/Linux-NetSpeed/master/tcpx.sh
-                chmod +x tcpx.sh
-                ./tcpx.sh
-                ;;
+              clear
+              if [ -f "/etc/alpine-release" ]; then
+                  while true; do
+                        clear
+                        congestion_algorithm=$(sysctl -n net.ipv4.tcp_congestion_control)
+                        queue_algorithm=$(sysctl -n net.core.default_qdisc)
+                        echo "当前TCP阻塞算法: $congestion_algorithm $queue_algorithm"
+
+                        echo ""
+                        echo "BBR管理"
+                        echo "------------------------"
+                        echo "1. 开启BBRv3              2. 关闭BBRv3（会重启）"
+                        echo "------------------------"
+                        echo "0. 返回上一级选单"
+                        echo "------------------------"
+                        read -p "请输入你的选择: " sub_choice
+
+                        case $sub_choice in
+                            1)
+                              cat > /etc/sysctl.conf << EOF
+net.core.default_qdisc=fq_pie
+net.ipv4.tcp_congestion_control=bbr
+EOF
+                              sysctl -p
+
+                                ;;
+                            2)
+                              sed -i '/net.core.default_qdisc=fq_pie/d' /etc/sysctl.conf
+                              sed -i '/net.ipv4.tcp_congestion_control=bbr/d' /etc/sysctl.conf
+                              sysctl -p
+                              reboot
+                                ;;
+                            0)
+                                break  # 跳出循环，退出菜单
+                                ;;
+
+                            *)
+                                break  # 跳出循环，退出菜单
+                                ;;
+
+                        esac
+                  done
+              else
+                  install wget
+                  wget --no-check-certificate -O tcpx.sh https://raw.githubusercontent.com/ylx2016/Linux-NetSpeed/master/tcpx.sh
+                  chmod +x tcpx.sh
+                  ./tcpx.sh
+              fi
+
+              ;;
 
             3)
                 while true; do
@@ -4193,8 +4238,114 @@ case $choice in
     done
     ;;
 
-
   9)
+    while true; do
+      clear
+      echo "▶ 我的工作区"
+      echo "系统将为你提供5个后台运行的工作区，你可以用来执行长时间的任务"
+      echo "即使你断开SSH，工作区中的任务也不会中断，非常方便！来试试吧！"
+      echo -e "\033[33m注意: 进入工作区后使用Ctrl+b再单独按d，退出工作区！\033[0m"
+      echo "------------------------"
+      echo "a. 安装工作区环境"
+      echo "------------------------"
+      echo "1. 1号工作区"
+      echo "2. 2号工作区"
+      echo "3. 3号工作区"
+      echo "4. 4号工作区"
+      echo "5. 5号工作区"
+      echo "6. 6号工作区"
+      echo "7. 7号工作区"
+      echo "8. 8号工作区"
+      echo "9. 9号工作区"
+      echo "10. 10号工作区"
+      echo "------------------------"
+      echo "99. 工作区状态"
+      echo "------------------------"
+      echo "b. 卸载工作区"
+      echo "------------------------"
+      echo "0. 返回主菜单"
+      echo "------------------------"
+      read -p "请输入你的选择: " sub_choice
+
+      case $sub_choice in
+          a)
+              clear
+              install tmux
+
+              ;;
+          b)
+              clear
+              remove tmux
+              ;;
+          1)
+              clear
+              SESSION_NAME="work1"
+              tmux_run
+
+              ;;
+          2)
+              clear
+              SESSION_NAME="work2"
+              tmux_run
+              ;;
+          3)
+              clear
+              SESSION_NAME="work3"
+              tmux_run
+              ;;
+          4)
+              clear
+              SESSION_NAME="work4"
+              tmux_run
+              ;;
+          5)
+              clear
+              SESSION_NAME="work5"
+              tmux_run
+              ;;
+          6)
+              clear
+              SESSION_NAME="work6"
+              tmux_run
+              ;;
+          7)
+              clear
+              SESSION_NAME="work7"
+              tmux_run
+              ;;
+          8)
+              clear
+              SESSION_NAME="work8"
+              tmux_run
+              ;;
+          9)
+              clear
+              SESSION_NAME="work9"
+              tmux_run
+              ;;
+          10)
+              clear
+              SESSION_NAME="work10"
+              tmux_run
+              ;;
+
+          99)
+              clear
+              tmux list-sessions
+              ;;
+          0)
+              kejilion
+              ;;
+          *)
+              echo "无效的输入!"
+              ;;
+      esac
+      break_end
+
+    done
+    ;;
+
+  10)
     clear
       while true; do
         echo -e "\033[31m▶ 外面的世界\033[0m"
@@ -4421,12 +4572,12 @@ case $choice in
       done
       ;;
 
-  10)
+  11)
       clear
       wget -N --no-check-certificate https://raw.githubusercontent.com/MXCCO/lxdpro/main/lxdpro.sh && bash lxdpro.sh
       ;;
 
-  11)
+  12)
     clear
     while true; do
       clear
@@ -4605,7 +4756,7 @@ EOF
 
     ;;
 
-  12)
+  13)
   clear
     while true; do
       echo -e "\033[31m▶ 系统工具\033[0m"
@@ -4850,107 +5001,200 @@ EOF
               ;;
 
           8)
-            dd_xitong_1() {
-              read -p "请输入你重装后的密码: " vpspasswd
-              install wget
-              bash <(wget --no-check-certificate -qO- 'https://raw.githubusercontent.com/MoeClub/Note/master/InstallNET.sh') $xitong -v 64 -p $vpspasswd -port 22
-            }
+          dd_xitong_1() {
+            read -p "请输入你重装后的密码: " vpspasswd
+            echo "任意键继续，重装后初始用户名: root  初始密码: $vpspasswd  初始端口: 22"
+            read -n 1 -s -r -p ""
+            install wget
+            bash <(wget --no-check-certificate -qO- 'https://raw.githubusercontent.com/MoeClub/Note/master/InstallNET.sh') $xitong -v 64 -p $vpspasswd -port 22
+          }
 
-            dd_xitong_2() {
-              install wget
-              wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh
-            }
+          dd_xitong_2() {
+            echo "任意键继续，重装后初始用户名: root  初始密码: LeitboGi0ro  初始端口: 22"
+            read -n 1 -s -r -p ""
+            install wget
+            wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh
+          }
 
-            clear
-            echo "请备份数据，将为你重装系统，预计花费15分钟。"
-            echo -e "\e[37m感谢MollyLau和MoeClub的脚本支持！\e[0m "
-            read -p "确定继续吗？(Y/N): " choice
+          dd_xitong_3() {
+            echo "任意键继续，重装后初始用户名: Administrator  初始密码: Teddysun.com  初始端口: 3389"
+            read -n 1 -s -r -p ""
+            install wget
+            wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh
+          }
 
-            case "$choice" in
-              [Yy])
-                while true; do
+          clear
+          echo "请备份数据，将为你重装系统，预计花费15分钟。"
+          echo -e "\e[37m感谢MollyLau和MoeClub的脚本支持！\e[0m "
+          read -p "确定继续吗？(Y/N): " choice
 
-                  echo "1. Debian 12"
-                  echo "2. Debian 11"
-                  echo "3. Debian 10"
-                  echo "4. Ubuntu 22.04"
-                  echo "5. Ubuntu 20.04"
-                  echo "6. CentOS 7.9"
-                  echo "7. Alpine 3.19"
-                  echo -e "8. Windows 11 \033[36mBeta\033[0m"
-                  echo "------------------------"
-                  read -p "请选择要重装的系统: " sys_choice
+          case "$choice" in
+            [Yy])
+              while true; do
 
-                  case "$sys_choice" in
-                    1)
-                      xitong="-d 12"
-                      dd_xitong_1
-                      exit
-                      reboot
-                      ;;
+                echo "------------------------"
+                echo "1. Debian 12"
+                echo "2. Debian 11"
+                echo "3. Debian 10"
+                echo "4. Debian 9"
+                echo "------------------------"
+                echo "11. Ubuntu 24.04"
+                echo "12. Ubuntu 22.04"
+                echo "13. Ubuntu 20.04"
+                echo "14. Ubuntu 18.04"
+                echo "------------------------"
+                echo "21. CentOS 9"
+                echo "22. CentOS 8"
+                echo "23. CentOS 7"
+                echo "------------------------"
+                echo "31. Alpine 3.19"
+                echo "------------------------"
+                echo "41. Windows 11"
+                echo "42. Windows 10"
+                echo "43. Windows Server 2022"
+                echo "44. Windows Server 2019"
+                echo "44. Windows Server 2016"
+                echo "------------------------"
+                read -p "请选择要重装的系统: " sys_choice
 
-                    2)
-                      xitong="-d 11"
-                      dd_xitong_1
-                      reboot
-                      exit
-                      ;;
+                case "$sys_choice" in
+                  1)
+                    xitong="-d 12"
+                    dd_xitong_1
+                    exit
+                    reboot
+                    ;;
 
-                    3)
-                      xitong="-d 10"
-                      dd_xitong_1
-                      reboot
-                      exit
-                      ;;
+                  2)
+                    xitong="-d 11"
+                    dd_xitong_1
+                    reboot
+                    exit
+                    ;;
 
-                    4)
-                      dd_xitong_2
-                      bash InstallNET.sh -ubuntu
-                      reboot
-                      exit
-                      ;;
+                  3)
+                    xitong="-d 10"
+                    dd_xitong_1
+                    reboot
+                    exit
+                    ;;
+                  4)
+                    xitong="-d 9"
+                    dd_xitong_1
+                    reboot
+                    exit
+                    ;;
 
-                    5)
-                      xitong="-u 20.04"
-                      dd_xitong_1
-                      reboot
-                      exit
-                      ;;
+                  11)
+                    dd_xitong_2
+                    bash InstallNET.sh -ubuntu 24.04
+                    reboot
+                    exit
+                    ;;
+                  12)
+                    dd_xitong_2
+                    bash InstallNET.sh -ubuntu 22.04
+                    reboot
+                    exit
+                    ;;
 
-                    6)
-                      dd_xitong_2
-                      bash InstallNET.sh -centos 7
-                      reboot
-                      exit
-                      ;;
-                    7)
-                      dd_xitong_2
-                      bash InstallNET.sh -alpine
-                      reboot
-                      exit
-                      ;;
+                  13)
+                    xitong="-u 20.04"
+                    dd_xitong_1
+                    reboot
+                    exit
+                    ;;
+                  14)
+                    xitong="-u 18.04"
+                    dd_xitong_1
+                    reboot
+                    exit
+                    ;;
 
-                    8)
-                      dd_xitong_2
-                      bash InstallNET.sh -windows
-                      reboot
-                      exit
-                      ;;
 
-                    *)
-                      echo "无效的选择，请重新输入。"
-                      ;;
-                  esac
-                done
-                ;;
-              [Nn])
-                echo "已取消"
-                ;;
-              *)
-                echo "无效的选择，请输入 Y 或 N。"
-                ;;
-            esac
-                ;;
+                  21)
+                    dd_xitong_2
+                    bash InstallNET.sh -centos 9
+                    reboot
+                    exit
+                    ;;
+
+
+                  22)
+                    dd_xitong_2
+                    bash InstallNET.sh -centos 8
+                    reboot
+                    exit
+                    ;;
+
+                  23)
+                    dd_xitong_2
+                    bash InstallNET.sh -centos 7
+                    reboot
+                    exit
+                    ;;
+
+
+
+                  31)
+                    dd_xitong_2
+                    bash InstallNET.sh -alpine
+                    reboot
+                    exit
+                    ;;
+
+
+
+                  41)
+                    dd_xitong_3
+                    bash InstallNET.sh -windows 11 -lang "cn"
+                    reboot
+                    exit
+                    ;;
+
+                  42)
+                    dd_xitong_3
+                    bash InstallNET.sh -windows 10 -lang "cn"
+                    reboot
+                    exit
+                    ;;
+
+                  43)
+                    dd_xitong_3
+                    bash InstallNET.sh -windows 2022 -lang "cn"
+                    reboot
+                    exit
+                    ;;
+
+                  44)
+                    dd_xitong_3
+                    bash InstallNET.sh -windows 2019 -lang "cn"
+                    reboot
+                    exit
+                    ;;
+
+                  45)
+                    dd_xitong_3
+                    bash InstallNET.sh -windows 2016 -lang "cn"
+                    reboot
+                    exit
+                    ;;
+
+
+                  *)
+                    echo "无效的选择，请重新输入。"
+                    ;;
+                esac
+              done
+              ;;
+            [Nn])
+              echo "已取消"
+              ;;
+            *)
+              echo "无效的选择，请输入 Y 或 N。"
+              ;;
+          esac
+              ;;
 
 
           9)
