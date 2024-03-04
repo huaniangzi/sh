@@ -461,7 +461,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.6.5 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.6.6 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
 echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本-\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
@@ -4392,13 +4392,8 @@ EOF
                 ;;
             5)
                 clear
-                echo "2a01:4f8:c010:d56::2 github.com
-                2a01:4f8:c010:d56::3 api.github.com
-                2a01:4f8:c010:d56::4 codeload.github.com
-                2a01:4f8:c010:d56::5 objects.githubusercontent.com
-                2a01:4f8:c010:d56::6 ghcr.io
-                2a01:4f8:c010:d56::7 pkg.github.com npm.pkg.github.com maven.pkg.github.com
-                nuget.pkg.github.com rubygems.pkg.github.com" | tee -a /etc/hosts
+                echo "nameserver 2001:67c:2b0::4" | sudo tee -a /etc/resolv.conf
+                echo "nameserver 2001:67c:2b0::6" | sudo tee -a /etc/resolv.conf
                 clear
                 echo "已解除限制。"
                 ;;
