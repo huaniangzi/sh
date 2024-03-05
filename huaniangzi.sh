@@ -83,7 +83,7 @@ break_end() {
 }
 
 huaniangzi() {
-            k
+            hua
             exit
 }
 
@@ -488,7 +488,7 @@ echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
 echo -e "\033[96m花娘子一键脚本工具 v1.6.7 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
-echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本\033[0m"
+echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本-\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
 echo "2. 系统更新"
@@ -701,7 +701,7 @@ case $choice in
   4)
     clear
     while true; do
-        echo -e "\033[31m▶ 常用工具\033[0m"
+        echo -e "${red}▶ 常用工具${re}"
         echo "------------------------"
         echo "1. 命令行工具和软件 ▶"
         echo "2. BBR管理 ▶"
@@ -716,7 +716,7 @@ case $choice in
             1)
                 while true; do
                     clear
-                    echo -e "\033[31m▶ 安装常用工具\033[0m"
+                    echo -e "${pink}▶ 安装常用工具${re}"
                     echo "------------------------"
                     echo "1. curl 下载工具"
                     echo "2. wget 下载工具"
@@ -1513,7 +1513,7 @@ EOF
   5)
     while true; do
       clear
-      echo "▶ Docker管理器"
+      echo "${red}▶ Docker管理器${re}"
       echo "------------------------"
       echo "1. 安装更新Docker环境"
       echo "------------------------"
@@ -1874,7 +1874,7 @@ EOF
   6)
     while true; do
       clear
-      echo "▶ 测试脚本合集"
+      echo "${red}▶ 测试脚本合集${re}"
       echo "------------------------"
       echo "1. ChatGPT解锁状态检测"
       echo "2. Region流媒体解锁测试"
@@ -1946,34 +1946,35 @@ EOF
   7)
     clear
       while true; do
-        echo -e "\033[31m▶ 外面的世界\033[0m"
+        echo -e "${red}▶ 外面的世界${re}"
         echo "------------------------"
-        echo -e "\033[91m▼ 快捷工具 ▼\033[0m"
-        echo "------------------------"
+        echo -e "${pink}▼ 快捷工具 ▼${re}"
+        echo "---------------------------------------------------------"
         echo "1.開啓 SWAP虛擬内存               2.開啓 BBR"
         echo "3.WARP 01                         4.WARP 02"
         echo "5.解除GitHub限制                  6.DisneyPlus檢測"
         echo "7.Netflix檢測"
-        echo -e "\033[91m▼ 系统工具 ▼\033[0m"
+        echo "---------------------------------------------------------"
+        echo -e "${pink}▼ 系统工具 ▼${re}"
         echo "------------------------"
         echo "20.安裝極光面板 "
         echo "------------------------"
-        echo -e "\033[91m▼ 一条龙服务 ▼\033[0m"
-        echo -e "---------------------------------------------------------"
+        echo -e "${pink}▼ 一条龙服务 ▼${re}"
+        echo "------------------------"
         echo -e "       Sing-box多合一             Argo-tunnel"
-        echo -e "---------------------------------------------------------"
+        echo "---------------------------------------------------------"
         echo -e " 41. F佬Sing-box一键脚本        45. F佬ArgoX一键脚本"
         echo -e " 42. 小绵羊Sing-box三合一       46. Suoha一键Argo脚本"
         echo -e " 43. 勇哥Sing-box四合一         47. WL一键Argo哪吒脚本"
         echo -e " 44. V2ray-agent八合一          48. 一键老王Nodejs-Argo节点+哪吒+订阅"
-        echo -e "---------------------------------------------------------"
+        echo "---------------------------------------------------------"
         echo -e "        单协议                    XRAY面板及其他"
-        echo -e "---------------------------------------------------------"
+        echo "---------------------------------------------------------"
         echo -e " 49. M佬Hysteria2一键脚本      53.新版Xray面板一键脚本"
         echo -e " 50. M佬Juicity一键脚本        54.伊朗版Xray面板一键脚本"
         echo -e " 51. M佬Tuic-v5一键脚本        55.OpenVPN一键安装脚本"
         echo -e " 52. Brutal-Reality一键脚本    56.一键搭建TG代理"
-        echo "------------------------"
+        echo "---------------------------------------------------------"
         echo "0. 返回主菜单"
         echo "------------------------"
         read -p "请输入你的选择: " sub_choice
@@ -2218,7 +2219,7 @@ EOF
   8)
   while true; do
     clear
-    echo -e "\033[31m▶ LDNMP建站\033[0m"
+    echo -e "${red}▶ LDNMP建站${re}"
     echo  "------------------------"
     echo  "1. 安装LDNMP环境"
     echo  "------------------------"
@@ -3140,7 +3141,7 @@ EOF
   9)
     while true; do
       clear
-      echo "▶ 面板工具"
+      echo "${red}▶ 面板工具${re}"
       echo "------------------------"
       echo "1. 宝塔面板官方版                       2. aaPanel宝塔国际版"
       echo "3. 1Panel新一代管理面板                 4. NginxProxyManager可视化面板"
@@ -4358,7 +4359,7 @@ EOF
   10)
     while true; do
       clear
-      echo "▶ 我的工作区"
+      echo "${red}▶ 我的工作区${re}"
       echo "系统将为你提供5个后台运行的工作区，你可以用来执行长时间的任务"
       echo "即使你断开SSH，工作区中的任务也不会中断，非常方便！来试试吧！"
       echo -e "\033[33m注意: 进入工作区后使用Ctrl+b再单独按d，退出工作区！\033[0m"
@@ -4465,7 +4466,7 @@ EOF
   11)
     while true; do
       clear
-      echo "▶ 系统工具"
+      echo "${re}▶ 系统工具${re}"
       echo "------------------------"
       echo "1. 设置脚本启动快捷键"
       echo "------------------------"
@@ -5909,7 +5910,7 @@ EOF
     clear
     while true; do
       clear
-      echo "▶ VPS集群控制"
+      echo "${red}▶ VPS集群控制${re}"
       echo "你可以远程操控多台VPS一起执行任务（仅支持Ubuntu/Debian）"
       echo "------------------------"
       echo "1. 安装集群环境"
