@@ -10,6 +10,7 @@ purple='\033[95m'   # 紫色    ${purple}
 black='\033[30m'    # 黑色    ${black}
 white='\033[97m'    # 白色    ${white}
 pink='\033[91m'     # 粉红色   ${pink}
+cyan='\033[96m'     # 浅青色   ${cyan}
 re='\033[0m'     # 重置颜色    ${re}
 
 
