@@ -1,19 +1,6 @@
 #!/bin/bash
 ln -sf ~/huaniangzi.sh /usr/local/bin/hua
 
-# 定义颜色
-re='\e[0m'
-red='\e[1;91m'
-white='\e[1;97m'
-green='\e[1;32m'
-yellow='\e[1;33m'
-purple='\e[1;35m'
-skyblue='\e[1;96m'
-
-# 检查是否为root下运行
-[[ $EUID -ne 0 ]] && echo -e "${red}注意: 请在root用户下运行脚本${re}" && sleep 2 && exit 1
-
-
 ip_address() {
 ipv4_address=$(curl -s ipv4.ip.sb)
 ipv6_address=$(curl -s --max-time 1 ipv6.ip.sb)
@@ -496,8 +483,7 @@ echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
 echo -e "\033[96m花娘子一键脚本工具 v1.6.7 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
-echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本-\033[0m"
-echo -e "    ${skyblue}当日运行：${yellow}${TODAY}次   ${skyblue}累计运行：${yellow}${TOTAL}次${re}"
+echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本 （当日运行：[93m${TODAY}\033次   累计运行：[93m${TOTAL}\033次）\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
 echo "2. 系统更新"
