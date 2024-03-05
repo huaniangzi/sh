@@ -9,7 +9,7 @@ green='\033[92m'    # 绿色    ${green}
 purple='\033[95m'   # 紫色    ${purple}
 black='\033[30m'    # 黑色    ${black}
 white='\033[97m'    # 白色    ${white}
-pink='\033[95m'     # 粉红色   ${pink}
+pink='\033[91m'     # 粉红色   ${pink}
 re='\033[0m'     # 重置颜色    ${re}
 
 
