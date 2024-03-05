@@ -1,5 +1,17 @@
 #!/bin/bash
-ln -sf ~/huaniangzi.sh /usr/local/bin/k
+ln -sf ~/huaniangzi.sh /usr/local/bin/hua
+
+# 定义颜色
+re='\e[0m'
+red='\e[1;91m'
+white='\e[1;97m'
+green='\e[1;32m'
+yellow='\e[1;33m'
+purple='\e[1;35m'
+skyblue='\e[1;96m'
+
+# 检查是否为root下运行
+[[ $EUID -ne 0 ]] && echo -e "${red}注意: 请在root用户下运行脚本${re}" && sleep 2 && exit 1
 
 
 ip_address() {
@@ -468,10 +480,13 @@ tmux_run() {
     fi
 }
 
-
-
-
-
+# 运行统计
+sum_run_times() {
+  local COUNT=$(wget --no-check-certificate -qO- --tries=2 --timeout=2 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fraw.githubusercontent.com%2Feooce%2Fssh_tool%2Fmain%2Fssh_tool.sh" 2>&1 | grep -m1 -oE "[0-9]+[ ]+/[ ]+[0-9]+") &&
+  TODAY=$(cut -d " " -f1 <<< "$COUNT") &&
+  TOTAL=$(cut -d " " -f3 <<< "$COUNT")
+}
+sum_run_times
 
 while true; do
 clear
@@ -482,6 +497,7 @@ echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
 echo -e "\033[96m花娘子一键脚本工具 v1.6.7 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
 echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本-\033[0m"
+echo -e "    ${skyblue}当日运行：${yellow}${TODAY}次   ${skyblue}累计运行：${yellow}${TOTAL}次${re}"
 echo "------------------------"
 echo "1. 系统信息查询"
 echo "2. 系统更新"
@@ -1952,13 +1968,20 @@ EOF
         echo "20.安裝極光面板 "
         echo "------------------------"
         echo -e "\033[91m▼ 一条龙服务 ▼\033[0m"
-        echo "40.安裝X-UI                       41.安裝3X-UI"
-        echo "42.搭建TG代理                     43.Shadowsocks Go版"
-        echo "44.F佬ArgoX                       5.F佬sing-box"
-        echo "46.suoha一键argo                  57.M佬Juicity"
-        echo "48.小绵羊reality+vmess+hy2        49.V2ray-agent八合一"
-        echo "50.OpenVPN                        51.M佬Hysteria2"
-        echo "52.老王nodejs-argo节点+哪吒+订阅"
+        echo -e "---------------------------------------------------------"
+        echo -e "       Sing-box多合一             Argo-tunnel"
+        echo -e "---------------------------------------------------------"
+        echo -e " 41. F佬Sing-box一键脚本        45. F佬ArgoX一键脚本"
+        echo -e " 42. 小绵羊Sing-box三合一       46. Suoha一键Argo脚本"
+        echo -e " 43. 勇哥Sing-box四合一         47. WL一键Argo哪吒脚本"
+        echo -e " 44. V2ray-agent八合一          48. 一键老王Nodejs-Argo节点+哪吒+订阅"
+        echo -e "---------------------------------------------------------"
+        echo -e "        单协议                    XRAY面板及其他"
+        echo -e "---------------------------------------------------------"
+        echo -e " 49. M佬Hysteria2一键脚本      53.新版Xray面板一键脚本"
+        echo -e "50. M佬Juicity一键脚本        54.伊朗版Xray面板一键脚本"
+        echo -e "51. M佬Tuic-v5一键脚本        55.OpenVPN一键安装脚本"
+        echo -e "52. Brutal-Reality一键脚本    56.一键搭建TG代理"
         echo "------------------------"
         echo "0. 返回主菜单"
         echo "------------------------"
@@ -1989,163 +2012,206 @@ EOF
                 echo "已解除限制。"
                 ;;
             6)
-              clear
-              wget -O dp https://github.com/sjlleo/VerifyDisneyPlus/releases/download/1.01/dp_1.01_linux_amd64 && chmod +x dp && clear && ./dp
-              ;;
+                clear
+                wget -O dp https://github.com/sjlleo/VerifyDisneyPlus/releases/download/1.01/dp_1.01_linux_amd64 && chmod +x dp && clear && ./dp
+                ;;
             7)
-              clear
-              wget -O nf https://github.com/sjlleo/netflix-verify/releases/download/2.01/nf_2.01_linux_amd64 && chmod +x nf && clear && ./nf
-              ;;
+                clear
+                wget -O nf https://github.com/sjlleo/netflix-verify/releases/download/2.01/nf_2.01_linux_amd64 && chmod +x nf && clear && ./nf
+                ;;
             20)
-              clear
-              bash <(curl -fsSL https://raw.githubusercontent.com/Aurora-Admin-Panel/deploy/main/install.sh)
-              ;;
-            40)
-              clear
-              bash <(curl -Ls https://raw.githubusercontent.com/vaxilu/x-ui/master/install.sh)
-              ;;
+                clear
+                bash <(curl -fsSL https://raw.githubusercontent.com/Aurora-Admin-Panel/deploy/main/install.sh)
+                ;;
             41)
-              clear
-              bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
-              ;;
+                clear
+                    bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sing-box/main/sing-box.sh)
+                    sleep 2
+                    break_end
+                ;;
             42)
-              clear
-              ## 新建目录
-              echo "自動創建TG代理目錄：/home/mtproxy"
-              mkdir /home/mtproxy && cd /home/mtproxy
-
-              ## 开始安装
-              curl -s -o mtproxy.sh https://raw.githubusercontent.com/sunpma/mtp/master/mtproxy.sh && chmod +x mtproxy.sh && bash mtproxy.sh
-              ;;
+                clear
+                    bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/beta.sh)
+                    sleep 2
+                    break_end
+                ;;
             43)
-              clear
-              wget -N --no-check-certificate https://raw.githubusercontent.com/ToyoDAdoubiBackup/doubi/master/ss-go.sh && chmod +x ss-go.sh && bash ss-go.sh
-              ;;
+                clear
+                    bash <(curl -Ls https://gitlab.com/rwkgyg/sing-box-yg/raw/main/sb.sh)
+                    sleep 2
+                    break_end
+                ;;
             44)
-              clear
-              bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/argox/main/argox.sh)
-              ;;
+                clear
+                    install wget
+                    wget -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 777 install.sh && bash install.sh
+                    sleep 2
+                    break_end
+                ;;
             45)
-              clear
-              bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sing-box/main/sing-box.sh)
-              ;;
+                clear
+                    bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/argox/main/argox.sh)
+                    sleep 2
+                    break_end
+                ;;
             46)
-              clear
-              curl https://www.baipiao.eu.org/suoha.sh -o suoha.sh && bash suoha.sh
-              ;;
+                clear
+                    curl https://www.baipiao.eu.org/suoha.sh -o suoha.sh && bash suoha.sh
+                    sleep 2
+                    break_end
+                ;;
             47)
-              clear
-              wget -N https://raw.githubusercontent.com/Misaka-blog/juicity-script/main/juicity.sh && bash juicity.sh
-              ;;
+                clear
+                    bash <(curl -sL https://raw.githubusercontent.com/dsadsadsss/vps-argo/main/install.sh)
+                    sleep 1
+                    break_end
+                ;;
             48)
-              clear
-              bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/beta.sh)
-              ;;
-            49)
-              clear
-              wget -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 777 install.sh && bash install.sh
-              ;;
-            50)
-              clear
-              wget https://git.io/vpn -O openvpn-install.sh && bash openvpn-install.sh
-              ;;
-            51)
-              clear
-              wget -N --no-check-certificate https://raw.githubusercontent.com/Misaka-blog/hysteria-install/main/hy2/hysteria.sh && bash hysteria.sh
-              ;;
-            52)
-              clear
-                # 检查系统中是否安装screen
-                if command -v screen &>/dev/null; then
-                    echo -e "Screen已经安装"
-                else
-                    # 如果系统中未安装screen，则根据对应系统安装
-                    install screen
-                fi
-
-                # 检查系统中是否存在nodejs
-                if command -v node &>/dev/null; then
-                    echo -e "Nodejs已经安装"
-
-                else
-                    echo -e "系统中未安装nodejs，正在安装nodejs..."
-
-                    # 根据对应系统安装最新版本的nodejs
-                    curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo bash - && install nodejs
-
-                    clear
-                    if [ $? -eq 0 ]; then
-                        echo -e "nodejs安装成功!"
+                clear
+                    # 检查系统中是否安装screen
+                    if command -v screen &>/dev/null; then
+                        echo -e "${green}Screen已经安装${re}"
                     else
-                        echo -e "nodejs安装失败，将为你重新安装"
-                        curl -fsSL https://rpm.nodesource.com/setup_21.x | sudo bash - && install nodejs
+                        # 如果系统中未安装screen，则根据对应系统安装
+                        install screen
                     fi
-                fi
-                # 提示输入订阅端口
-                echo -e "注意：NAT小鸡需输入指定端口范围内的端口，否则无法使用订阅功能"
-                while true; do
-                    read -p $'\033[1;35m请输入节点订阅端口: \033[0m' port
 
-                    if [[ $port =~ ^[0-9]+$ ]]; then
-                        # 检查输入是否为正整数
-                        if [ "$port" -gt 0 ] 2>/dev/null; then
-                            # 输入有效，跳出循环
-                            break
-                        else
-                            echo -e "端口输入错误，端口应为数字且为正整数"
-                        fi
-                    else
-                        echo -e "端口输入错误，端口应为数字且为正整数"
-                    fi
-                done
+                    # 检查系统中是否存在nodejs
+                    install_nodejs
+                    # 提示输入订阅端口
+                    echo -e "${yellow}注意：NAT小鸡需输入指定端口范围内的端口，否则无法使用订阅功能${re}"
+                    while true; do
+                        read -p $'\033[1;35m请输入节点订阅端口: \033[0m' port
 
-                echo -e "正在开放端口中..."
-                    open_port() {
-                        if command -v iptables &> /dev/null; then
-                            iptables -A INPUT -p tcp --dport $port -j ACCEPT
-                            echo -e "${port}端口已开放"
-                        else
-                            echo "iptables未安装，尝试安装..."
-
-                            install iptables
-
-                            if [ $? -eq 0 ]; then
-                                clear
-                                echo -e "iptables安装成功"
-                                iptables -A INPUT -p tcp --dport $port -j ACCEPT
-                                echo -e "${port}端口已开放"
+                        if [[ $port =~ ^[0-9]+$ ]]; then
+                            # 检查输入是否为正整数
+                            if [ "$port" -gt 0 ] 2>/dev/null; then
+                                # 输入有效，跳出循环
+                                break
                             else
-                                echo -e "iptables安装失败，尝试关闭防火墙"
-                                sudo systemctl stop ufw.service && sudo systemctl disable ufw.service && (sudo ufw status | grep -q 'Status: inactive' && echo "防火墙已关闭成功" || echo "防火墙已关闭失败，请手动关闭")
+                                echo -e "${red}端口输入错误，端口应为数字且为正整数${re}"
                             fi
+                        else
+                            echo -e "${red}端口输入错误，端口应为数字且为正整数${re}"
                         fi
-                    }
-                    open_port
+                    done
 
-                ipv4=$(curl -s ipv4.ip.sb)
+                    echo -e "${yellow}正在开放端口中...${re}"
+                        open_port() {
+                            if command -v iptables &> /dev/null; then
+                                iptables -A INPUT -p tcp --dport $port -j ACCEPT
+                                echo -e "${green}${port}端口已开放${re}"
+                            else
+                                echo "iptables未安装，尝试安装..."
 
-                echo -e "你的节点订阅链接为：http://$ipv4:$port/sub"
+                                install iptables
 
-                # 判断是否要安装哪吒
-                read -p $'\033[1;33m是否需要一起安装哪吒探针？(y/n): \033[0m' nezha
+                                if [ $? -eq 0 ]; then
+                                    clear
+                                    echo -e "${green}iptables安装成功${re}"
+                                    iptables -A INPUT -p tcp --dport $port -j ACCEPT
+                                    echo -e "${green}${port}端口已开放${re}"
+                                else
+                                    echo -e "${red}iptables安装失败，尝试关闭防火墙${re}"
+                                    sudo systemctl stop ufw.service && sudo systemctl disable ufw.service && (sudo ufw status | grep -q 'Status: inactive' && echo "防火墙已关闭成功" || echo "防火墙已关闭失败，请手动关闭")
+                                fi
+                            fi
+                        }
+                        open_port
 
-                if [ "$nezha" == "y" ] || [ "$nezha" == "Y" ]; then
+                    ipv4=$(curl -s ipv4.ip.sb)
 
-                    # 提示输入哪吒域名
-                    read -p $'\033[1;35m请输入哪吒客户端的域名: \033[0m' nezha_server
+                    echo -e "${green}你的节点订阅链接为：http://$ipv4:$port/sub${re}"
 
-                    # 提示输入哪吒端口
-                    read -p $'\033[1;35m请输入哪吒端口: \033[0m' nezha_port
+                    # 判断是否要安装哪吒
+                    read -p $'\033[1;33m是否需要一起安装哪吒探针？(y/n): \033[0m' nezha
 
-                    # 提示输入哪吒密钥
-                    read -p $'\033[1;35m请输入哪吒客户端密钥: \033[0m' nezha_key
+                    if [ "$nezha" == "y" ] || [ "$nezha" == "Y" ]; then
 
-                    curl -O https://raw.githubusercontent.com/eooce/ssh_tool/main/index.js && curl -O https://raw.githubusercontent.com/eooce/nodejs-argo/main/package.json && npm install && chmod +x index.js && PORT=$port NEZHA_SERVER=$nezha_server NEZHA_PORT=$nezha_port NEZHA_KEY=$nezha_key CFIP=www.adfilt.xyz CFPORT=8889 screen node index.js
+                        # 提示输入哪吒域名
+                        read -p $'\033[1;35m请输入哪吒客户端的域名: \033[0m' nezha_server
 
-                else
+                        # 提示输入哪吒端口
+                        read -p $'\033[1;35m请输入哪吒端口: \033[0m' nezha_port
 
-                    curl -O https://raw.githubusercontent.com/eooce/ssh_tool/main/index.js && curl -O https://raw.githubusercontent.com/eooce/nodejs-argo/main/package.json && npm install && chmod +x index.js && PORT=$port CFIP=www.adfilt.xyz CFPORT=8889 screen node index.js
-                fi
+                        # 提示输入哪吒密钥
+                        read -p $'\033[1;35m请输入哪吒客户端密钥: \033[0m' nezha_key
+                        [ -d "node" ] || mkdir -p "node" && cd "node"
+                        curl -O https://raw.githubusercontent.com/eooce/ssh_tool/main/index.js && curl -O https://raw.githubusercontent.com/eooce/nodejs-argo/main/package.json && npm install && chmod +x index.js && PORT=$port NEZHA_SERVER=$nezha_server NEZHA_PORT=$nezha_port NEZHA_KEY=$nezha_key CFIP=na.ma CFPORT=8443 screen node index.js
+
+                    else
+
+                        curl -O https://raw.githubusercontent.com/eooce/ssh_tool/main/index.js && curl -O https://raw.githubusercontent.com/eooce/nodejs-argo/main/package.json && npm install && chmod +x index.js && PORT=$port CFIP=na.ma CFPORT=8443 screen node index.js
+                    fi
+                ;;
+            49)
+                clear
+                    install wget && wget -N --no-check-certificate https://raw.githubusercontent.com/Misaka-blog/hysteria-install/main/hy2/hysteria.sh && bash hysteria.sh
+                    sleep 2
+                    break_end
+                ;;
+            50)
+                clear
+                    install wget && wget -N https://raw.githubusercontent.com/Misaka-blog/juicity-script/main/juicity.sh && bash juicity.sh
+                    sleep 2
+                    break_end
+                ;;
+            51)
+                clear
+                    install wget && wget -N --no-check-certificate https://gitlab.com/Misaka-blog/tuic-script/-/raw/main/tuic.sh && bash tuic.sh
+                    sleep 2
+                    break_end
+                ;;
+            52)
+                clear
+                    echo ""
+                    echo -e "${purple}安装Tcp-Brutal-Reality需要内核高于5.8，不符合请手动升级5.8内核以上再安装${re}"
+
+                    current_kernel_version=$(uname -r | cut -d'-' -f1 | awk -F'.' '{print $1 * 100 + $2}')
+                    target_kernel_version=508
+
+                    # 比较内核版本
+                    if [ "$current_kernel_version" -lt "$target_kernel_version" ]; then
+                        echo -e "${red}当前系统内核版本小于 $target_kernel_version，请手动升级内核后重试，正在退出...${re}"
+                        sleep 2
+                        main_menu
+                    else
+                        echo ""
+                        echo -e "${green}当前系统内核版本 $current_kernel_version，符合安装要求${re}"
+                        sleep 1
+                        bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/tcp-brutal-reality.sh)
+                        sleep 2
+                        break_end
+                    fi
+
+                ;;
+            53)
+                clear
+                    bash <(curl -Ls https://raw.githubusercontent.com/slobys/x-ui/main/install.sh)
+                    sleep 2
+                    break_end
+                ;;
+            54)
+                clear
+                    bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
+                    sleep 2
+                    break_end
+                ;;
+            55)
+                clear
+                    install wget && wget https://git.io/vpn -O openvpn-install.sh && bash openvpn-install.sh
+                    sleep 2
+                    break_end
+                ;;
+            56)
+                clear
+
+                    echo "自動創建TG代理目錄：/home/mtproxy"
+                    mkdir /home/mtproxy && cd /home/mtproxy
+
+                    curl -s -o mtproxy.sh https://raw.githubusercontent.com/sunpma/mtp/master/mtproxy.sh && chmod +x mtproxy.sh && bash mtproxy.sh
+                    sleep 2
+                    break_end
                 ;;
             0)
                 huaniangzi
