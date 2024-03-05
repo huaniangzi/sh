@@ -1,6 +1,18 @@
 #!/bin/bash
 ln -sf ~/huaniangzi.sh /usr/local/bin/hua
 
+# 定义颜色
+red = '\033[91m'      # 红色    ${red}
+yellow = '\033[93m'   # 黄色    ${yellow}
+blue = '\033[94m'     # 蓝色    ${blue}
+green = '\033[92m'    # 绿色    ${green}
+purple = '\033[95m'   # 紫色    ${purple}
+black = '\033[30m'    # 黑色    ${black}
+white = '\033[97m'    # 白色    ${white}
+pink = '\033[95m'     # 粉红色   ${pink}
+re = '\033[0m'     # 重置颜色    ${re}
+
+
 ip_address() {
 ipv4_address=$(curl -s ipv4.ip.sb)
 ipv6_address=$(curl -s --max-time 1 ipv6.ip.sb)
@@ -485,7 +497,7 @@ echo "4. 常用工具 ▶"
 echo "5. Docker管理 ▶ "
 echo "6. 测试脚本合集 ▶ "
 echo "7. 外面的世界 ▶ "
-echo -e "\033[33m8. LDNMP建站 ▶ \033[0m"
+echo -e "${yellow}8. LDNMP建站 ▶ ${re}"
 echo "9. 面板工具 ▶ "
 echo "10. 我的工作区 ▶ "
 echo "11. 系统工具 ▶ "
