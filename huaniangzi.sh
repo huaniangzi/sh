@@ -486,7 +486,7 @@ clear
 
 echo -e "${cyan}_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
-echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
+echo "| | |_| | |  | \| | | | | \| |__|  /__ |${re} "
 echo "                                "
 echo -e "${cyan}花娘子一键脚本工具 v1.6.7 （支持Ubuntu/Debian/CentOS/Alpine系统）${re}"
 echo -e "${cyan}-输入\033[93mhua\033[96m可快速启动此脚本-${re}"
