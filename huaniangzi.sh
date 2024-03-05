@@ -483,12 +483,12 @@ tmux_run() {
 while true; do
 clear
 
-echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
+echo -e "${cyan}_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.6.7 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
-echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本-\033[0m"
+echo -e "${cyan}花娘子一键脚本工具 v1.6.7 （支持Ubuntu/Debian/CentOS/Alpine系统）${re}"
+echo -e "${cyan}-输入\033[93mhua\033[96m可快速启动此脚本-${re}"
 echo "------------------------"
 echo "1. 系统信息查询"
 echo "2. 系统更新"
@@ -1513,7 +1513,7 @@ EOF
   5)
     while true; do
       clear
-      echo "${red}▶ Docker管理器${re}"
+      echo -e "${red}▶ Docker管理器${re}"
       echo "------------------------"
       echo "1. 安装更新Docker环境"
       echo "------------------------"
@@ -1874,7 +1874,7 @@ EOF
   6)
     while true; do
       clear
-      echo "${red}▶ 测试脚本合集${re}"
+      echo -e "${red}▶ 测试脚本合集${re}"
       echo "------------------------"
       echo "1. ChatGPT解锁状态检测"
       echo "2. Region流媒体解锁测试"
@@ -3141,7 +3141,7 @@ EOF
   9)
     while true; do
       clear
-      echo "${red}▶ 面板工具${re}"
+      echo -e "${red} ▶ 面板工具${re}"
       echo "------------------------"
       echo "1. 宝塔面板官方版                       2. aaPanel宝塔国际版"
       echo "3. 1Panel新一代管理面板                 4. NginxProxyManager可视化面板"
@@ -4359,7 +4359,7 @@ EOF
   10)
     while true; do
       clear
-      echo "${red}▶ 我的工作区${re}"
+      echo -e "${red}▶ 我的工作区${re}"
       echo "系统将为你提供5个后台运行的工作区，你可以用来执行长时间的任务"
       echo "即使你断开SSH，工作区中的任务也不会中断，非常方便！来试试吧！"
       echo -e "\033[33m注意: 进入工作区后使用Ctrl+b再单独按d，退出工作区！\033[0m"
@@ -4466,7 +4466,7 @@ EOF
   11)
     while true; do
       clear
-      echo "${re}▶ 系统工具${re}"
+      echo -e "${re}▶ 系统工具${re}"
       echo "------------------------"
       echo "1. 设置脚本启动快捷键"
       echo "------------------------"
@@ -5910,7 +5910,7 @@ EOF
     clear
     while true; do
       clear
-      echo "${red}▶ VPS集群控制${re}"
+      echo -e "${red}▶ VPS集群控制${re}"
       echo "你可以远程操控多台VPS一起执行任务（仅支持Ubuntu/Debian）"
       echo "------------------------"
       echo "1. 安装集群环境"
