@@ -467,13 +467,6 @@ tmux_run() {
     fi
 }
 
-# 运行统计
-sum_run_times() {
-  local COUNT=$(wget --no-check-certificate -qO- --tries=2 --timeout=2 "https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fraw.githubusercontent.com%2Feooce%2Fssh_tool%2Fmain%2Fssh_tool.sh" 2>&1 | grep -m1 -oE "[0-9]+[ ]+/[ ]+[0-9]+") &&
-  TODAY=$(cut -d " " -f1 <<< "$COUNT") &&
-  TOTAL=$(cut -d " " -f3 <<< "$COUNT")
-}
-sum_run_times
 
 while true; do
 clear
@@ -483,7 +476,7 @@ echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
 echo -e "\033[96m花娘子一键脚本工具 v1.6.7 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
-echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本 （当日运行：\033[33m${TODAY} \033[0m次   累计运行：\033[33m${TOTAL} \033[0m）\033[0m"
+echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
 echo "2. 系统更新"
