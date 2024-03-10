@@ -2199,8 +2199,8 @@ EOF
             56)
                 clear
 
-                    echo "自動創建TG代理目錄：/home/mtproxy"
-                    mkdir /home/mtproxy && cd /home/mtproxy
+                    echo "自動創建TG代理目錄：/home/tg/mtproxy"
+                    mkdir /home/tg/mtproxy && cd /home/tg/mtproxy
 
                     curl -s -o mtproxy.sh https://raw.githubusercontent.com/sunpma/mtp/master/mtproxy.sh && chmod +x mtproxy.sh && bash mtproxy.sh
                     sleep 2
@@ -2526,11 +2526,20 @@ EOF
       install_ssltls
 
       docker run -d \
-        --name bitwarden \
-        --restart always \
+        --name vaultwarden \
         -p 3280:80 \
-        -v /home/web/html/$yuming/bitwarden/data:/data \
-        vaultwarden/server
+        -v /home/docker/vaultwarden/data:/data \
+        -e LOGIN_RATELIMIT_MAX_BURST=10 \
+        -e LOGIN_RATELIMIT_SECONDS=60 \
+        -e ADMIN_RATELIMIT_MAX_BURST=10 \
+        -e ADMIN_RATELIMIT_SECONDS=60 \
+        -e ADMIN_SESSION_LIFETIME=20 \
+        -e ADMIN_TOKEN=hCWqQngEdKJmWGTSHUvhwyVnSmAPUK \
+        -e SENDS_ALLOWED=true \
+        -e EMERGENCY_ACCESS_ALLOWED=true \
+        -e WEB_VAULT_ENABLED=true \
+        -e SIGNUPS_ALLOWED=true \
+        vaultwarden/server:latest
       duankou=3280
       reverse_proxy
 
@@ -2802,6 +2811,7 @@ EOF
     32)
       clear
       cd /home/ && tar czvf web_$(date +"%Y%m%d%H%M%S").tar.gz web
+      cd /home/ && tar czvf docker_$(date +"%Y%m%d%H%M%S").tar.gz docker
 
       while true; do
         clear
@@ -2813,7 +2823,7 @@ EOF
               echo "错误: 请输入远端服务器IP。"
               continue
             fi
-            latest_tar=$(ls -t /home/*.tar.gz | head -1)
+            latest_tar=$(ls -t /home/*.tar.gz | head -2)
             if [ -n "$latest_tar" ]; then
               ssh-keygen -f "/root/.ssh/known_hosts" -R "$remote_ip"
               sleep 2  # 添加等待时间
@@ -2870,7 +2880,7 @@ EOF
 
     34)
       clear
-      cd /home/ && ls -t /home/*.tar.gz | head -1 | xargs -I {} tar -xzf {}
+      cd /home/ && ls -t /home/*.tar.gz | head -2 | xargs -I {} tar -xzf {}
       check_port
       install_dependency
       install_docker
