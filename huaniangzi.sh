@@ -116,6 +116,7 @@ check_port() {
 }
 
 check_userport() {
+    install lsof
     clear
     while true; do
         read -p "输入端口号: " userport
