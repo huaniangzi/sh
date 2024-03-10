@@ -115,6 +115,17 @@ check_port() {
     fi
 }
 
+check_userport() {
+    read -p "输入端口号: " userport
+    if lsof -Pi :$userport -sTCP:LISTEN -t >/dev/null; then
+        echo "端口 $userport 已被占用，请重新输入新的端口号。"
+    else
+        # 在这里添加要执行的操作
+        echo "端口 $userport 可用。"
+    fi
+}
+
+
 install_add_docker() {
     if [ -f "/etc/alpine-release" ]; then
         apk update
@@ -488,7 +499,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.6.8 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.6.9 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
 echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
@@ -2525,9 +2536,10 @@ EOF
       add_yuming
       install_ssltls
 
+      check_userport
       docker run -d \
         --name vaultwarden \
-        -p 3280:80 \
+        -p $userport:80 \
         -v /home/docker/vaultwarden/data:/data \
         -e LOGIN_RATELIMIT_MAX_BURST=10 \
         -e LOGIN_RATELIMIT_SECONDS=60 \
@@ -2540,7 +2552,7 @@ EOF
         -e WEB_VAULT_ENABLED=true \
         -e SIGNUPS_ALLOWED=true \
         vaultwarden/server:latest
-      duankou=3280
+      duankou=$userport
       reverse_proxy
 
       clear
