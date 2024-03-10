@@ -116,6 +116,7 @@ check_port() {
 }
 
 check_userport() {
+    clear
     read -p "输入端口号: " userport
     if lsof -Pi :$userport -sTCP:LISTEN -t >/dev/null; then
         echo "端口 $userport 已被占用，请重新输入新的端口号。"
