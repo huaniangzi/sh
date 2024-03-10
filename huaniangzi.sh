@@ -117,14 +117,17 @@ check_port() {
 
 check_userport() {
     clear
-    read -p "输入端口号: " userport
-    if lsof -Pi :$userport -sTCP:LISTEN -t >/dev/null; then
-        echo "端口 $userport 已被占用，请重新输入新的端口号。"
-    else
-        # 在这里添加要执行的操作
-        echo "端口 $userport 可用。"
-    fi
+    while true; do
+        read -p "输入端口号: " userport
+        if lsof -Pi :$userport -sTCP:LISTEN -t >/dev/null; then
+            echo "端口 $userport 已被占用，请重新输入新的端口号。"
+        else
+            echo "端口 $userport 可用。"
+            break
+        fi
+    done
 }
+
 
 
 install_add_docker() {
@@ -2241,7 +2244,7 @@ EOF
     echo  "2. 安装WordPress               3. 安装Discuz论坛"
     echo  "4. 安装可道云桌面              5. 安装苹果CMS网站"
     echo  "6. 安装独角数发卡网            7. 安装BingChatAI聊天网站"
-    echo  "8. 安装flarum论坛网站          9. 安装Bitwarden密码管理平台"
+    echo  "8. 安装flarum论坛网站          9. 安装vaultwarden密码管理平台"
     echo  "10. 安装Halo博客网站           11. 安装typecho轻量博客网站"
     echo "---------------------------------------------------------"
     echo -e "\033[91m▼ LDNMP工具 ▼\033[0m"
@@ -2533,11 +2536,11 @@ EOF
 
       9)
       clear
-      # Bitwarden
+      # vaultwarden
+      check_userport
       add_yuming
       install_ssltls
 
-      check_userport
       docker run -d \
         --name vaultwarden \
         -p $userport:80 \
@@ -2557,7 +2560,7 @@ EOF
       reverse_proxy
 
       clear
-      echo "您的Bitwarden网站搭建好了！"
+      echo "您的vaultwarden网站搭建好了！"
       echo "https://$yuming"
       nginx_status
         ;;
