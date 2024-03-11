@@ -2617,6 +2617,35 @@ EOF
       nginx_status
         ;;
 
+      12)
+      clear
+      # miaoo朋友圈
+      add_yuming
+      install_ssltls
+      add_db
+
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/nginx/main/pyq.com.conf
+      sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
+
+      cd /home/web/html
+      mkdir $yuming
+      cd $yuming
+      wget -O latest.zip https://github.com/huaniangzi/jilu/blob/main/miaooproinstaller_1039.zip
+      unzip latest.zip
+      rm latest.zip
+
+      clear
+      echo "您的miaoo朋友圈搭建好了！"
+      echo "https://$yuming"
+      echo "------------------------"
+      echo "WP安装信息如下: "
+      echo "数据库名: $dbname"
+      echo "用户名: $dbuse"
+      echo "密码: $dbusepasswd"
+      echo "数据库地址: mysql"
+      echo "表前缀: wp_"
+      nginx_status
+        ;;
 
       21)
       check_port
