@@ -290,7 +290,7 @@ clear
     echo "系统工具中新增了host解析设置功能"
     echo "优化了alpine系统的主机名修改逻辑"
     echo "------------------------"
-    echo "2024-03-06   v1.7.0"
+    echo "2024-03-11   v1.7.0"
     echo "LDNMP扩展中新增了sourceguardian"
     echo "优化了mtproxy的代码"
     echo "------------------------"
