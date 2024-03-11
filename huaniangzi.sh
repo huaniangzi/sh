@@ -198,6 +198,7 @@ install_ldnmp() {
           "docker exec php install-php-extensions bcmath > /dev/null 2>&1"
           "docker exec php install-php-extensions opcache > /dev/null 2>&1"
           "docker exec php install-php-extensions imagick redis > /dev/null 2>&1"
+          "docker exec php install-php-extensions sourceguardian > /dev/null 2>&1"
 
           # php配置参数
           "docker exec php sh -c 'echo \"upload_max_filesize=50M \" > /usr/local/etc/php/conf.d/uploads.ini' > /dev/null 2>&1"
