@@ -2630,7 +2630,7 @@ EOF
       cd /home/web/html
       mkdir $yuming
       cd $yuming
-      wget -O latest.zip https://github.com/huaniangzi/jilu/blob/main/miaooproinstaller_1039.zip
+      wget -O latest.zip https://github.com/huaniangzi/Website_source_code/blob/main/miaooproinstaller_1039.zip
       unzip latest.zip
       rm latest.zip
 
@@ -2638,12 +2638,12 @@ EOF
       echo "您的miaoo朋友圈搭建好了！"
       echo "https://$yuming"
       echo "------------------------"
-      echo "WP安装信息如下: "
-      echo "数据库名: $dbname"
-      echo "用户名: $dbuse"
-      echo "密码: $dbusepasswd"
+      echo "安装信息如下: "
       echo "数据库地址: mysql"
-      echo "表前缀: wp_"
+      echo "数据库名: $dbname"
+      echo "数据库账号: $dbuse"
+      echo "数据库密码: $dbusepasswd"
+      echo "管理员账号: 自由设置"
       nginx_status
         ;;
 
