@@ -2633,7 +2633,8 @@ EOF
       wget -O latest.zip https://api.trii.top/tools/tol/upload/source/lan.zip
       unzip latest.zip
       rm latest.zip
-      docker restart nginx
+
+      restart_ldnmp
 
       clear
       echo "您的miaoo朋友圈搭建好了！"
