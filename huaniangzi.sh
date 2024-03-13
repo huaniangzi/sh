@@ -506,7 +506,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.7.0 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.7.1 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
 echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
@@ -2249,6 +2249,7 @@ EOF
     echo  "6. 安装独角数发卡网            7. 安装BingChatAI聊天网站"
     echo  "8. 安装flarum论坛网站          9. 安装vaultwarden密码管理平台"
     echo  "10. 安装Halo博客网站           11. 安装typecho轻量博客网站"
+    echo  "12. 安装lan朋友圈网站"
     echo "---------------------------------------------------------"
     echo -e "\033[91m▼ LDNMP工具 ▼\033[0m"
     echo "---------------------------------------------------------"
@@ -2619,7 +2620,7 @@ EOF
 
       12)
       clear
-      # miaoo朋友圈
+      # lan朋友圈
       add_yuming
       install_ssltls
       add_db
@@ -2637,7 +2638,7 @@ EOF
       restart_ldnmp
 
       clear
-      echo "您的miaoo朋友圈搭建好了！"
+      echo "您的lan朋友圈搭建好了！"
       echo "https://$yuming"
       echo "------------------------"
       echo "安装信息如下: "
@@ -2645,7 +2646,7 @@ EOF
       echo "数据库名: $dbname"
       echo "数据库账号: $dbuse"
       echo "数据库密码: $dbusepasswd"
-      echo "管理员账号: 自由设置"
+      echo "管理员账号: 账号自己设置，默认密码123456"
       nginx_status
         ;;
 
