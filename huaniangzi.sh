@@ -2630,7 +2630,7 @@ EOF
       cd /home/web/html
       mkdir $yuming
       cd $yuming
-      wget -O latest.zip https://github.com/huaniangzi/Website_source_code/raw/main/miaooproinstaller_1039.zip
+      wget -O latest.zip https://api.trii.top/tools/tol/upload/source/lan.zip
       unzip latest.zip
       rm latest.zip
 
