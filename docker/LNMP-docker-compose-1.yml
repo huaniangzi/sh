@@ -30,4 +30,4 @@ services:
       - MYSQL_ROOT_PASSWORD=webroot
       - MYSQL_DATABASE=web
       - MYSQL_USER=huaniangzi
-      - MYSQL_PASSWOR=huaniangziYYDS
+      - MYSQL_PASSWORD=huaniangziYYDS
