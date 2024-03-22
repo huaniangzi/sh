@@ -6095,7 +6095,7 @@ EOF
     curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/update_log.sh && chmod +x update_log.sh && ./update_log.sh
     rm update_log.sh
     echo ""
-    curl -sS -O https://raw.trrr.top/huaniangzi.sh && chmod +x huaniangzi.sh
+    curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi.sh && chmod +x huaniangzi.sh
     echo "脚本已更新到最新版本！"
     break_end
     huaniangzi
