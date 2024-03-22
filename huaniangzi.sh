@@ -506,7 +506,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.7.2 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.7.3 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
 echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
@@ -2246,10 +2246,9 @@ EOF
     echo "---------------------------------------------------------"
     echo  "2. 安装WordPress               3. 安装Discuz论坛"
     echo  "4. 安装可道云桌面              5. 安装苹果CMS网站"
-    echo  "6. 安装独角数发卡网            7. 安装BingChatAI聊天网站"
+    echo  "6. 安装独角数发卡网            7. 安装lan朋友圈网站"
     echo  "8. 安装flarum论坛网站          9. 安装vaultwarden密码管理平台"
     echo  "10. 安装Halo博客网站           11. 安装typecho轻量博客网站"
-    echo  "12. 安装lan朋友圈网站"
     echo "---------------------------------------------------------"
     echo -e "\033[91m▼ LDNMP工具 ▼\033[0m"
     echo "---------------------------------------------------------"
@@ -2484,17 +2483,33 @@ EOF
 
       7)
       clear
-      # BingChat
+      # lan朋友圈
       add_yuming
       install_ssltls
+      add_db
 
-      docker run -d -p 3099:8080 --name go-proxy-bingai --restart=unless-stopped adams549659584/go-proxy-bingai
-      duankou=3099
-      reverse_proxy
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/miaoo.com.conf
+      sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
+
+      cd /home/web/html
+      mkdir $yuming
+      cd $yuming
+      wget -O latest.zip https://api.trii.top/tools/tol/upload/source/lan.zip
+      unzip latest.zip
+      rm latest.zip
+
+      restart_ldnmp
 
       clear
-      echo "您的BingChat网站搭建好了！"
+      echo "您的lan朋友圈搭建好了！"
       echo "https://$yuming"
+      echo "------------------------"
+      echo "安装信息如下: "
+      echo "数据库地址: mysql"
+      echo "数据库名: $dbname"
+      echo "数据库账号: $dbuse"
+      echo "数据库密码: $dbusepasswd"
+      echo "管理员账号: 账号自己设置，默认密码123456"
       nginx_status
         ;;
 
@@ -2618,37 +2633,6 @@ EOF
       nginx_status
         ;;
 
-      12)
-      clear
-      # lan朋友圈
-      add_yuming
-      install_ssltls
-      add_db
-
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/miaoo.com.conf
-      sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
-
-      cd /home/web/html
-      mkdir $yuming
-      cd $yuming
-      wget -O latest.zip https://api.trii.top/tools/tol/upload/source/lan.zip
-      unzip latest.zip
-      rm latest.zip
-
-      restart_ldnmp
-
-      clear
-      echo "您的lan朋友圈搭建好了！"
-      echo "https://$yuming"
-      echo "------------------------"
-      echo "安装信息如下: "
-      echo "数据库地址: mysql"
-      echo "数据库名: $dbname"
-      echo "数据库账号: $dbuse"
-      echo "数据库密码: $dbusepasswd"
-      echo "管理员账号: 账号自己设置，默认密码123456"
-      nginx_status
-        ;;
 
       21)
       check_port
@@ -2861,8 +2845,7 @@ EOF
 
     32)
       clear
-      cd /home/ && tar czvf web_$(date +"%Y%m%d%H%M%S").tar.gz web
-      cd /home/ && tar czvf docker_$(date +"%Y%m%d%H%M%S").tar.gz docker
+      cd / && tar czvf /home/home_$(date +"%Y%m%d%H%M%S").tar.gz home
 
       while true; do
         clear
@@ -2874,7 +2857,7 @@ EOF
               echo "错误: 请输入远端服务器IP。"
               continue
             fi
-            latest_tar=$(ls -t /home/*.tar.gz | head -2)
+            latest_tar=$(ls -t /home/*.tar.gz | head -1)
             if [ -n "$latest_tar" ]; then
               ssh-keygen -f "/root/.ssh/known_hosts" -R "$remote_ip"
               sleep 2  # 添加等待时间
@@ -3193,25 +3176,27 @@ EOF
   9)
     while true; do
       clear
-      echo -e "${red} ▶ 面板工具${re}"
-      echo "---------------------------------------------------------"
-      echo "1. 宝塔面板官方版                2. aaPanel宝塔国际版"
-      echo "3. 1Panel新一代管理面板          4. NginxProxyManager可视化面板"
-      echo "5. AList多存储文件列表程序       6. Ubuntu远程桌面网页版"
-      echo "7. 哪吒探针VPS监控面板           8. QB离线BT磁力下载面板"
-      echo "9. Poste.io邮件服务器程序        10. RocketChat多人在线聊天系统"
-      echo "11. 禅道项目管理软件             12. 青龙面板定时任务管理平台"
-      echo "13. Cloudreve网盘                14. 简单图床图片管理程序"
-      echo "15. emby多媒体管理系统           16. Speedtest测速面板"
-      echo "17. AdGuardHome去广告软件        18. onlyoffice在线办公OFFICE"
-      echo "19. 雷池WAF防火墙面板            20. portainer容器管理面板"
-      echo "21. VScode网页版                 22. UptimeKuma监控工具"
-      echo "23. Memos网页备忘录              24. pandoranext潘多拉GPT镜像站"
-      echo "25. Nextcloud网盘                26. QD-Today定时任务管理框架"
-      echo "27. Dockge容器堆栈管理面板       28. LibreSpeed测速工具"
-      echo "29. searxng聚合搜索站            30. PhotoPrism私有相册系统"
-      echo "31. StirlingPDF工具大全          32. drawio免费的在线图表软件"
-      echo "---------------------------------------------------------"
+      echo "▶ 面板工具"
+      echo "------------------------"
+      echo "1. 宝塔面板官方版                       2. aaPanel宝塔国际版"
+      echo "3. 1Panel新一代管理面板                 4. NginxProxyManager可视化面板"
+      echo "5. AList多存储文件列表程序              6. Ubuntu远程桌面网页版"
+      echo "7. 哪吒探针VPS监控面板                  8. QB离线BT磁力下载面板"
+      echo "9. Poste.io邮件服务器程序               10. RocketChat多人在线聊天系统"
+      echo "11. 禅道项目管理软件                    12. 青龙面板定时任务管理平台"
+      echo "13. Cloudreve网盘                       14. 简单图床图片管理程序"
+      echo "15. emby多媒体管理系统                  16. Speedtest测速面板"
+      echo "17. AdGuardHome去广告软件               18. onlyoffice在线办公OFFICE"
+      echo "19. 雷池WAF防火墙面板                   20. portainer容器管理面板"
+      echo "21. VScode网页版                        22. UptimeKuma监控工具"
+      echo "23. Memos网页备忘录"
+      echo "25. Nextcloud网盘                       26. QD-Today定时任务管理框架"
+      echo "27. Dockge容器堆栈管理面板              28. LibreSpeed测速工具"
+      echo "29. searxng聚合搜索站                   30. PhotoPrism私有相册系统"
+      echo "31. StirlingPDF工具大全                 32. drawio免费的在线图表软件"
+      echo "------------------------"
+      echo "51. PVE开小鸡面板"
+      echo "------------------------"
       echo "0. 返回主菜单"
       echo "------------------------"
       read -p "请输入你的选择: " sub_choice
@@ -4148,125 +4133,6 @@ EOF
             docker_app
               ;;
 
-          24)
-
-            docker_name="PandoraNext"
-            docker_img="pengzhile/pandora-next"
-            docker_port=8181
-            docker_rum="docker run -d --restart always --name PandoraNext \
-                            -p 8181:8181 \
-                            -v /home/docker/PandoraNext/data:/data \
-                            -v /home/docker/PandoraNext/sessions:/root/.cache/PandoraNext \
-                            pengzhile/pandora-next"
-            docker_describe="pandora-next一个好用的GPT镜像站服务，国内也可以访问"
-            docker_url="官网介绍: https://github.com/pandora-next/deploy"
-
-
-            if docker inspect "$docker_name" &>/dev/null; then
-                clear
-                echo "$docker_name 已安装，访问地址: "
-                ip_address
-                echo "http:$ipv4_address:$docker_port"
-                echo ""
-                echo "应用操作"
-                echo "------------------------"
-                echo "1. 更新应用             2. 卸载应用"
-                echo "3. 修改config           4. 修改tokens"
-                echo "------------------------"
-                echo "0. 返回上一级选单"
-                echo "------------------------"
-                read -p "请输入你的选择: " sub_choice
-
-                case $sub_choice in
-                    1)
-                        clear
-                        docker rm -f "$docker_name"
-                        docker rmi -f "$docker_img"
-
-                        $docker_rum
-                        clear
-                        echo "$docker_name 已经安装完成"
-                        echo "------------------------"
-                        # 获取外部 IP 地址
-                        ip_address
-                        echo "您可以使用以下地址访问:"
-                        echo "http:$ipv4_address:$docker_port"
-
-                        ;;
-                    2)
-                        clear
-                        docker rm -f "$docker_name"
-                        docker rmi -f "$docker_img"
-                        rm -rf "/home/docker/$docker_name"
-                        echo "应用已卸载"
-                        ;;
-                    3)
-                        clear
-                        nano /home/docker/PandoraNext/data/config.json
-                        echo "正在重启$docker_name"
-                        docker restart "$docker_name"
-
-                        ;;
-                    4)
-                        clear
-                        nano /home/docker/PandoraNext/data/tokens.json
-                        echo "正在重启$docker_name"
-                        docker restart "$docker_name"
-
-                        ;;
-                    0)
-                        # 跳出循环，退出菜单
-                        ;;
-                    *)
-                        # 跳出循环，退出菜单
-                        ;;
-                esac
-            else
-                clear
-                echo "安装提示"
-                echo "$docker_describe"
-                echo "$docker_url"
-                echo ""
-
-                # 提示用户确认安装
-                read -p "确定安装吗？(Y/N): " choice
-                case "$choice" in
-                    [Yy])
-                        clear
-                        echo "获取license_id请访问: https://dash.pandoranext.com/"
-                        read -p "请输入你的GitHub的license_id: " github1
-
-                        install_docker
-
-                        mkdir -p /home/docker/PandoraNext/{data,sessions}
-                        cd /home/docker/PandoraNext/data
-                        wget https://raw.githubusercontent.com/huaniangzi/sh/main/PandoraNext/config.json
-                        wget https://raw.githubusercontent.com/huaniangzi/sh/main/PandoraNext/tokens.json
-                        sed -i "s/github/$github1/g" /home/docker/PandoraNext/data/config.json
-                        webgptpasswd1=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c16)
-                        sed -i "s/webgptpasswd/$webgptpasswd1/g" /home/docker/PandoraNext/data/config.json
-
-                        $docker_rum
-                        clear
-                        echo "$docker_name 已经安装完成"
-                        echo "------------------------"
-                        # 获取外部 IP 地址
-                        ip_address
-                        echo "您可以使用以下地址访问:"
-                        echo "http:$ipv4_address:$docker_port"
-
-                        ;;
-                    [Nn])
-                        # 用户选择不安装
-                        ;;
-                    *)
-                        # 无效输入
-                        ;;
-                esac
-            fi
-
-              ;;
-
           25)
             docker_name="nextcloud"
             docker_img="nextcloud:latest"
@@ -4396,6 +4262,10 @@ EOF
               ;;
 
 
+          51)
+          clear
+          curl -L https://raw.githubusercontent.com/oneclickvirt/pve/main/scripts/install_pve.sh -o install_pve.sh && chmod +x install_pve.sh && bash install_pve.sh
+              ;;
           0)
               huaniangzi
               ;;
@@ -4542,6 +4412,7 @@ EOF
       echo "19. 切换系统更新源"
       echo "20. 定时任务管理"
       echo "21. 本机host解析"
+      echo "22. fail2banSSH防御程序"
       echo "------------------------"
       echo "99. 重启服务器"
       echo "------------------------"
@@ -5900,6 +5771,88 @@ EOF
               done
               ;;
 
+          22)
+            if [ -x "$(command -v fail2ban-client)" ] && [ -d "/etc/fail2ban" ]; then
+                while true; do
+                    clear
+                    echo "SSH防御程序已启动"
+                    echo "------------------------"
+                    echo "1. 查看SSH拦截记录"
+                    echo "2. 日志实时监控"
+                    echo "------------------------"
+                    echo "9. 卸载防御程序"
+                    echo "------------------------"
+                    echo "0. 退出"
+                    echo "------------------------"
+                    read -p "请输入你的选择: " sub_choice
+                    case $sub_choice in
+
+                        1)
+                            echo "------------------------"
+                            fail2ban-client status sshd
+                            echo "------------------------"
+                            ;;
+                        2)
+                            tail -f /var/log/fail2ban.log
+                            break
+                            ;;
+                        9)
+                            remove fail2ban
+                            break
+                            ;;
+                        0)
+                            break
+                            ;;
+                        *)
+                            echo "无效的选择，请重新输入。"
+                            ;;
+                    esac
+                    break_end
+
+                done
+            else
+
+              clear
+              echo "fail2ban是一个SSH防止暴力破解工具"
+              echo "官网介绍: https://github.com/fail2ban/fail2ban"
+              echo "------------------------------------------------"
+              echo "工作原理：研判非法IP恶意高频访问SSH端口，自动进行IP封锁"
+              echo "------------------------------------------------"
+              read -p "确定继续吗？(Y/N): " choice
+
+              case "$choice" in
+                  [Yy])
+                  clear
+                  install epel-release fail2ban
+
+                  if grep -q 'Alpine' /etc/issue; then
+                      echo "当前系统为Alpine 将采用默认配置"
+                  else
+                      rm -rf /etc/fail2ban/jail.d/*
+                      cd /etc/fail2ban/jail.d/
+                      curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/sshd.local
+                  fi
+
+                  systemctl start fail2ban
+                  service fail2ban start
+                  systemctl enable fail2ban
+                  rc-update add fail2ban
+
+                  sleep 1
+                  fail2ban-client status
+                  echo "Fail2Ban防御程序已开启"
+
+                  ;;
+                [Nn])
+                  echo "已取消"
+                  ;;
+                *)
+                  echo "无效的选择，请输入 Y 或 N。"
+                  ;;
+              esac
+            fi
+
+              ;;
 
 
           31)
