@@ -1,19 +1,10 @@
-#!/bin/bash 
+#!/bin/bash
 
-# Create a tar archive of the home directory
-cd / && tar czvf /home/home_$(date +"%Y%m%d%H%M%S").tar.gz home
+# Create a tar archive of the web directory
+cd / && tar czvf home_$(date +"%Y%m%d%H%M%S").tar.gz home
 
 # Transfer the tar archive to another VPS
-latest_backup=$(ls -t /home_* | head -1)
-sshpass -p 123456 scp -o StrictHostKeyChecking=no -P 22 "$latest_backup" root@0.0.0.0:/home/
+cd / && ls -t /*.tar.gz | head -1 | xargs -I {} sshpass -p 123456 scp -o StrictHostKeyChecking=no -P 22 {} root@0.0.0.0:/
 
-# Keep only 3 latest backups on remote server
-sshpass -p 123456 ssh -o StrictHostKeyChecking=no -p 22 root@0.0.0.0 << EOF
-cd /home/
-if [ "$(ls -t /home_*.tar.gz | wc -l)" -gt 3 ]; then
-    ls -t /home_*.tar.gz | tail -n +4 | xargs -I {} rm {}
-fi
-EOF
-
-# Delete all other backups except the latest one
-rm /home_*.tar.gz
+# Keep only 5 tar archives and delete the rest
+cd / && ls -t /*.tar.gz | tail -n +4 | xargs -I {} rm {}
