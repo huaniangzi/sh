@@ -43,7 +43,7 @@ apt update -y  && apt install -y curl
 官网版一键脚本
 
 ```
-curl -sS -O https://raw.tiiii.top/huaniangzi.sh && chmod +x huaniangzi.sh && ./huaniangzi.sh
+curl -sS -O https://raw.trrr.top/huaniangzi.sh && chmod +x huaniangzi.sh && ./huaniangzi.sh
 ```
 
 or
