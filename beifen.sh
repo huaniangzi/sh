@@ -10,7 +10,9 @@ sshpass -p 123456 scp -o StrictHostKeyChecking=no -P 22 "$latest_backup" root@0.
 # Keep only 3 latest backups on remote server
 sshpass -p 123456 ssh -o StrictHostKeyChecking=no -p 22 root@0.0.0.0 << EOF
 cd /home/
-ls -t /home_*.tar.gz | tail -n +4 | xargs -I {} rm {}
+if [ "$(ls -t /home_*.tar.gz | wc -l)" -gt 3 ]; then
+    ls -t /home_*.tar.gz | tail -n +4 | xargs -I {} rm {}
+fi
 EOF
 
 # Delete all other backups except the latest one
