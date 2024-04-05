@@ -1,5 +1,5 @@
 #在oci=begin和oci=end之间放入你的API配置信息 支持多个配置文件 机器人切换profile可更换操作配置
-oci=begin 
+oci=begin
 
 [DEFAULT]
 user=ocid1.user.oc1..aaaaaaaaxxxxgwlg3xuzwgsaazxtzbozqq
