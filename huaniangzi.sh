@@ -358,7 +358,8 @@ install_ssltls() {
       iptables_open
       cd ~
       certbot certonly --standalone -d $yuming --email your@email.com --agree-tos --no-eff-email --force-renewal
-      cp /etc/letsencrypt/live/$yuming/cert.pem /home/web/certs/${yuming}_cert.pem
+      # cp /etc/letsencrypt/live/$yuming/cert.pem /home/web/certs/${yuming}_cert.pem
+      cp /etc/letsencrypt/live/$yuming/fullchain.pem /home/web/certs/${yuming}_cert.pem
       cp /etc/letsencrypt/live/$yuming/privkey.pem /home/web/certs/${yuming}_key.pem
       docker start nginx > /dev/null 2>&1
 }
@@ -549,7 +550,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.7.4 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.7.5 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
 echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
@@ -6196,10 +6197,10 @@ EOF
 
   00)
     cd ~
-    curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/update_log.sh && chmod +x update_log.sh && ./update_log.sh
+    curl -sS -O https://raw.gitmirror.com/huaniangzi/sh/main/update_log.sh && chmod +x update_log.sh && ./update_log.sh
     rm update_log.sh
     echo ""
-    curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi.sh && chmod +x huaniangzi.sh
+    curl -sS -O https://raw.gitmirror.com/huaniangzi/sh/main/huaniangzi.sh && chmod +x huaniangzi.sh
     echo "脚本已更新到最新版本！"
     break_end
     huaniangzi
