@@ -614,8 +614,141 @@ server_reboot() {
 
 }
 
+output_status() {
+    output=$(awk 'BEGIN { rx_total = 0; tx_total = 0 }
+        NR > 2 { rx_total += $2; tx_total += $10 }
+        END {
+            rx_units = "Bytes";
+            tx_units = "Bytes";
+            if (rx_total > 1024) { rx_total /= 1024; rx_units = "KB"; }
+            if (rx_total > 1024) { rx_total /= 1024; rx_units = "MB"; }
+            if (rx_total > 1024) { rx_total /= 1024; rx_units = "GB"; }
+
+            if (tx_total > 1024) { tx_total /= 1024; tx_units = "KB"; }
+            if (tx_total > 1024) { tx_total /= 1024; tx_units = "MB"; }
+            if (tx_total > 1024) { tx_total /= 1024; tx_units = "GB"; }
+
+            printf("总接收: %.2f %s\n总发送: %.2f %s\n", rx_total, rx_units, tx_total, tx_units);
+        }' /proc/net/dev)
+
+}
 
 
+ldnmp_install_status() {
+
+   if docker inspect "php" &>/dev/null; then
+    echo "LDNMP环境已安装，开始部署 $webname"
+   else
+    echo "LDNMP环境未安装，请先安装LDNMP环境，再部署网站"
+    break_end
+    kejilion
+
+   fi
+
+}
+
+
+nginx_install_status() {
+
+   if docker inspect "nginx" &>/dev/null; then
+    echo "nginx环境已安装，开始部署 $webname"
+   else
+    echo "nginx未安装，请先安装nginx环境，再部署网站"
+    break_end
+    kejilion
+
+   fi
+
+}
+
+
+ldnmp_web_on() {
+      clear
+      echo "您的 $webname 搭建好了！"
+      echo "https://$yuming"
+      echo "------------------------"
+      echo "$webname 安装信息如下: "
+
+}
+
+nginx_web_on() {
+      clear
+      echo "您的 $webname 搭建好了！"
+      echo "https://$yuming"
+
+}
+
+
+
+install_panel() {
+            if $lujing ; then
+                clear
+                echo "$panelname 已安装，应用操作"
+                echo ""
+                echo "------------------------"
+                echo "1. 管理$panelname          2. 卸载$panelname"
+                echo "------------------------"
+                echo "0. 返回上一级选单"
+                echo "------------------------"
+                read -p "请输入你的选择: " sub_choice
+
+                case $sub_choice in
+                    1)
+                        clear
+                        $gongneng1
+                        $gongneng1_1
+                        ;;
+                    2)
+                        clear
+                        $gongneng2
+                        $gongneng2_1
+                        $gongneng2_2
+                        ;;
+                    0)
+                        break  # 跳出循环，退出菜单
+                        ;;
+                    *)
+                        break  # 跳出循环，退出菜单
+                        ;;
+                esac
+            else
+                clear
+                echo "安装提示"
+                echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装$panelname！"
+                echo "会根据系统自动安装，支持Debian，Ubuntu，Centos"
+                echo "官网介绍: $panelurl "
+                echo ""
+
+                read -p "确定安装 $panelname 吗？(Y/N): " choice
+                case "$choice" in
+                    [Yy])
+                        iptables_open
+                        install wget
+                        if grep -q 'Alpine' /etc/issue; then
+                            $ubuntu_mingling
+                            $ubuntu_mingling2
+                        elif grep -qi 'CentOS' /etc/redhat-release; then
+                            $centos_mingling
+                            $centos_mingling2
+                        elif grep -qi 'Ubuntu' /etc/os-release; then
+                            $ubuntu_mingling
+                            $ubuntu_mingling2
+                        elif grep -qi 'Debian' /etc/os-release; then
+                            $ubuntu_mingling
+                            $ubuntu_mingling2
+                        else
+                            echo "Unsupported OS"
+                        fi
+                                                    ;;
+                    [Nn])
+                        ;;
+                    *)
+                        ;;
+                esac
+
+            fi
+
+}
 
 
 
@@ -627,7 +760,7 @@ echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.7.8 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
+echo -e "\033[96m花娘子一键脚本工具 v1.8.0 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
 echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本\033[0m"
 echo "------------------------"
 echo "1. 系统信息查询"
@@ -706,22 +839,7 @@ case $choice in
       fi
     fi
 
-    output=$(awk 'BEGIN { rx_total = 0; tx_total = 0 }
-        NR > 2 { rx_total += $2; tx_total += $10 }
-        END {
-            rx_units = "Bytes";
-            tx_units = "Bytes";
-            if (rx_total > 1024) { rx_total /= 1024; rx_units = "KB"; }
-            if (rx_total > 1024) { rx_total /= 1024; rx_units = "MB"; }
-            if (rx_total > 1024) { rx_total /= 1024; rx_units = "GB"; }
-
-            if (tx_total > 1024) { tx_total /= 1024; tx_units = "KB"; }
-            if (tx_total > 1024) { tx_total /= 1024; tx_units = "MB"; }
-            if (tx_total > 1024) { tx_total /= 1024; tx_units = "GB"; }
-
-            printf("总接收: %.2f %s\n总发送: %.2f %s\n", rx_total, rx_units, tx_total, tx_units);
-        }' /proc/net/dev)
-
+    output_status
 
     current_time=$(date "+%Y-%m-%d %I:%M %p")
 
@@ -845,8 +963,7 @@ case $choice in
         echo "------------------------"
         echo "1. 命令行工具和软件 ▶"
         echo "2. BBR管理 ▶"
-        echo "3. 常用环境管理 ▶"
-        echo "4. WARP管理 ▶ 解锁ChatGPT Netflix"
+        echo "3. WARP管理 ▶ 解锁ChatGPT Netflix"
         echo "------------------------"
         echo "0. 返回上一级菜单菜单"
         echo "------------------------"
@@ -1111,514 +1228,6 @@ EOF
               ;;
 
             3)
-                while true; do
-                    clear
-                    echo "▶ 常用环境管理"
-                    echo "------------------------"
-                    echo "1. 一键安装Python最新版"
-                    echo "2. 一键安装Nodejs最新版"
-                    echo "3. 一键安装Golang最新版"
-                    echo "4. 一键安装Java最新版"
-                    echo "------------------------"
-                    echo -e "5. 一键卸载Python"
-                    echo -e "6. 一键卸载Nodejs"
-                    echo -e "7. 一键卸载Golang"
-                    echo -e "8. 一键卸载Java"
-                    echo "------------------------"
-                    echo -e "${skyblue}0. 返回主菜单"
-                    echo "------------------------"
-                    read -p $'\033[1;91m请输入你的选择: \033[0m' sub_choice
-
-                    case $sub_choice in
-                        1)
-                         clear
-                            # 系统检测
-                            OS=$(cat /etc/os-release | grep -o -E "Debian|Ubuntu|CentOS" | head -n 1)
-
-                            if [[ $OS == "Debian" || $OS == "Ubuntu" || $OS == "CentOS" || $OS == "Alpine" ]]; then
-                                echo -e "检测到你的系统是 ${OS}"
-                            else
-                                echo -e "很抱歉，你的系统不受支持！"
-                                exit 1
-                            fi
-
-                            # 检测安装Python3的版本
-                            VERSION=$(python3 -V 2>&1 | awk '{print $2}')
-
-                            # 获取最新Python3版本
-                            PY_VERSION=$(curl -s https://www.python.org/ | grep "downloads/release" | grep -o 'Python [0-9.]*' | grep -o '[0-9.]*')
-
-                            # 卸载Python3旧版本
-                            if [[ $VERSION == "3"* ]]; then
-                                echo -e "你的Python3版本是${VERSION}，最新版本是${PY_VERSION}"
-                                read -p $'\033[1;91m是否确认升级最新版Python3？默认不升级 [y/N]: \033[0m' confirm
-                                if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
-                                    if [[ $OS == "CentOS" ]]; then
-                                        echo ""
-                                        rm-rf /usr/local/python3* >/dev/null 2>&1
-                                    else
-                                        apt --purge remove python3 python3-pip -y
-                                        rm-rf /usr/local/python3*
-                                    fi
-                                else
-                                    echo -e "${yellow}已取消升级Python3"
-                                    exit 1
-                                fi
-                            else
-                                echo -e "检测到没有安装Python3。"
-                                read -p "是否确认安装最新版Python3？默认安装 [Y/n]: "confirm
-                                if [ "$confirm" == "n" ] || [ "$confirm" == "N" ]; then
-                                    echo -e "开始安装最新版Python3..."
-                                else
-                                    echo -e "已取消安装Python3"
-                                    exit 1
-                                fi
-                            fi
-
-                            # 安装相关依赖
-                            if [[ $OS == "CentOS" ]]; then
-                                yum update
-                                yum groupinstall -y "development tools"
-                                yum install wget openssl-devel bzip2-devel libffi-devel zlib-devel -y
-                            else
-                                apt update
-                                apt install wget build-essential libreadline-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev libffi-dev zlib1g-dev -y
-                            fi
-
-                            # 安装python3
-                            cd /root/
-                            wget https://www.python.org/ftp/python/${PY_VERSION}/Python-"$PY_VERSION".tgz
-                            tar -zxf Python-${PY_VERSION}.tgz
-                            cd Python-${PY_VERSION}
-                            ./configure --prefix=/usr/local/python3
-                            make -j $(nproc)
-                            make install
-                            if [ $? -eq 0 ];then
-                                rm -f /usr/local/bin/python3*
-                                rm -f /usr/local/bin/pip3*
-                                ln -sf /usr/local/python3/bin/python3 /usr/bin/python3
-                                ln -sf /usr/local/python3/bin/pip3 /usr/bin/pip3
-                                clear
-                                echo -e "Python3安装成功，版本为: ${PY_VERSION}"
-                                sleep 2
-                            else
-                                clear
-                                echo -e "Python3安装失败！"
-                                exit 1
-                            fi
-                            cd /root/ && rm -rf Python-${PY_VERSION}.tgz && rm -rf Python-${PY_VERSION}
-                        ;;
-
-                        2)
-                         clear
-                            # 检查系统中是否存在nodejs
-                            if command -v node &>/dev/null; then
-                                # 获取当前nodejs版本
-                                current_version=$(node --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
-
-                                # 获取最新nodejs版本
-                                install jq
-                                json_data=$(curl -s https://nodejs.org/dist/index.json)
-                                latest_version=$(echo "$json_data" | jq -r '.[] | select(.lts != null) | .version' | head -n 1 | sed 's/^v//')
-                                # echo "$latest_version"
-                                if [ "$current_version" = "$latest_version" ]; then
-                                    echo -e "当前版本$current_version已经是最新版$latest_version，无需更新！"
-                                    sleep 2
-                                    main_menu
-                                else
-                                    # 如果不是最新版本
-                                    echo -e "你的nodejs版本是${current_version}，最新版本是${purple}${latest_version}"
-                                    read -p $'\033[1;91m是否卸载旧版nodejs并安装最新版？[y/n]: \033[0m' confirm
-                                    if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
-
-                                        # 卸载旧版
-                                        remove nodejs
-                                        sleep 1
-
-                                        # 安装最新版本的nodjs
-                                        curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && install nodejs
-
-                                        if [ $? -eq 0 ]; then
-
-                                            echo -e "nodejs安装成功，版本：${purple}${latest_version}"
-                                            sleep 2
-                                        else
-                                            echo -e "nodejs安装失败，尝试为你再次安装"
-
-                                            curl -fsSL https://rpm.nodesource.com/setup_21.x | sudo bash - && install nodejs
-                                            sleep 2
-                                        fi
-                                    else
-                                        main_menu
-                                    fi
-                                fi
-
-                            else
-                                echo -e "系统中未安装nodejs，正在安装最新版nodejs..."
-
-
-
-                                # 安装最新版本的nodejs
-                                curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && install nodejs
-
-                                if [ $? -eq 0 ]; then
-
-                                    echo -e "nodejs安装成功!"
-                                    break_end
-                                else
-                                    echo -e "nodejs安装失败，尝试为你再次安装"
-
-                                    curl -fsSL https://rpm.nodesource.com/setup_21.x | sudo bash - && install nodejs
-                                    break_end
-                                fi
-
-                            fi
-
-                        ;;
-
-                        3)
-                        clear
-                            # 获取最新版Go的版本
-                            html=$(curl -s https://go.dev/dl/)
-                            latest_version=$(echo "$html" | grep -oP 'go[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
-
-                            # 根据系统架构选择不同的下载链接
-                            architecture=$(uname -m)
-                            case "$architecture" in
-                                x86_64|amd64)
-                                    latest_version_url="https://golang.org/dl/${latest_version}.linux-amd64.tar.gz"
-                                    ;;
-                                x86)
-                                    latest_version_url="https://golang.org/dl/${latest_version}.linux-386.tar.gz"
-                                    ;;
-                                arm64|aarch64)
-                                    latest_version_url="https://golang.org/dl/${latest_version}.linux-arm64.tar.gz"
-                                    ;;
-                                *)
-                                    echo -e "暂不支持的系统架构：$architecture"
-                                    sleep 2
-                                    main_menu
-                                    ;;
-                            esac
-
-                            # 检查是否已安装Go
-                            if command -v go &> /dev/null; then
-                                # 获取当前已安装的Go版本
-                                installed_version=$(go version | grep -oE 'go[0-9]+\.[0-9]+\.[0-9]+')
-                                echo -e "当前已安装的Go版本：${red}$installed_version"
-
-                                # 比较已安装版本与最新版本
-                                if [ "$installed_version" = "$latest_version" ]; then
-                                    echo -e "当前Go已经是最新版本，无需更新。"
-                                    main_menu
-
-                                elif [ "$(printf "$installed_version\n$latest_version" | sort -V | head -n 1)" != "$installed_version" ]; then
-                                    echo -e "发现新版本：$latest_version。"
-                                    read -p $'\033[1;91m需要卸载当前版本 $installed_version 并安装新版本 $latest_version 吗 [y/n]: \033[0m' confirm
-
-                                    if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
-                                        echo "卸载旧版Go：$installed_version"
-                                        sudo rm -rf /usr/local/go
-
-                                    else
-                                        echo -e "退出更新。"
-                                        sleep 2
-                                        break_end
-                                    fi
-                                fi
-                            else
-                                echo -e "系统中未安装Go，正在为你安装最新版Go..."
-                            fi
-                          # 下载并安装最新版Go
-                          wget -O go_latest.tar.gz "$latest_version_url"
-                          sudo tar -C /usr/local -xzf go_latest.tar.gz
-
-                          # 设置环境变量
-                          echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
-                          echo 'export GOPATH=$HOME/go' >> ~/.bashrc
-                          echo 'export PATH=$PATH:$GOPATH/bin' >> ~/.bashrc
-
-                          export PATH=$PATH:/usr/local/go/bin
-                          rm go_latest.tar.gz
-                          echo -e "GO安装完成，当前Go版本：$(go version | grep -oE 'go[0-9]+\.[0-9]+\.[0-9]+' | cut -c 3-)"
-                          read -p $'\033[1;91m重启服务器配置才可生效，需要立即重启吗 [y/n]: \033[0m' confirm
-
-                          if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
-                            sleep 1
-                            reboot
-                          else
-                            main_menu
-                          fi
-                          sleep 5
-                        ;;
-
-                        4)
-                          clear
-                            latest_version="17.0.9"
-                            if command -v java &>/dev/null; then
-                                installed_version=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
-                                echo -e "当前Java版本是${installed_version},最新版本是${latest_version}"
-
-                                if [ "$installed_version" == "$latest_version" ]; then
-                                    echo -e "当前已安装Java最新版：${latest_version},无需更新"
-                                    sleep 2
-                                    main_menu
-                                else
-                                    echo -e "${red}"
-                                    read -p "是否卸载旧版java并安装最新版？[y/n]: " confirm
-                                    if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
-                                        # 卸载旧版java
-                                        remove java
-                                        break_end
-                                        # 安装java
-                                        install_java() {
-                                            local install_status=0
-
-                                            if command -v apt &>/dev/null; then
-                                                sudo apt install -y openjdk-17-jdk
-                                            elif command -v yum &>/dev/null; then
-                                                sudo yum install -y java
-                                            elif command -v dnf &>/dev/null; then
-                                                sudo dnf install -y java
-                                            elif command -v apk &>/dev/null; then
-                                                sudo apk add openjdk17
-                                            else
-                                                echo -e "暂不支持你的系统！"
-                                                exit 1
-                                            fi
-
-                                            # 检查是否安装成功
-                                            if [ $install_status -eq 0 ]; then
-                                                echo -e "Java安装成功，版本：${purple}${latest_version}"
-                                                break_end
-                                            else
-                                                echo -e "Java安装失败，请更新系统后重试！"
-                                                break_end
-                                            fi
-                                        }
-                                        install_java
-
-                                    else
-                                        main_menu
-
-                                    fi
-                                fi
-
-                            else
-                                echo -e "系统中未安装Java，正在为你安装..."
-
-                                install_java() {
-                                    local install_status=0
-
-                                    if command -v apt &>/dev/null; then
-                                        sudo apt update -y && sudo apt install -y openjdk-17-jdk
-                                    elif command -v yum &>/dev/null; then
-                                        sudo yum install -y java
-                                    elif command -v dnf &>/dev/null; then
-                                        sudo dnf install -y java
-                                    elif command -v apk &>/dev/null; then
-                                        sudo apk add openjdk17
-                                    else
-                                        echo -e "暂不支持你的系统！"
-                                        exit 1
-                                    fi
-
-                                    install_status=$?
-
-                                    if [ $install_status -eq 0 ]; then
-                                        echo -e "Java安装成功。"
-                                        java -version
-                                        sleep 2
-                                    else
-                                        echo -e "Java安装失败，请检查网络连接或更新系统后重试！"
-                                        return 1
-                                    fi
-
-                                    return 0
-                                }
-                                install_java
-
-                            fi
-                        ;;
-
-                        5)
-                         clear
-                            if command -v python3 &>/dev/null; then
-                                # 获取当前安装的python版本
-                                current_version=$(python3 --version 2>&1 | awk '{print $2}')
-
-                                echo -e "${yellow}当前已安装python${red}${current_version}"
-
-                                read -p $'\033[1;91m确定卸载python？[y/n]: \033[0m' confirm
-                                if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
-
-
-                                    # 卸载python3
-                                    remove python3
-
-                                    # 清理缓存配置文件
-                                    rm -rf /usr/bin/pip3
-                                    rm -rf /usr/bin/python3
-                                    rm -rf /usr/share/python3
-                                    rm -rf /usr/local/python3
-                                    rm -rf /usr/share/man/man1/python3.1.gz
-                                    rm -rf /usr/local/bin/python
-                                    rm -rf /usr/local/lib/python*
-                                    rm -rf /usr/local/bin/python*
-
-                                    echo -e "python已卸载"
-                                    break_end
-                                else
-                                    main_menu
-                                fi
-                            else
-                                echo -e "系统中未安装python，无需卸载"
-                                sleep 2
-                            fi
-                        ;;
-
-                        6)
-                         clear
-                            if command -v node &>/dev/null; then
-                                # 获取当前安装的nodjs版本
-                                current_version=$(node --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
-
-                                echo -e "当前已安装nodejs$current_version"
-
-                                read -p $'\033[1;91m确定卸载nodejs？[y/n]: \033[0m' confirm
-                                if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
-
-
-                                    # 卸载
-                                    remove nodejs npm
-
-                                    # 清理缓存配置文件
-                                    rm -rf ~/.npm
-                                    rm -rf ~/.nvm
-                                    rm -rf /usr/local/bin/node
-                                    rm -rf /usr/local/lib/node_modules
-
-                                    echo -e "nodejs已卸载"
-                                    break_end
-                                else
-                                    main_menu
-                                fi
-                            else
-                                echo -e "系统中未安装nodejs，无需卸载"
-                                sleep 2
-                            fi
-                        ;;
-
-                        7)
-                         clear
-                            if command -v go &> /dev/null; then
-                                # 获取当前安装的Go版本
-                                installed_version=$(go version | grep -oE 'go[0-9]+\.[0-9]+\.[0-9]+' | cut -c 3-)
-
-                                echo -e "当前已安装Go：$installed_version"
-
-                                read -p $'\033[1;91m确定卸载Go？[y/n]: \033[0m' confirm
-                                if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
-
-                                    rm -rf /usr/local/go
-
-                                    # 清理环境变量
-                                    export PATH=$PATH:/usr/local/go/bin
-                                    export GOPATH=$HOME/go
-                                    export PATH=$PATH:$GOPATH/bin
-                                    source ~/.bashrc
-
-                                    echo -e "Go已卸载"
-                                    sleep 1
-                                    echo -e ""
-                                    read -p "重启服务器配置才可生效，需要立即重启吗 [y/n]: " confirm
-
-                                    if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
-                                        sleep 1
-                                        reboot
-                                    else
-                                        main_menu
-                                    fi
-
-                                else
-                                    main_menu
-                                fi
-                            else
-                                echo -e "系统中未安装Go，无需卸载"
-                                sleep 2
-                            fi
-                        ;;
-
-                        8)
-                         clear
-                            if command -v java &> /dev/null; then
-                                # 获取当前安装的Java版本
-                                installed_version=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
-                                echo -e "你的Java版本：${installed_version}"
-
-                                read -p $'\033[1;91m确定卸载Java？[y/n]: \033[0m' confirm
-                                if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
-
-                                    remove_java() {
-                                        local remove_status=0
-
-                                        if command -v apt &>/dev/null; then
-                                            sudo apt remove -y openjdk-17-jdk && sudo apt autoremove -y openjdk-17-jdk
-                                        elif command -v yum &>/dev/null; then
-                                            sudo yum remove -y java && sudo yum autoremove -y java
-                                        elif command -v dnf &>/dev/null; then
-                                            sudo dnf remove -y java && sudo dnf autoremove -y java
-                                        elif command -v apk &>/dev/null; then
-                                            sudo apk del openjdk17
-                                        else
-                                            echo -e "暂不支持你的系统！"
-                                            exit 1
-                                        fi
-                                        # 检查是否安装成功，如果没有成功则重新
-                                        if [ $remove_status -eq 0 ]; then
-                                            echo -e "Java卸载成功！"
-                                        else
-                                            echo -e "Java卸载失败，请重试!"
-                                            break_end
-                                        fi
-                                    }
-                                    remove_java
-
-                                    rm -rf /usr/lib/jvm/java-*
-                                    rm -rf /usr/local/java
-                                    rm -rf /opt/java
-                                    echo -e "${red}"
-                                    read -p $'\033[1;91m重启服务器配置才可生效，需要立即重启吗 [y/n]: \033[0m' confirm
-
-                                    if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
-                                        sleep 1
-                                        reboot
-                                    else
-                                        main_menu
-                                    fi
-
-                                else
-                                    main_menu
-                                fi
-                            else
-                                echo -e "系统中未安装Java，无需卸载"
-                                sleep 2
-                            fi
-                        ;;
-
-                        0)
-                          # 返回上一级菜单菜单
-                          break  # 使用 break 来跳出当前循环，返回上一级菜单
-                          ;;
-
-                        *)
-                        echo -e "无效的输入!"
-                        ;;
-                    esac
-                done
-                ;;
-
-            4)
                 clear
                 # 检查并安装 wget（如果需要）
                 if ! command -v wget &>/dev/null; then
@@ -2422,18 +2031,21 @@ EOF
     echo  "------------------------"
     echo  "1. 安装LDNMP环境"
     echo  "------------------------"
-    echo -e "\033[91m▼ LDNMP项目 ▼\033[0m"
+    echo -e "\033[91m▼ LDNMP项目(php) ▼\033[0m"
     echo "---------------------------------------------------------"
     echo  "2. 安装WordPress               3. 安装Discuz论坛"
     echo  "4. 安装可道云桌面              5. 安装苹果CMS网站"
-    echo  "6. 安装独角数发卡网            7. 安装lan朋友圈网站"
-    echo  "8. 安装flarum论坛网站          9. 安装vaultwarden密码管理平台"
-    echo  "10. 安装Halo博客网站           11. 安装typecho轻量博客网站"
+    echo  "6. 安装独角数发卡网            7. 安装flarum论坛网站"
+    echo  "8. 安装typecho轻量博客网站"
+    echo "---------------------------------------------------------"
+    echo -e "\033[91m▼ LDNMP项目 ▼\033[0m"
+    echo "---------------------------------------------------------"
+    echo  "10. 安装vaultwarden密码管理平台           11. 安装Halo博客网站"
     echo "---------------------------------------------------------"
     echo -e "\033[91m▼ LDNMP工具 ▼\033[0m"
     echo "---------------------------------------------------------"
-    echo -e "21. 仅安装nginx \033[33mNEW\033[0m            22. 站点重定向"
-    echo -e "23. 站点反向代理               24. 自定义静态站点 \033[36mBeta\033[0m"
+    echo -e "21. 仅安装nginx              22. 站点重定向"
+    echo -e "23. 站点反向代理               24. 自定义静态站点"
     echo "---------------------------------------------------------"
     echo  "31. 站点数据管理               32. 备份全站数据"
     echo  "33. 定时远程备份               34. 还原全站数据"
@@ -2461,7 +2073,7 @@ EOF
       default_server_ssl
 
       # 下载 docker-compose.yml 文件并进行替换
-      wget -O /home/web/docker-compose.yml https://raw.githubusercontent.com/huaniangzi/sh/main/docker/LNMP-docker-compose-11.yml
+      wget -O /home/web/docker-compose.yml https://raw.githubusercontent.com/huaniangzi/sh/main/docker/LNMP-docker-compose-10.yml
 
       dbrootpasswd=$(openssl rand -base64 16) && dbuse=$(openssl rand -hex 4) && dbusepasswd=$(openssl rand -base64 8)
 
@@ -2476,6 +2088,8 @@ EOF
       2)
       clear
       # wordpress
+      webname="WordPress"
+      ldnmp_install_status
       add_yuming
       install_ssltls
       add_db
@@ -2494,11 +2108,7 @@ EOF
 
       restart_ldnmp
 
-      clear
-      echo "您的WordPress搭建好了！"
-      echo "https://$yuming"
-      echo "------------------------"
-      echo "WP安装信息如下: "
+      ldnmp_web_on
       echo "数据库名: $dbname"
       echo "用户名: $dbuse"
       echo "密码: $dbusepasswd"
@@ -2510,6 +2120,8 @@ EOF
       3)
       clear
       # Discuz论坛
+      webname="Discuz论坛"
+      ldnmp_install_status
       add_yuming
       install_ssltls
       add_db
@@ -2528,11 +2140,7 @@ EOF
       restart_ldnmp
 
 
-      clear
-      echo "您的Discuz论坛搭建好了！"
-      echo "https://$yuming"
-      echo "------------------------"
-      echo "安装信息如下: "
+      ldnmp_web_on
       echo "数据库地址: mysql"
       echo "数据库名: $dbname"
       echo "用户名: $dbuse"
@@ -2545,6 +2153,8 @@ EOF
       4)
       clear
       # 可道云桌面
+      webname="可道云桌面"
+      ldnmp_install_status
       add_yuming
       install_ssltls
       add_db
@@ -2562,11 +2172,7 @@ EOF
       restart_ldnmp
 
 
-      clear
-      echo "您的可道云桌面搭建好了！"
-      echo "https://$yuming"
-      echo "------------------------"
-      echo "安装信息如下: "
+      ldnmp_web_on
       echo "数据库地址: mysql"
       echo "用户名: $dbuse"
       echo "密码: $dbusepasswd"
@@ -2578,6 +2184,8 @@ EOF
       5)
       clear
       # 苹果CMS
+      webname="苹果CMS"
+      ldnmp_install_status
       add_yuming
       install_ssltls
       add_db
@@ -2589,7 +2197,8 @@ EOF
       cd /home/web/html
       mkdir $yuming
       cd $yuming
-      wget https://github.com/magicblack/maccms_down/raw/master/maccms10.zip && unzip maccms10.zip && rm maccms10.zip
+      # wget https://github.com/magicblack/maccms_down/raw/master/maccms10.zip && unzip maccms10.zip && rm maccms10.zip
+      wget https://github.com/magicblack/maccms_down/raw/master/maccms10.zip && unzip maccms10.zip && mv maccms10-*/* . && rm -r maccms10-* && rm maccms10.zip
       cd /home/web/html/$yuming/template/ && wget https://github.com/huaniangzi/sh/raw/main/file/DYXS2.zip && unzip DYXS2.zip && rm /home/web/html/$yuming/template/DYXS2.zip
       cp /home/web/html/$yuming/template/DYXS2/asset/admin/Dyxs2.php /home/web/html/$yuming/application/admin/controller
       cp /home/web/html/$yuming/template/DYXS2/asset/admin/dycms.html /home/web/html/$yuming/application/admin/view/system
@@ -2598,11 +2207,7 @@ EOF
       restart_ldnmp
 
 
-      clear
-      echo "您的苹果CMS搭建好了！"
-      echo "https://$yuming"
-      echo "------------------------"
-      echo "安装信息如下: "
+      ldnmp_web_on
       echo "数据库地址: mysql"
       echo "数据库端口: 3306"
       echo "数据库名: $dbname"
@@ -2618,6 +2223,8 @@ EOF
       6)
       clear
       # 独脚数卡
+      webname="独脚数卡"
+      ldnmp_install_status
       add_yuming
       install_ssltls
       add_db
@@ -2634,11 +2241,7 @@ EOF
       restart_ldnmp
 
 
-      clear
-      echo "您的独角数卡网站搭建好了！"
-      echo "https://$yuming"
-      echo "------------------------"
-      echo "安装信息如下: "
+      ldnmp_web_on
       echo "数据库地址: mysql"
       echo "数据库端口: 3306"
       echo "数据库名: $dbname"
@@ -2663,39 +2266,9 @@ EOF
 
       7)
       clear
-      # lan朋友圈
-      add_yuming
-      install_ssltls
-      add_db
-
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/miaoo.com.conf
-      sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
-
-      cd /home/web/html
-      mkdir $yuming
-      cd $yuming
-      wget -O latest.zip https://api.trii.top/tools/tol/upload/source/lan.zip
-      unzip latest.zip
-      rm latest.zip
-
-      restart_ldnmp
-
-      clear
-      echo "您的lan朋友圈搭建好了！"
-      echo "https://$yuming"
-      echo "------------------------"
-      echo "安装信息如下: "
-      echo "数据库地址: mysql"
-      echo "数据库名: $dbname"
-      echo "数据库账号: $dbuse"
-      echo "数据库密码: $dbusepasswd"
-      echo "管理员账号: 账号自己设置，默认密码123456"
-      nginx_status
-        ;;
-
-      8)
-      clear
       # flarum论坛
+      webname="flarum论坛"
+      ldnmp_install_status
       add_yuming
       install_ssltls
       add_db
@@ -2719,11 +2292,7 @@ EOF
       restart_ldnmp
 
 
-      clear
-      echo "您的flarum论坛网站搭建好了！"
-      echo "https://$yuming"
-      echo "------------------------"
-      echo "安装信息如下: "
+      ldnmp_web_on
       echo "数据库地址: mysql"
       echo "数据库名: $dbname"
       echo "用户名: $dbuse"
@@ -2733,9 +2302,42 @@ EOF
       nginx_status
         ;;
 
-      9)
+      8)
       clear
-      # vaultwarden
+      # typecho
+      webname="typecho"
+      ldnmp_install_status
+      add_yuming
+      install_ssltls
+      add_db
+
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/typecho.com.conf
+      sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
+
+      cd /home/web/html
+      mkdir $yuming
+      cd $yuming
+      wget -O latest.zip https://github.com/typecho/typecho/releases/latest/download/typecho.zip
+      unzip latest.zip
+      rm latest.zip
+
+      restart_ldnmp
+
+
+      clear
+      ldnmp_web_on
+      echo "数据库前缀: typecho_"
+      echo "数据库地址: mysql"
+      echo "用户名: $dbuse"
+      echo "密码: $dbusepasswd"
+      echo "数据库名: $dbname"
+      nginx_status
+        ;;
+
+      10)
+      clear
+      webname="vaultwarden"
+      nginx_install_status
       add_yuming
       install_ssltls
 
@@ -2757,58 +2359,22 @@ EOF
       duankou=3280
       reverse_proxy
 
-      clear
-      echo "您的vaultwarden网站搭建好了！"
-      echo "https://$yuming"
-      nginx_status
-        ;;
-
-      10)
-      clear
-      # halo
-      add_yuming
-      install_ssltls
-
-      docker run -d --name halo --restart always --network web_default -p 8010:8090 -v /home/web/html/$yuming/.halo2:/root/.halo2 halohub/halo:2.14
-      duankou=8010
-      reverse_proxy
-
-      clear
-      echo "您的Halo网站搭建好了！"
-      echo "https://$yuming"
+      nginx_web_on
       nginx_status
         ;;
 
       11)
       clear
-      # typecho
+      webname="halo"
+      nginx_install_status
       add_yuming
       install_ssltls
-      add_db
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/typecho.com.conf
-      sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
+      docker run -d --name halo --restart always --network web_default -p 8010:8090 -v /home/web/html/$yuming/.halo2:/root/.halo2 halohub/halo:2
+      duankou=8010
+      reverse_proxy
 
-      cd /home/web/html
-      mkdir $yuming
-      cd $yuming
-      wget -O latest.zip https://github.com/typecho/typecho/releases/latest/download/typecho.zip
-      unzip latest.zip
-      rm latest.zip
-
-      restart_ldnmp
-
-
-      clear
-      echo "您的typecho搭建好了！"
-      echo "https://$yuming"
-      echo "------------------------"
-      echo "安装信息如下: "
-      echo "数据库前缀: typecho_"
-      echo "数据库地址: mysql"
-      echo "用户名: $dbuse"
-      echo "密码: $dbusepasswd"
-      echo "数据库名: $dbname"
+      nginx_web_on
       nginx_status
         ;;
 
@@ -2838,6 +2404,8 @@ EOF
 
       22)
       clear
+      webname="站点重定向"
+      nginx_install_status
       ip_address
       add_yuming
       read -p "请输入跳转域名: " reverseproxy
@@ -2850,15 +2418,15 @@ EOF
 
       docker restart nginx
 
-      clear
-      echo "您的重定向网站做好了！"
-      echo "https://$yuming"
+      nginx_web_on
       nginx_status
 
         ;;
 
       23)
       clear
+      webname="站点反向代理"
+      nginx_install_status
       ip_address
       add_yuming
       read -p "请输入你的反代IP: " reverseproxy
@@ -2873,15 +2441,14 @@ EOF
 
       docker restart nginx
 
-      clear
-      echo "您的反向代理网站做好了！"
-      echo "https://$yuming"
+      nginx_web_on
       nginx_status
         ;;
 
       24)
       clear
-      # 静态界面
+      webname="静态站点"
+      nginx_install_status
       add_yuming
       install_ssltls
 
@@ -2901,9 +2468,7 @@ EOF
       docker exec nginx chmod -R 777 /var/www/html
       docker restart nginx
 
-      clear
-      echo "您的静态网站搭建好了！"
-      echo "https://$yuming"
+      nginx_web_on
       nginx_status
         ;;
 
@@ -3422,7 +2987,8 @@ EOF
       echo "27. Dockge容器堆栈管理面板              28. LibreSpeed测速工具"
       echo "29. searxng聚合搜索站                   30. PhotoPrism私有相册系统"
       echo "31. StirlingPDF工具大全                 32. drawio免费的在线图表软件"
-      echo "33. Sun-Panel导航面板"
+      echo "33. Sun-Panel导航面板                   34. Pingvin-Share文件分享平台"
+      echo "35. 极简朋友圈"
       echo "------------------------"
       echo "51. PVE开小鸡面板"
       echo "------------------------"
@@ -3432,254 +2998,73 @@ EOF
 
       case $sub_choice in
           1)
-            if [ -f "/etc/init.d/bt" ] && [ -d "/www/server/panel" ]; then
-                clear
-                echo "宝塔面板已安装，应用操作"
-                echo ""
-                echo "------------------------"
-                echo "1. 管理宝塔面板           2. 卸载宝塔面板"
-                echo "------------------------"
-                echo "0. 返回上一级选单"
-                echo "------------------------"
-                read -p "请输入你的选择: " sub_choice
 
-                case $sub_choice in
-                    1)
-                        clear
-                        # 更新宝塔面板操作
-                        bt
-                        ;;
-                    2)
-                        clear
-                        curl -o bt-uninstall.sh http://download.bt.cn/install/bt-uninstall.sh > /dev/null 2>&1
-                        chmod +x bt-uninstall.sh
-                        ./bt-uninstall.sh
-                        ;;
-                    0)
-                        break  # 跳出循环，退出菜单
-                        ;;
-                    *)
-                        break  # 跳出循环，退出菜单
-                        ;;
-                esac
-            else
-                clear
-                echo "安装提示"
-                echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装宝塔面板！"
-                echo "会根据系统自动安装，支持Debian，Ubuntu，Centos"
-                echo "官网介绍: https://www.bt.cn/new/index.html"
-                echo ""
+            lujing="[ -d "/www/server/panel" ]"
+            panelname="宝塔面板"
 
-                # 获取当前系统类型
-                get_system_type() {
-                    if [ -f /etc/os-release ]; then
-                        . /etc/os-release
-                        if [ "$ID" == "centos" ]; then
-                            echo "centos"
-                        elif [ "$ID" == "ubuntu" ]; then
-                            echo "ubuntu"
-                        elif [ "$ID" == "debian" ]; then
-                            echo "debian"
-                        else
-                            echo "unknown"
-                        fi
-                    else
-                        echo "unknown"
-                    fi
-                }
+            gongneng1="bt"
+            gongneng1_1=""
+            gongneng2="curl -o bt-uninstall.sh http://download.bt.cn/install/bt-uninstall.sh > /dev/null 2>&1 && chmod +x bt-uninstall.sh && ./bt-uninstall.sh"
+            gongneng2_1="chmod +x bt-uninstall.sh"
+            gongneng2_2="./bt-uninstall.sh"
 
-                system_type=$(get_system_type)
+            panelurl="https://www.bt.cn/new/index.html"
 
-                if [ "$system_type" == "unknown" ]; then
-                    echo "不支持的操作系统类型"
-                else
-                    read -p "确定安装宝塔吗？(Y/N): " choice
-                    case "$choice" in
-                        [Yy])
-                            iptables_open
-                            install wget
-                            if [ "$system_type" == "centos" ]; then
-                                yum install -y wget && wget -O install.sh https://download.bt.cn/install/install_6.0.sh && sh install.sh ed8484bec
-                            elif [ "$system_type" == "ubuntu" ]; then
-                                wget -O install.sh https://download.bt.cn/install/install-ubuntu_6.0.sh && bash install.sh ed8484bec
-                            elif [ "$system_type" == "debian" ]; then
-                                wget -O install.sh https://download.bt.cn/install/install-ubuntu_6.0.sh && bash install.sh ed8484bec
-                            fi
-                            ;;
-                        [Nn])
-                            ;;
-                        *)
-                            ;;
-                    esac
-                fi
-            fi
+
+            centos_mingling="wget -O install.sh https://download.bt.cn/install/install_6.0.sh"
+            centos_mingling2="sh install.sh ed8484bec"
+
+            ubuntu_mingling="wget -O install.sh https://download.bt.cn/install/install-ubuntu_6.0.sh"
+            ubuntu_mingling2="bash install.sh ed8484bec"
+
+            install_panel
+
+
 
               ;;
           2)
-            if [ -f "/etc/init.d/bt" ] && [ -d "/www/server/panel" ]; then
-                clear
-                echo "aaPanel已安装，应用操作"
-                echo ""
-                echo "------------------------"
-                echo "1. 管理aaPanel           2. 卸载aaPanel"
-                echo "------------------------"
-                echo "0. 返回上一级选单"
-                echo "------------------------"
-                read -p "请输入你的选择: " sub_choice
 
-                case $sub_choice in
-                    1)
-                        clear
-                        # 更新aaPanel操作
-                        bt
-                        ;;
-                    2)
-                        clear
-                        curl -o bt-uninstall.sh http://download.bt.cn/install/bt-uninstall.sh > /dev/null 2>&1
-                        chmod +x bt-uninstall.sh
-                        ./bt-uninstall.sh
-                        ;;
-                    0)
-                        break  # 跳出循环，退出菜单
-                        ;;
-                    *)
-                        break  # 跳出循环，退出菜单
-                        ;;
-                esac
-            else
-                clear
-                echo "安装提示"
-                echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装aaPanel！"
-                echo "会根据系统自动安装，支持Debian，Ubuntu，Centos"
-                echo "官网介绍: https://www.aapanel.com/new/index.html"
-                echo ""
+            lujing="[ -d "/www/server/panel" ]"
+            panelname="aapanel"
 
-                # 获取当前系统类型
-                get_system_type() {
-                    if [ -f /etc/os-release ]; then
-                        . /etc/os-release
-                        if [ "$ID" == "centos" ]; then
-                            echo "centos"
-                        elif [ "$ID" == "ubuntu" ]; then
-                            echo "ubuntu"
-                        elif [ "$ID" == "debian" ]; then
-                            echo "debian"
-                        else
-                            echo "unknown"
-                        fi
-                    else
-                        echo "unknown"
-                    fi
-                }
+            gongneng1="bt"
+            gongneng1_1=""
+            gongneng2="curl -o bt-uninstall.sh http://download.bt.cn/install/bt-uninstall.sh > /dev/null 2>&1 && chmod +x bt-uninstall.sh && ./bt-uninstall.sh"
+            gongneng2_1="chmod +x bt-uninstall.sh"
+            gongneng2_2="./bt-uninstall.sh"
 
-                system_type=$(get_system_type)
+            panelurl="https://www.aapanel.com/new/index.html"
 
-                if [ "$system_type" == "unknown" ]; then
-                    echo "不支持的操作系统类型"
-                else
-                    read -p "确定安装aaPanel吗？(Y/N): " choice
-                    case "$choice" in
-                        [Yy])
-                            iptables_open
-                            install wget
-                            if [ "$system_type" == "centos" ]; then
-                                yum install -y wget && wget -O install.sh http://www.aapanel.com/script/install_6.0_en.sh && bash install.sh aapanel
-                            elif [ "$system_type" == "ubuntu" ]; then
-                                wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && bash install.sh aapanel
-                            elif [ "$system_type" == "debian" ]; then
-                                wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && bash install.sh aapanel
-                            fi
-                            ;;
-                        [Nn])
-                            ;;
-                        *)
-                            ;;
-                    esac
-                fi
-            fi
+            centos_mingling="wget -O install.sh http://www.aapanel.com/script/install_6.0_en.sh"
+            centos_mingling2="bash install.sh aapanel"
+
+            ubuntu_mingling="wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh"
+            ubuntu_mingling2="bash install.sh aapanel"
+
+            install_panel
+
               ;;
           3)
-            if command -v 1pctl &> /dev/null; then
-                clear
-                echo "1Panel已安装，应用操作"
-                echo ""
-                echo "------------------------"
-                echo "1. 查看1Panel信息           2. 卸载1Panel"
-                echo "------------------------"
-                echo "0. 返回上一级选单"
-                echo "------------------------"
-                read -p "请输入你的选择: " sub_choice
 
-                case $sub_choice in
-                    1)
-                        clear
-                        1pctl user-info
-                        1pctl update password
-                        ;;
-                    2)
-                        clear
-                        1pctl uninstall
+            lujing="command -v 1pctl &> /dev/null"
+            panelname="1Panel"
 
-                        ;;
-                    0)
-                        break  # 跳出循环，退出菜单
-                        ;;
-                    *)
-                        break  # 跳出循环，退出菜单
-                        ;;
-                esac
-            else
+            gongneng1="1pctl user-info"
+            gongneng1_1="1pctl update password"
+            gongneng2="1pctl uninstall"
+            gongneng2_1=""
+            gongneng2_2=""
 
-                clear
-                echo "安装提示"
-                echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装1Panel！"
-                echo "会根据系统自动安装，支持Debian，Ubuntu，Centos"
-                echo "官网介绍: https://1panel.cn/"
-                echo ""
-                # 获取当前系统类型
-                get_system_type() {
-                  if [ -f /etc/os-release ]; then
-                    . /etc/os-release
-                    if [ "$ID" == "centos" ]; then
-                      echo "centos"
-                    elif [ "$ID" == "ubuntu" ]; then
-                      echo "ubuntu"
-                    elif [ "$ID" == "debian" ]; then
-                      echo "debian"
-                    else
-                      echo "unknown"
-                    fi
-                  else
-                    echo "unknown"
-                  fi
-                }
+            panelurl="https://1panel.cn/"
 
-                system_type=$(get_system_type)
 
-                if [ "$system_type" == "unknown" ]; then
-                  echo "不支持的操作系统类型"
-                else
-                  read -p "确定安装1Panel吗？(Y/N): " choice
-                  case "$choice" in
-                    [Yy])
-                      iptables_open
-                      install_docker
-                      if [ "$system_type" == "centos" ]; then
-                        curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh -o quick_start.sh && sh quick_start.sh
-                      elif [ "$system_type" == "ubuntu" ]; then
-                        curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh -o quick_start.sh && bash quick_start.sh
-                      elif [ "$system_type" == "debian" ]; then
-                        curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh -o quick_start.sh && bash quick_start.sh
-                      fi
-                      ;;
-                    [Nn])
-                      ;;
-                    *)
-                      ;;
-                  esac
-                fi
-            fi
+            centos_mingling="curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh -o quick_start.sh"
+            centos_mingling2="sh quick_start.sh"
 
+            ubuntu_mingling="curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh -o quick_start.sh"
+            ubuntu_mingling2="bash quick_start.sh"
+
+            install_panel
 
               ;;
           4)
@@ -3984,7 +3369,7 @@ EOF
                     sleep 1
                     docker exec -it db mongosh --eval "printjson(rs.initiate())"
                     sleep 5
-                    docker run --name rocketchat --restart=always -p 3897:3000 --link db --env ROOT_URL=http://localhost --env MONGO_OPLOG_URL=mongodb://db:27017/rs5 -d rocket.chat:6.3
+                    docker run --name rocketchat --restart=always -p 3897:3000 --link db --env ROOT_URL=http://localhost --env MONGO_OPLOG_URL=mongodb://db:27017/rs5 -d rocket.chat
 
                     clear
 
@@ -4537,6 +3922,43 @@ EOF
             docker_app
               ;;
 
+          34)
+            docker_name="pingvin-share"
+            docker_img="stonith404/pingvin-share"
+            docker_port=3060
+            docker_rum="docker run -d \
+                            --name pingvin-share \
+                            --restart always \
+                            -p 3060:3000 \
+                            -v /home/docker/pingvin-share/data:/opt/app/backend/data \
+                            stonith404/pingvin-share"
+            docker_describe="Pingvin Share 是一个可自建的文件分享平台，是 WeTransfer 的一个替代品"
+            docker_url="官网介绍: https://github.com/stonith404/pingvin-share"
+            docker_use=""
+            docker_passwd=""
+            docker_app
+              ;;
+
+
+          35)
+            docker_name="moments"
+            docker_img="kingwrcy/moments:latest"
+            docker_port=8035
+            docker_rum="docker run -d --restart unless-stopped \
+                            -p 8035:3000 \
+                            -v /home/docker/moments/data:/app/data \
+                            -v /etc/localtime:/etc/localtime:ro \
+                            -v /etc/timezone:/etc/timezone:ro \
+                            --name moments \
+                            kingwrcy/moments:latest"
+            docker_describe="极简朋友圈，高仿微信朋友圈，记录你的美好生活"
+            docker_url="官网介绍: https://github.com/kingwrcy/moments?tab=readme-ov-file"
+            docker_use="echo \"账号: admin  密码: a123456\""
+            docker_passwd=""
+            docker_app
+              ;;
+
+
           51)
           clear
           curl -L https://raw.githubusercontent.com/oneclickvirt/pve/main/scripts/install_pve.sh -o install_pve.sh && chmod +x install_pve.sh && bash install_pve.sh
@@ -4688,6 +4110,7 @@ EOF
       echo "20. 定时任务管理"
       echo "21. 本机host解析"
       echo "22. fail2banSSH防御程序"
+      echo "23. 限流自动关机"
       echo "------------------------"
       echo "99. 重启服务器"
       echo "------------------------"
@@ -6080,41 +5503,56 @@ EOF
             fi
               ;;
 
-          31)
+
+          23)
             clear
-            install sshpass
+            echo "当前流量使用情况，重启服务器流量计算会清零！"
+            output_status
+            echo "$output"
 
-            remote_ip="66.42.61.110"
-            remote_user="liaotian123"
-            remote_file="/home/liaotian123/liaotian.txt"
-            password="huaniangziYYDS"  # 替换为您的密码
-
-            clear
-            echo "花娘子留言板"
-            echo "------------------------"
-            # 显示已有的留言内容
-            sshpass -p "${password}" ssh -o StrictHostKeyChecking=no "${remote_user}@${remote_ip}" "cat '${remote_file}'"
-            echo ""
-            echo "------------------------"
-
-            # 判断是否要留言
-            read -p "是否要留言？(y/n): " leave_message
-
-            if [ "$leave_message" == "y" ] || [ "$leave_message" == "Y" ]; then
-                # 输入新的留言内容
-                read -p "输入你的昵称: " nicheng
-                read -p "输入你的聊天内容: " neirong
-
-                # 添加新留言到远程文件
-                sshpass -p "${password}" ssh -o StrictHostKeyChecking=no "${remote_user}@${remote_ip}" "echo -e '${nicheng}: ${neirong}' >> '${remote_file}'"
-                echo "已添加留言: "
-                echo "${nicheng}: ${neirong}"
-                echo ""
+            # 检查是否存在 Limiting_Shut_down.sh 文件
+            if [ -f ~/Limiting_Shut_down.sh ]; then
+                # 获取 threshold_gb 的值
+                threshold_gb=$(grep -oP 'threshold_gb=\K\d+' ~/Limiting_Shut_down.sh)
+                echo "当前设置的限流阈值为 ${threshold_gb}GB"
             else
-                echo "您选择了不留言。"
+                echo "当前未启用限流关机功能"
             fi
 
-            echo "留言板操作完成。"
+            echo
+            echo "------------------------------------------------"
+            echo "系统每分钟会检测实际流量是否到达阈值，到达后会自动关闭服务器！每月1日重置流量重启服务器。"
+            read -p "1. 开启限流关机功能    2. 停用限流关机功能    0. 退出  : " Limiting
+
+            case "$Limiting" in
+              1)
+                # 输入新的虚拟内存大小
+                echo "如果实际服务器就100G流量，可设置阈值为95G，提前关机，以免出现流量误差或溢出."
+                read -p "请输入流量阈值（单位为GB）: " threshold_gb
+                cd ~
+                curl -Ss -O https://raw.githubusercontent.com/kejilion/sh/main/Limiting_Shut_down.sh
+                chmod +x ~/Limiting_Shut_down.sh
+                sed -i "s/110/$threshold_gb/g" ~/Limiting_Shut_down.sh
+                crontab -l | grep -v '~/Limiting_Shut_down.sh' | crontab -
+                (crontab -l ; echo "* * * * * ~/Limiting_Shut_down.sh") | crontab - > /dev/null 2>&1
+                crontab -l | grep -v 'reboot' | crontab -
+                (crontab -l ; echo "0 1 1 * * reboot") | crontab - > /dev/null 2>&1
+                echo "限流关机已设置"
+
+                ;;
+              0)
+                echo "已取消"
+                ;;
+              2)
+                crontab -l | grep -v '~/Limiting_Shut_down.sh' | crontab -
+                crontab -l | grep -v 'reboot' | crontab -
+                rm ~/Limiting_Shut_down.sh
+                echo "已关闭限流关机功能"
+                ;;
+              *)
+                echo "无效的选择，请输入 Y 或 N。"
+                ;;
+            esac
 
               ;;
 
