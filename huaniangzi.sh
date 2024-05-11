@@ -1,17 +1,18 @@
 #!/bin/bash
-ln -sf ~/huaniangzi.sh /usr/local/bin/hua
 
-# 定义颜色
-red='\033[31m'      # 红色    ${red}
-yellow='\033[93m'   # 黄色    ${yellow}
-blue='\033[94m'     # 蓝色    ${blue}
-green='\033[92m'    # 绿色    ${green}
-purple='\033[95m'   # 紫色    ${purple}
-black='\033[30m'    # 黑色    ${black}
-white='\033[97m'    # 白色    ${white}
-pink='\033[91m'     # 粉红色   ${pink}
-cyan='\033[96m'     # 浅青色   ${cyan}
-re='\033[0m'     # 重置颜色    ${re}
+sh_v="1.8.2"
+
+huang='\033[33m'    # 黄色    ${yellow}
+bai='\033[0m'       # 白色    ${white}
+lv='\033[0;32m'     # 绿色    ${green}
+lan='\033[0;34m'    # 蓝色    ${blue}
+hong='\033[31m'     # 红色    ${red}
+fen='\033[91m'      # 粉红色   ${pink}
+hua='\033[96m'      # 浅青色   ${cyan}
+hui='\e[37m'        # 灰色
+re='\033[0m'        # 重置颜色    ${re}
+
+cp ./huaniangzi.sh /usr/local/bin/hua > /dev/null 2>&1
 
 
 ip_address() {
@@ -80,7 +81,7 @@ remove() {
 
 
 break_end() {
-      echo -e "\033[0;32m操作完成\033[0m"
+      echo -e "${lv}操作完成${bai}"
       echo "按任意键继续..."
       read -n 1 -s -r -p ""
       echo ""
@@ -108,7 +109,7 @@ check_port() {
             echo ""
         else
             clear
-            echo -e "\e[1;31m端口 $PORT 已被占用，无法安装环境，卸载以下程序后重试！\e[0m"
+            echo -e "${hong}端口 $PORT 已被占用，无法安装环境，卸载以下程序后重试！${bai}"
             echo "$result"
             break_end
             huaniangzi
@@ -209,6 +210,9 @@ install_ldnmp() {
           "docker exec nginx chmod -R 777 /var/www/html"
           "docker restart nginx > /dev/null 2>&1"
 
+          # "docker exec php sed -i "s/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g" /etc/apk/repositories > /dev/null 2>&1"
+          # "docker exec php74 sed -i "s/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g" /etc/apk/repositories > /dev/null 2>&1"
+
           "docker exec php apt update > /dev/null 2>&1"
           "docker exec php apk update > /dev/null 2>&1"
           "docker exec php74 apt update > /dev/null 2>&1"
@@ -226,11 +230,14 @@ install_ldnmp() {
           # php安装扩展
           "docker exec php install-php-extensions mysqli > /dev/null 2>&1"
           "docker exec php install-php-extensions pdo_mysql > /dev/null 2>&1"
-          "docker exec php install-php-extensions gd intl zip > /dev/null 2>&1"
+          "docker exec php install-php-extensions gd > /dev/null 2>&1"
+          "docker exec php install-php-extensions intl > /dev/null 2>&1"
+          "docker exec php install-php-extensions zip > /dev/null 2>&1"
           "docker exec php install-php-extensions exif > /dev/null 2>&1"
           "docker exec php install-php-extensions bcmath > /dev/null 2>&1"
           "docker exec php install-php-extensions opcache > /dev/null 2>&1"
-          "docker exec php install-php-extensions imagick redis > /dev/null 2>&1"
+          "docker exec php install-php-extensions imagick > /dev/null 2>&1"
+          "docker exec php install-php-extensions redis > /dev/null 2>&1"
 
           # php配置参数
           "docker exec php sh -c 'echo \"upload_max_filesize=50M \" > /usr/local/etc/php/conf.d/uploads.ini' > /dev/null 2>&1"
@@ -246,11 +253,14 @@ install_ldnmp() {
           # php7.4安装扩展
           "docker exec php74 install-php-extensions mysqli > /dev/null 2>&1"
           "docker exec php74 install-php-extensions pdo_mysql > /dev/null 2>&1"
-          "docker exec php74 install-php-extensions gd intl zip > /dev/null 2>&1"
+          "docker exec php74 install-php-extensions gd > /dev/null 2>&1"
+          "docker exec php74 install-php-extensions intl > /dev/null 2>&1"
+          "docker exec php74 install-php-extensions zip > /dev/null 2>&1"
           "docker exec php74 install-php-extensions exif > /dev/null 2>&1"
           "docker exec php74 install-php-extensions bcmath > /dev/null 2>&1"
           "docker exec php74 install-php-extensions opcache > /dev/null 2>&1"
-          "docker exec php74 install-php-extensions imagick redis > /dev/null 2>&1"
+          "docker exec php74 install-php-extensions imagick > /dev/null 2>&1"
+          "docker exec php74 install-php-extensions redis > /dev/null 2>&1"
 
           # php7.4配置参数
           "docker exec php74 sh -c 'echo \"upload_max_filesize=50M \" > /usr/local/etc/php/conf.d/uploads.ini' > /dev/null 2>&1"
@@ -385,7 +395,7 @@ nginx_status() {
         dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
         docker exec mysql mysql -u root -p"$dbrootpasswd" -e "DROP DATABASE $dbname;" 2> /dev/null
 
-        echo -e "\e[1;31m检测到域名证书申请失败，请检测域名是否正确解析或更换域名重新尝试！\e[0m"
+        echo -e "${hong}检测到域名证书申请失败，请检测域名是否正确解析或更换域名重新尝试！${bai}"
     fi
 
 }
@@ -393,7 +403,7 @@ nginx_status() {
 
 add_yuming() {
       ip_address
-      echo -e "先将域名解析到本机IP: \033[33m$ipv4_address  $ipv6_address\033[0m"
+      echo -e "先将域名解析到本机IP: ${huang}$ipv4_address  $ipv6_address${bai}"
       read -p "请输入你解析的域名: " yuming
 }
 
@@ -597,7 +607,7 @@ f2b_sshd() {
 
 server_reboot() {
 
-    read -p $'\e[33m现在重启服务器吗？(Y/N): \e[0m' rboot
+    read -p "${huang}现在重启服务器吗？(Y/N): ${bai}" rboot
     case "$rboot" in
       [Yy])
         echo "已重启"
@@ -639,7 +649,7 @@ ldnmp_install_status() {
    if docker inspect "php" &>/dev/null; then
     echo "LDNMP环境已安装，开始部署 $webname"
    else
-    echo "LDNMP环境未安装，请先安装LDNMP环境，再部署网站"
+    echo -e "${huang}LDNMP环境未安装，请先安装LDNMP环境，再部署网站${bai}"
     break_end
     kejilion
 
@@ -653,7 +663,7 @@ nginx_install_status() {
    if docker inspect "nginx" &>/dev/null; then
     echo "nginx环境已安装，开始部署 $webname"
    else
-    echo "nginx未安装，请先安装nginx环境，再部署网站"
+    echo -e "${huang}nginx未安装，请先安装nginx环境，再部署网站${bai}"
     break_end
     kejilion
 
@@ -756,12 +766,12 @@ install_panel() {
 while true; do
 clear
 
-echo -e "\033[96m_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
+echo -e "${hua}_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
 echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
-echo -e "\033[96m花娘子一键脚本工具 v1.8.0 （支持Ubuntu/Debian/CentOS/Alpine系统）\033[0m"
-echo -e "\033[96m-输入\033[93mhua\033[96m可快速启动此脚本\033[0m"
+echo -e "${hua}花娘子一键脚本工具 v1.8.2 （支持Ubuntu/Debian/CentOS/Alpine系统）${bai}"
+echo -e "${hua}-输入${huang}hua${hua}可快速启动此脚本${bai}"
 echo "------------------------"
 echo "1. 系统信息查询"
 echo "2. 系统更新"
@@ -770,7 +780,7 @@ echo "4. 常用工具 ▶"
 echo "5. Docker管理 ▶ "
 echo "6. 测试脚本合集 ▶ "
 echo "7. 外面的世界 ▶ "
-echo -e "${yellow}8. LDNMP建站 ▶ ${re}"
+echo -e "${huang}8. LDNMP建站 ▶ ${bai}"
 echo "9. 面板工具 ▶ "
 echo "10. 我的工作区 ▶ "
 echo "11. 系统工具 ▶ "
@@ -959,7 +969,7 @@ case $choice in
   4)
     clear
     while true; do
-        echo -e "${red}▶ 常用工具${re}"
+        echo -e "${hong}▶ 常用工具${bai}"
         echo "------------------------"
         echo "1. 命令行工具和软件 ▶"
         echo "2. BBR管理 ▶"
@@ -973,7 +983,7 @@ case $choice in
             1)
                 while true; do
                     clear
-                    echo -e "${pink}▶ 安装常用工具${re}"
+                    echo -e "${fen}▶ 安装常用工具${bai}"
                     echo "------------------------"
                     echo "1. curl 下载工具"
                     echo "2. wget 下载工具"
@@ -1262,7 +1272,7 @@ EOF
   5)
     while true; do
       clear
-      echo -e "${red}▶ Docker管理器${re}"
+      echo -e "${hong}▶ Docker管理器${bai}"
       echo "------------------------"
       echo "1. 安装更新Docker环境"
       echo "------------------------"
@@ -1623,12 +1633,13 @@ EOF
   6)
     while true; do
       clear
-      echo -e "${red}▶ 测试脚本合集${re}"
+      echo -e "${hong}▶ 测试脚本合集${bai}"
       echo ""
-      echo "----解锁状态检测-----------"
+      echo "----IP及解锁状态检测-----------"
       echo "1. ChatGPT解锁状态检测"
       echo "2. Region流媒体解锁测试"
       echo "3. yeahwu流媒体解锁检测"
+      echo "4. xykt_IP质量体检脚本"
       echo ""
       echo "----网络线路测速-----------"
       echo "11. besttrace三网回程延迟路由测试"
@@ -1664,6 +1675,10 @@ EOF
               clear
               install wget
               wget -qO- https://github.com/yeahwu/check/raw/main/check.sh | bash
+              ;;
+          4)
+              clear
+              bash <(curl -Ls IP.Check.Place)
               ;;
           11)
               clear
@@ -1754,20 +1769,20 @@ EOF
   7)
     clear
       while true; do
-        echo -e "${red}▶ 外面的世界${re}"
+        echo -e "${hong}▶ 外面的世界${bai}"
         echo "------------------------"
-        echo -e "${pink}▼ 快捷工具 ▼${re}"
+        echo -e "${fen}▼ 快捷工具 ▼${bai}"
         echo "---------------------------------------------------------"
         echo "1.開啓 SWAP虛擬内存             2.開啓 BBR"
         echo "3.WARP 01                       4.WARP 02"
         echo "5.解除GitHub限制                6.DisneyPlus檢測"
         echo "7.Netflix檢測"
         echo "---------------------------------------------------------"
-        echo -e "${pink}▼ 系统工具 ▼${re}"
+        echo -e "${fen}▼ 系统工具 ▼${bai}"
         echo "------------------------"
         echo "20.安裝極光面板 "
         echo "------------------------"
-        echo -e "${pink}▼ 一条龙服务 ▼${re}"
+        echo -e "${fen}▼ 一条龙服务 ▼${bai}"
         echo "------------------------"
         echo -e "       Sing-box多合一             Argo-tunnel"
         echo "---------------------------------------------------------"
@@ -2027,7 +2042,7 @@ EOF
   8)
   while true; do
     clear
-    echo -e "${red}▶ LDNMP建站${re}"
+    echo -e "${hong}▶ LDNMP建站${bai}"
     echo  "------------------------"
     echo  "1. 安装LDNMP环境"
     echo  "------------------------"
@@ -2044,6 +2059,7 @@ EOF
     echo "---------------------------------------------------------"
     echo -e "\033[91m▼ LDNMP工具 ▼\033[0m"
     echo "---------------------------------------------------------"
+    echo  "20. 自定义动态站点"
     echo -e "21. 仅安装nginx              22. 站点重定向"
     echo -e "23. 站点反向代理               24. 自定义静态站点"
     echo "---------------------------------------------------------"
@@ -2378,6 +2394,72 @@ EOF
       nginx_status
         ;;
 
+      20)
+      clear
+      webname="PHP动态站点"
+      ldnmp_install_status
+      add_yuming
+      install_ssltls
+      add_db
+
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/index_php.conf
+      sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
+
+      cd /home/web/html
+      mkdir $yuming
+      cd $yuming
+
+      clear
+      echo "上传PHP源码"
+      echo "-------------"
+      echo "目前只允许上传zip格式的源码包，请将源码包放到/home/web/html/${yuming}目录下"
+      read -p "也可以输入下载链接，远程下载源码包，直接回车将跳过远程下载： " url_download
+
+      if [ -n "$url_download" ]; then
+          wget "$url_download"
+      fi
+
+      unzip $(ls -t *.zip | head -n 1)
+      rm -f $(ls -t *.zip | head -n 1)
+
+      clear
+      echo "index.php所在路径"
+      echo "-------------"
+      find "$(realpath .)" -name "index.php" -print
+
+      read -p "请输入index.php的路径，类似（/home/web/html/$yuming/wordpress/）： " index_lujing
+
+      sed -i "s#root /var/www/html/$yuming/#root $index_lujing#g" /home/web/conf.d/$yuming.conf
+      sed -i "s#/home/web/#/var/www/#g" /home/web/conf.d/$yuming.conf
+
+      clear
+      echo "请选择PHP版本"
+      echo "-------------"
+      read -p "1. php最新版 | 2. php7.4 : " pho_v
+      case "$pho_v" in
+        1)
+          sed -i "s#php:9000#php:9000#g" /home/web/conf.d/$yuming.conf
+          ;;
+        2)
+          sed -i "s#php:9000#php74:9000#g" /home/web/conf.d/$yuming.conf
+          ;;
+        *)
+          echo "无效的选择，请重新输入。"
+          ;;
+      esac
+
+      restart_ldnmp
+
+      ldnmp_web_on
+      prefix="web$(shuf -i 10-99 -n 1)_"
+      echo "数据库地址: mysql"
+      echo "数据库名: $dbname"
+      echo "用户名: $dbuse"
+      echo "密码: $dbusepasswd"
+      echo "表前缀: $prefix"
+      echo "管理员登录信息自行设置"
+      nginx_status
+        ;;
 
       21)
       check_port
@@ -2459,11 +2541,29 @@ EOF
       mkdir $yuming
       cd $yuming
 
-      install lrzsz
+
       clear
-      echo -e "目前只允许上传\033[33mindex.html\033[0m文件，请提前准备好，按任意键继续..."
-      read -n 1 -s -r -p ""
-      rz -y
+      echo "上传静态源码"
+      echo "-------------"
+      echo "目前只允许上传zip格式的源码包，请将源码包放到/home/web/html/${yuming}目录下"
+      read -p "也可以输入下载链接，远程下载源码包，直接回车将跳过远程下载： " url_download
+
+      if [ -n "$url_download" ]; then
+          wget "$url_download"
+      fi
+
+      unzip $(ls -t *.zip | head -n 1)
+      rm -f $(ls -t *.zip | head -n 1)
+
+      clear
+      echo "index.html所在路径"
+      echo "-------------"
+      find "$(realpath .)" -name "index.html" -print
+
+      read -p "请输入index.html的路径，类似（/home/web/html/$yuming/wordpress/）： " index_lujing
+
+      sed -i "s#root /var/www/html/$yuming/#root $index_lujing#g" /home/web/conf.d/$yuming.conf
+      sed -i "s#/home/web/#/var/www/#g" /home/web/conf.d/$yuming.conf
 
       docker exec nginx chmod -R 777 /var/www/html
       docker restart nginx
@@ -2518,13 +2618,14 @@ EOF
         echo ""
         echo "站点目录"
         echo "------------------------"
-        echo -e "数据 \e[37m/home/web/html\e[0m     证书 \e[37m/home/web/certs\e[0m     配置 \e[37m/home/web/conf.d\e[0m"
+        echo -e "数据 ${hui}/home/web/html${bai}     证书 ${hui}/home/web/certs${bai}     配置 ${hui}/home/web/conf.d${bai}"
         echo "------------------------"
         echo ""
         echo "操作"
         echo "------------------------"
         echo "1. 申请/更新域名证书               2. 更换站点域名"
         echo "3. 清理站点缓存                    4. 查看站点分析报告"
+        echo "5. 查看全局配置                    6. 查看站点配置"
         echo "------------------------"
         echo "7. 删除指定站点                    8. 删除指定数据库"
         echo "------------------------"
@@ -2569,8 +2670,21 @@ EOF
 
                 ;;
 
+            5)
+                install nano
+                nano /home/web/nginx.conf
+                docker restart nginx
+                ;;
+
+            6)
+                read -p "查看站点配置，请输入你的域名: " yuming
+                install nano
+                nano /home/web/conf.d/$yuming.conf
+                docker restart nginx
+                ;;
+
             7)
-                read -p "请输入你的域名: " yuming
+                read -p "删除站点数据目录，请输入你的域名: " yuming
                 rm -r /home/web/html/$yuming
                 rm /home/web/conf.d/$yuming.conf
                 rm /home/web/certs/${yuming}_key.pem
@@ -2578,7 +2692,7 @@ EOF
                 docker restart nginx
                 ;;
             8)
-                read -p "请输入数据库名: " shujuku
+                read -p "删除站点数据库，请输入数据库名: " shujuku
                 dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
                 docker exec mysql mysql -u root -p"$dbrootpasswd" -e "DROP DATABASE $shujuku;" 2> /dev/null
                 ;;
@@ -2988,7 +3102,8 @@ EOF
       echo "29. searxng聚合搜索站                   30. PhotoPrism私有相册系统"
       echo "31. StirlingPDF工具大全                 32. drawio免费的在线图表软件"
       echo "33. Sun-Panel导航面板                   34. Pingvin-Share文件分享平台"
-      echo "35. 极简朋友圈"
+      echo "35. 极简朋友圈                          36. LobeChatAI聊天聚合网站"
+      echo "37. MyIP工具箱"
       echo "------------------------"
       echo "51. PVE开小鸡面板"
       echo "------------------------"
@@ -3233,9 +3348,9 @@ EOF
                 timeout=3
 
                 if echo "quit" | timeout $timeout telnet smtp.qq.com $port | grep 'Connected'; then
-                  echo -e "\e[32m端口$port当前可用\e[0m"
+                  echo -e "${lv}端口 $port 当前可用${bai}"
                 else
-                  echo -e "\e[31m端口$port当前不可用\e[0m"
+                  echo -e "${hong}端口 $port 当前不可用${bai}"
                 fi
                 echo "------------------------"
                 echo ""
@@ -3959,6 +4074,35 @@ EOF
               ;;
 
 
+
+          36)
+            docker_name="lobe-chat"
+            docker_img="lobehub/lobe-chat:latest"
+            docker_port=8036
+            docker_rum="docker run -d -p 8036:3210 \
+                            --name lobe-chat \
+                            --restart=always \
+                            lobehub/lobe-chat"
+            docker_describe="LobeChat聚合市面上主流的AI大模型，ChatGPT/Claude/Gemini/Groq/Ollama"
+            docker_url="官网介绍: https://github.com/lobehub/lobe-chat"
+            docker_use=""
+            docker_passwd=""
+            docker_app
+              ;;
+
+          37)
+            docker_name="myip"
+            docker_img="ghcr.io/jason5ng32/myip:latest"
+            docker_port=8037
+            docker_rum="docker run -d -p 8037:18966 --name myip --restart always ghcr.io/jason5ng32/myip:latest"
+            docker_describe="是一个多功能IP工具箱，可以查看自己IP信息及连通性，用网页面板呈现"
+            docker_url="官网介绍: https://github.com/jason5ng32/MyIP/blob/main/README_ZH.md"
+            docker_use=""
+            docker_passwd=""
+            docker_app
+              ;;
+
+
           51)
           clear
           curl -L https://raw.githubusercontent.com/oneclickvirt/pve/main/scripts/install_pve.sh -o install_pve.sh && chmod +x install_pve.sh && bash install_pve.sh
@@ -3978,10 +4122,10 @@ EOF
   10)
     while true; do
       clear
-      echo -e "${red}▶ 我的工作区${re}"
+      echo -e "${hong}▶ 我的工作区${bai}"
       echo "系统将为你提供5个后台运行的工作区，你可以用来执行长时间的任务"
       echo "即使你断开SSH，工作区中的任务也不会中断，非常方便！来试试吧！"
-      echo -e "\033[33m注意: 进入工作区后使用Ctrl+b再单独按d，退出工作区！\033[0m"
+      echo -e "${huang}注意: 进入工作区后使用Ctrl+b再单独按d，退出工作区！${bai}"
       echo "------------------------"
       echo "a. 安装工作区环境"
       echo "------------------------"
@@ -4085,7 +4229,7 @@ EOF
   11)
     while true; do
       clear
-      echo -e "${re}▶ 系统工具${re}"
+      echo -e "${hong}▶ 系统工具${bai}"
       echo "------------------------"
       echo "1. 设置脚本启动快捷键"
       echo "------------------------"
@@ -4147,18 +4291,13 @@ EOF
           4)
             clear
 
-            RED="\033[31m"
-            GREEN="\033[32m"
-            YELLOW="\033[33m"
-            NC="\033[0m"
-
             # 系统检测
             OS=$(cat /etc/os-release | grep -o -E "Debian|Ubuntu|CentOS" | head -n 1)
 
             if [[ $OS == "Debian" || $OS == "Ubuntu" || $OS == "CentOS" ]]; then
-                echo -e "检测到你的系统是 ${YELLOW}${OS}${NC}"
+                echo -e "检测到你的系统是 ${huang}${OS}${bai}"
             else
-                echo -e "${RED}很抱歉，你的系统不受支持！${NC}"
+                echo -e "${hong}很抱歉，你的系统不受支持！${bai}"
                 exit 1
             fi
 
@@ -4170,7 +4309,7 @@ EOF
 
             # 卸载Python3旧版本
             if [[ $VERSION == "3"* ]]; then
-                echo -e "${YELLOW}你的Python3版本是${NC}${RED}${VERSION}${NC}，${YELLOW}最新版本是${NC}${RED}${PY_VERSION}${NC}"
+                echo -e "${huang}你的Python3版本是${bai}${hong}${VERSION}${bai}，${huang}最新版本是${bai}${hong}${PY_VERSION}${bai}"
                 read -p "是否确认升级最新版Python3？默认不升级 [y/N]: " CONFIRM
                 if [[ $CONFIRM == "y" ]]; then
                     if [[ $OS == "CentOS" ]]; then
@@ -4181,16 +4320,16 @@ EOF
                         rm-rf /usr/local/python3*
                     fi
                 else
-                    echo -e "${YELLOW}已取消升级Python3${NC}"
+                    echo -e "${huang}已取消升级Python3${bai}"
                     exit 1
                 fi
             else
-                echo -e "${RED}检测到没有安装Python3。${NC}"
+                echo -e "${hong}检测到没有安装Python3。${bai}"
                 read -p "是否确认安装最新版Python3？默认安装 [Y/n]: " CONFIRM
                 if [[ $CONFIRM != "n" ]]; then
-                    echo -e "${GREEN}开始安装最新版Python3...${NC}"
+                    echo -e "${lv}开始安装最新版Python3...${bai}"
                 else
-                    echo -e "${YELLOW}已取消安装Python3${NC}"
+                    echo -e "${huang}已取消安装Python3${bai}"
                     exit 1
                 fi
             fi
@@ -4219,10 +4358,10 @@ EOF
                 ln -sf /usr/local/python3/bin/python3 /usr/bin/python3
                 ln -sf /usr/local/python3/bin/pip3 /usr/bin/pip3
                 clear
-                echo -e "${YELLOW}Python3安装${GREEN}成功，${NC}版本为: ${NC}${GREEN}${PY_VERSION}${NC}"
+                echo -e "${huang}Python3安装${lv}成功，${bai}版本为: ${bai}${lv}${PY_VERSION}${bai}"
             else
                 clear
-                echo -e "${RED}Python3安装失败！${NC}"
+                echo -e "${hong}Python3安装失败！${bai}"
                 exit 1
             fi
             cd /root/ && rm -rf Python-${PY_VERSION}.tgz && rm -rf Python-${PY_VERSION}
@@ -4334,7 +4473,7 @@ EOF
 
           clear
           echo "请备份数据，将为你重装系统，预计花费15分钟。"
-          echo -e "\e[37m感谢MollyLau的脚本支持！\e[0m "
+          echo -e "${hui}感谢MollyLau的脚本支持！${bai} "
           read -p "确定继续吗？(Y/N): " choice
 
           case "$choice" in
@@ -5577,7 +5716,7 @@ EOF
     clear
     while true; do
       clear
-      echo -e "${red}▶ VPS集群控制${re}"
+      echo -e "${hong}▶ VPS集群控制${bai}"
       echo "你可以远程操控多台VPS一起执行任务（仅支持Ubuntu/Debian）"
       echo "------------------------"
       echo "1. 安装集群环境"
@@ -5757,10 +5896,32 @@ EOF
     curl -sS -O https://raw.gitmirror.com/huaniangzi/sh/main/update_log.sh && chmod +x update_log.sh && ./update_log.sh
     rm update_log.sh
     echo ""
-    curl -sS -O https://raw.gitmirror.com/huaniangzi/sh/main/huaniangzi.sh && chmod +x huaniangzi.sh
-    echo "脚本已更新到最新版本！"
-    break_end
-    huaniangzi
+
+    sh_v_new=$(curl -s https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi.sh | grep -o 'sh_v="[0-9.]*"' | cut -d '"' -f 2)
+
+    if [ "$sh_v" = "$sh_v_new" ]; then
+        echo -e "${lv}你已经是最新版本！v$sh_v ${bai}"
+    else
+        echo "发现新版本！"
+        echo -e "当前版本v$sh_v     最新版本${huang}v$sh_v_new${bai}"
+        echo "------------------------"
+        read -p "确定更新脚本吗？(Y/N): " choice
+        case "$choice" in
+            [Yy])
+                clear
+                curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi.sh && chmod +x kejilion.sh
+                echo -e "脚本已更新到最新版本${huang}v$sh_v_new${bai}"
+                break_end
+                kejilion
+                ;;
+            [Nn])
+                echo "已取消"
+                ;;
+            *)
+                ;;
+        esac
+    fi
+
     ;;
 
   0)
