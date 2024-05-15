@@ -6131,9 +6131,9 @@ EOF
     clear
     echo "更新日志"
     echo "------------------------"
-    echo "全部日志: https://raw.githubusercontent.com/huaniangzi/sh/main/update_log.txt"
+    echo "全部日志: https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi_sh_log.txt"
     echo "------------------------"
-    curl -s https://raw.githubusercontent.com/huaniangzi/sh/main/update_log.txt | tail -n 35
+    curl -s https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi_sh_log.txt | tail -n 35
     echo ""
     echo ""
     sh_v_new=$(curl -s https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi.sh | grep -o 'sh_v="[0-9.]*"' | cut -d '"' -f 2)
