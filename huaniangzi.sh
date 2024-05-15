@@ -1137,6 +1137,7 @@ case $choice in
     linux_clean
     ;;
 
+  4)
         case $sub_choice in
             1)
                 while true; do
