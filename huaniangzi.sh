@@ -6138,7 +6138,7 @@ EOF
                 curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi.sh && chmod +x huaniangzi.sh
                 echo -e "${lv}脚本已更新到最新版本！${huang}v$sh_v_new${bai}"
                 break_end
-                kejilion
+                huaniangzi
                 ;;
             [Nn])
                 echo "已取消"
