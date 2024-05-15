@@ -1138,6 +1138,18 @@ case $choice in
     ;;
 
   4)
+    clear
+    while true; do
+        echo -e "${hong}▶ 常用工具${bai}"
+        echo "------------------------"
+        echo "1. 命令行工具和软件 ▶"
+        echo "2. BBR管理 ▶"
+        echo "3. WARP管理 ▶ 解锁ChatGPT Netflix"
+        echo "------------------------"
+        echo "0. 返回上一级菜单菜单"
+        echo "------------------------"
+        read -p "请输入你的选择: " sub_choice
+
         case $sub_choice in
             1)
                 while true; do
