@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sh_v="1.8.3"
+sh_v="1.8.6"
 
 huang='\033[33m'    # 黄色    ${yellow}
 bai='\033[0m'       # 白色    ${white}
@@ -127,7 +127,8 @@ install_add_docker() {
         rc-update add docker default
         service docker start
     else
-        curl -fsSL https://get.docker.com | sh && ln -s /usr/libexec/docker/cli-plugins/docker-compose /usr/local/bin
+        curl -fsSL https://get.docker.com | sh
+        # curl -fsSL https://get.docker.com | sh -s docker --mirror Aliyun
         systemctl start docker
         systemctl enable docker
     fi
@@ -227,7 +228,7 @@ install_ldnmp() {
       new_swap=1024
       add_swap
 
-      cd /home/web && docker-compose up -d
+      cd /home/web && docker compose up -d
       clear
       echo "正在配置LDNMP环境，请耐心稍等……"
 
@@ -405,11 +406,26 @@ nginx_status() {
 
 }
 
+repeat_add_yuming() {
+
+if [ -e /home/web/conf.d/$yuming.conf ]; then
+    echo -e "${huang}当前 ${yuming} 域名已被使用，请前往31站点管理，删除站点，再部署 ${webname} ！${bai}"
+    break_end
+    kejilion
+else
+    echo "当前 ${yuming} 域名可用"
+fi
+
+}
+
+
 
 add_yuming() {
       ip_address
       echo -e "先将域名解析到本机IP: ${huang}$ipv4_address  $ipv6_address${bai}"
       read -p "请输入你解析的域名: " yuming
+      repeat_add_yuming
+
 }
 
 
@@ -729,7 +745,7 @@ install_panel() {
             else
                 clear
                 echo "安装提示"
-                echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装$panelname！"
+                echo "如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装 $panelname！"
                 echo "会根据系统自动安装，支持Debian，Ubuntu，Centos"
                 echo "官网介绍: $panelurl "
                 echo ""
@@ -769,9 +785,9 @@ install_panel() {
 
 current_timezone() {
     if grep -q 'Alpine' /etc/issue; then
-       :
+       date +"%Z %z"
     else
-       timedatectl show --property=Timezone --value
+       timedatectl | grep "Time zone" | awk '{print $3}'
     fi
 
 }
@@ -890,28 +906,19 @@ sysctl -p
 
 set_dns() {
 
-cloudflare_ipv4="1.1.1.1"
-google_ipv4="8.8.8.8"
-cloudflare_ipv6="2606:4700:4700::1111"
-google_ipv6="2001:4860:4860::8888"
-
 # 检查机器是否有IPv6地址
 ipv6_available=0
 if [[ $(ip -6 addr | grep -c "inet6") -gt 0 ]]; then
     ipv6_available=1
 fi
 
-# 设置DNS地址为Cloudflare和Google（IPv4和IPv6）
-echo "设置DNS为Cloudflare和Google"
+echo "nameserver $dns1_ipv4" > /etc/resolv.conf
+echo "nameserver $dns2_ipv4" >> /etc/resolv.conf
 
-# 设置IPv4地址
-echo "nameserver $cloudflare_ipv4" > /etc/resolv.conf
-echo "nameserver $google_ipv4" >> /etc/resolv.conf
 
-# 如果有IPv6地址，则设置IPv6地址
 if [[ $ipv6_available -eq 1 ]]; then
-    echo "nameserver $cloudflare_ipv6" >> /etc/resolv.conf
-    echo "nameserver $google_ipv6" >> /etc/resolv.conf
+    echo "nameserver $dns1_ipv6" >> /etc/resolv.conf
+    echo "nameserver $dns2_ipv6" >> /etc/resolv.conf
 fi
 
 echo "DNS地址已更新"
@@ -960,8 +967,7 @@ sed -i -e 's/^\s*#\?\s*PermitRootLogin .*/PermitRootLogin prohibit-password/' \
        -e 's/^\s*#\?\s*PasswordAuthentication .*/PasswordAuthentication no/' \
        -e 's/^\s*#\?\s*PubkeyAuthentication .*/PubkeyAuthentication yes/' \
        -e 's/^\s*#\?\s*ChallengeResponseAuthentication .*/ChallengeResponseAuthentication no/' /etc/ssh/sshd_config
-
-
+rm -rf /etc/ssh/sshd_config.d/* /etc/ssh/ssh_config.d/*
 echo -e "${lv}ROOT私钥登录已开启，已关闭ROOT密码登录，重连将会生效${bai}"
 
 }
@@ -973,6 +979,7 @@ echo "设置你的ROOT密码"
 passwd
 sed -i 's/^\s*#\?\s*PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config;
 sed -i 's/^\s*#\?\s*PasswordAuthentication.*/PasswordAuthentication yes/g' /etc/ssh/sshd_config;
+rm -rf /etc/ssh/sshd_config.d/* /etc/ssh/ssh_config.d/*
 restart_ssh
 echo -e "${lv}ROOT登录设置完毕！${bai}"
 server_reboot
@@ -1094,6 +1101,9 @@ case $choice in
 
     runtime=$(cat /proc/uptime | awk -F. '{run_days=int($1 / 86400);run_hours=int(($1 % 86400) / 3600);run_minutes=int(($1 % 3600) / 60); if (run_days > 0) printf("%d天 ", run_days); if (run_hours > 0) printf("%d时 ", run_hours); printf("%d分\n", run_minutes)}')
 
+    timezone=$(current_timezone)
+
+
     echo ""
     echo "系统信息查询"
     echo "------------------------"
@@ -1120,6 +1130,7 @@ case $choice in
     echo "公网IPv6地址: $ipv6_address"
     echo "------------------------"
     echo "地理位置: $country $city"
+    echo "系统时区: $timezone"
     echo "系统时间: $current_time"
     echo "------------------------"
     echo "系统运行时长: $runtime"
@@ -1456,8 +1467,9 @@ case $choice in
           2)
               clear
               echo "Dcoker版本"
-              docker --version
-              docker-compose --version
+              docker -v
+              docker compose version
+
               echo ""
               echo "Dcoker镜像列表"
               docker image ls
@@ -2232,6 +2244,7 @@ case $choice in
 
     case $sub_choice in
       1)
+      root_use
       check_port
       install_dependency
       install_docker
@@ -2566,7 +2579,7 @@ case $choice in
       cd $yuming
 
       clear
-      echo "上传PHP源码"
+      echo -e "[${huang}1/5${bai}] 上传PHP源码"
       echo "-------------"
       echo "目前只允许上传zip格式的源码包，请将源码包放到/home/web/html/${yuming}目录下"
       read -p "也可以输入下载链接，远程下载源码包，直接回车将跳过远程下载： " url_download
@@ -2579,7 +2592,7 @@ case $choice in
       rm -f $(ls -t *.zip | head -n 1)
 
       clear
-      echo "index.php所在路径"
+      echo -e "[${huang}2/5${bai}] index.php所在路径"
       echo "-------------"
       find "$(realpath .)" -name "index.php" -print
 
@@ -2589,20 +2602,43 @@ case $choice in
       sed -i "s#/home/web/#/var/www/#g" /home/web/conf.d/$yuming.conf
 
       clear
-      echo "请选择PHP版本"
+      echo -e "[${huang}3/5${bai}] 请选择PHP版本"
       echo "-------------"
       read -p "1. php最新版 | 2. php7.4 : " pho_v
       case "$pho_v" in
         1)
           sed -i "s#php:9000#php:9000#g" /home/web/conf.d/$yuming.conf
+          PHP_Version="php"
           ;;
         2)
           sed -i "s#php:9000#php74:9000#g" /home/web/conf.d/$yuming.conf
+          PHP_Version="php74"
           ;;
         *)
           echo "无效的选择，请重新输入。"
           ;;
       esac
+
+
+      clear
+      echo -e "[${huang}4/5${bai}] 安装指定扩展"
+      echo "-------------"
+      echo "已经安装的扩展"
+      docker exec php php -m
+
+      read -p "$(echo -e "输入需要安装的扩展名称，如 ${huang}SourceGuardian imap ftp${bai} 等等。直接回车将跳过安装 ： ")" php_extensions
+      if [ -n "$php_extensions" ]; then
+          docker exec $PHP_Version install-php-extensions $php_extensions
+      fi
+
+
+      clear
+      echo -e "[${huang}5/5${bai}] 编辑站点配置"
+      echo "-------------"
+      echo "按任意键继续，可以详细设置站点配置，如伪静态等内容"
+      read -n 1 -s -r -p ""
+      install nano
+      nano /home/web/conf.d/$yuming.conf
 
       restart_ldnmp
 
@@ -2701,7 +2737,7 @@ case $choice in
 
 
       clear
-      echo "上传静态源码"
+      echo -e "[${huang}1/2${bai}] 上传静态源码"
       echo "-------------"
       echo "目前只允许上传zip格式的源码包，请将源码包放到/home/web/html/${yuming}目录下"
       read -p "也可以输入下载链接，远程下载源码包，直接回车将跳过远程下载： " url_download
@@ -2714,11 +2750,11 @@ case $choice in
       rm -f $(ls -t *.zip | head -n 1)
 
       clear
-      echo "index.html所在路径"
+      echo -e "[${huang}2/2${bai}] index.html所在路径"
       echo "-------------"
       find "$(realpath .)" -name "index.html" -print
 
-      read -p "请输入index.html的路径，类似（/home/web/html/$yuming/wordpress/）： " index_lujing
+      read -p "请输入index.html的路径，类似（/home/web/html/$yuming/index/）： " index_lujing
 
       sed -i "s#root /var/www/html/$yuming/#root $index_lujing#g" /home/web/conf.d/$yuming.conf
       sed -i "s#/home/web/#/var/www/#g" /home/web/conf.d/$yuming.conf
@@ -2766,7 +2802,7 @@ case $choice in
         echo ""
         echo "操作"
         echo "------------------------"
-        echo -e "1. 申请/更新域名证书               ${hui}2. 更换站点域名${bai}"
+        echo "1. 申请/更新域名证书"
         echo "3. 清理站点缓存                    4. 查看站点分析报告"
         echo "5. 查看全局配置                    6. 查看站点配置"
         echo "------------------------"
@@ -3715,7 +3751,7 @@ case $choice in
 
                             cd /home/ && mkdir -p docker/cloud && cd docker/cloud && mkdir temp_data && mkdir -vp cloudreve/{uploads,avatar} && touch cloudreve/conf.ini && touch cloudreve/cloudreve.db && mkdir -p aria2/config && mkdir -p data/aria2 && chmod -R 777 data/aria2
                             curl -o /home/docker/cloud/docker-compose.yml https://raw.githubusercontent.com/huaniangzi/sh/main/docker/cloudreve-docker-compose.yml
-                            cd /home/docker/cloud/ && docker-compose up -d
+                            cd /home/docker/cloud/ && docker compose up -d
 
 
                             clear
@@ -3759,7 +3795,7 @@ case $choice in
                     install_docker
                     cd /home/ && mkdir -p docker/cloud && cd docker/cloud && mkdir temp_data && mkdir -vp cloudreve/{uploads,avatar} && touch cloudreve/conf.ini && touch cloudreve/cloudreve.db && mkdir -p aria2/config && mkdir -p data/aria2 && chmod -R 777 data/aria2
                     curl -o /home/docker/cloud/docker-compose.yml https://raw.githubusercontent.com/huaniangzi/sh/main/docker/cloudreve-docker-compose.yml
-                    cd /home/docker/cloud/ && docker-compose up -d
+                    cd /home/docker/cloud/ && docker compose up -d
 
 
                     clear
@@ -4380,31 +4416,20 @@ case $choice in
       clear
       echo -e "${hong}▶ 系统工具${bai}"
       echo "------------------------"
-      echo "1. 设置脚本启动快捷键"
+      echo "1. 设置脚本启动快捷键                  2. 修改登录密码"
+      echo "3. ROOT密码登录模式                    4. 安装Python最新版"
+      echo "5. 开放所有端口                        6. 修改SSH连接端口"
+      echo "7. 优化DNS地址                         8. 一键重装系统"
+      echo "9. 禁用ROOT账户创建新账户              10. 切换优先ipv4/ipv6"
       echo "------------------------"
-      echo "2. 修改登录密码"
-      echo "3. ROOT密码登录模式"
-      echo "4. 安装Python最新版"
-      echo "5. 开放所有端口"
-      echo "6. 修改SSH连接端口"
-      echo "7. 优化DNS地址"
-      echo "8. 一键重装系统"
-      echo "9. 禁用ROOT账户创建新账户"
-      echo "10. 切换优先ipv4/ipv6"
-      echo "11. 查看端口占用状态"
-      echo "12. 修改虚拟内存大小"
-      echo "13. 用户管理"
-      echo "14. 用户/密码生成器"
-      echo "15. 系统时区调整"
-      echo "16. 设置BBR3加速"
-      echo "17. 防火墙高级管理器"
-      echo "18. 修改主机名"
-      echo "19. 切换系统更新源"
-      echo "20. 定时任务管理"
-      echo "21. 本机host解析"
-      echo "22. fail2banSSH防御程序"
-      echo "23. 限流自动关机"
-      echo "24. ROOT私钥登录模式"
+      echo "11. 查看端口占用状态                   12. 修改虚拟内存大小"
+      echo "13. 用户管理                           14. 用户/密码生成器"
+      echo "15. 系统时区调整                       16. 设置BBR3加速"
+      echo "17. 防火墙高级管理器                   18. 修改主机名"
+      echo "19. 切换系统更新源                     20. 定时任务管理"
+      echo "------------------------"
+      echo "21. 本机host解析                       22. fail2banSSH防御程序"
+      echo "23. 限流自动关机                       24. ROOT私钥登录模式"
       echo "------------------------"
       echo "66. 一条龙系统调优"
       echo "------------------------"
@@ -4549,10 +4574,37 @@ case $choice in
             echo "------------------------"
             echo ""
             # 询问用户是否要优化DNS设置
-            read -p "是否要设置为Cloudflare和Google的DNS地址？(y/n): " choice
+            read -p "是否要设置DNS地址？(y/n): " choice
 
             if [ "$choice" == "y" ]; then
-                set_dns
+                read -p "1. 国外DNS优化    2. 国内DNS优化    0. 退出  : " Limiting
+
+                case "$Limiting" in
+                  1)
+
+                    dns1_ipv4="1.1.1.1"
+                    dns2_ipv4="8.8.8.8"
+                    dns1_ipv6="2606:4700:4700::1111"
+                    dns2_ipv6="2001:4860:4860::8888"
+                    set_dns
+                    ;;
+
+                  2)
+                    dns1_ipv4="223.5.5.5"
+                    dns2_ipv4="183.60.83.19"
+                    dns1_ipv6="2400:3200::1"
+                    dns2_ipv6="2400:da00::6666"
+                    set_dns
+                    ;;
+                  0)
+                    echo "已取消"
+                    ;;
+                  *)
+                    echo "无效的选择，请输入 Y 或 N。"
+                    ;;
+                esac
+
+
             else
                 echo "DNS设置未更改"
             fi
@@ -4575,9 +4627,17 @@ case $choice in
             wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh
           }
 
+          dd_xitong_4() {
+            echo -e "任意键继续，重装后初始用户名: ${huang}Administrator${bai}  初始密码: ${huang}123@@@${bai}  初始端口: ${huang}3389${bai}"
+            read -n 1 -s -r -p ""
+            install wget
+            curl -O https://raw.githubusercontent.com/bin456789/reinstall/main/reinstall.sh
+          }
+
+
           root_use
           echo "请备份数据，将为你重装系统，预计花费15分钟。"
-          echo -e "${hui}感谢MollyLau的脚本支持！${bai} "
+          echo -e "${hui}感谢MollyLau大佬和bin456789大佬的脚本支持！${bai} "
           read -p "确定继续吗？(Y/N): " choice
 
           case "$choice" in
@@ -4603,9 +4663,10 @@ case $choice in
                 echo "------------------------"
                 echo "41. Windows 11"
                 echo "42. Windows 10"
-                echo "43. Windows Server 2022"
-                echo "44. Windows Server 2019"
-                echo "44. Windows Server 2016"
+                echo "43. Windows 7"
+                echo "44. Windows Server 2022"
+                echo "45. Windows Server 2019"
+                echo "46. Windows Server 2016"
                 echo "------------------------"
                 read -p "请选择要重装的系统: " sys_choice
 
@@ -4708,20 +4769,27 @@ case $choice in
                     ;;
 
                   43)
-                    dd_xitong_3
-                    bash InstallNET.sh -windows 2022 -lang "cn"
+                    dd_xitong_4
+                    bash reinstall.sh windows --image-name 'Windows 7 Professional' --lang zh-cn
                     reboot
                     exit
                     ;;
 
                   44)
+                    dd_xitong_4
+                    bash reinstall.sh windows --image-name 'Windows Server 2022 SERVERDATACENTER' --lang zh-cn
+                    reboot
+                    exit
+                    ;;
+
+                  45)
                     dd_xitong_3
                     bash InstallNET.sh -windows 2019 -lang "cn"
                     reboot
                     exit
                     ;;
 
-                  45)
+                  46)
                     dd_xitong_3
                     bash InstallNET.sh -windows 2016 -lang "cn"
                     reboot
@@ -5574,7 +5642,7 @@ EOF
                   echo ""
                   echo "操作"
                   echo "------------------------"
-                  echo "1. 添加定时任务              2. 删除定时任务"
+                  echo "1. 添加定时任务              2. 删除定时任务              3. 编辑定时任务"
                   echo "------------------------"
                   echo "0. 返回上一级选单"
                   echo "------------------------"
@@ -5584,17 +5652,27 @@ EOF
                       1)
                           read -p "请输入新任务的执行命令: " newquest
                           echo "------------------------"
-                          echo "1. 每周任务                 2. 每天任务"
+                          echo "1. 每月任务                 2. 每周任务"
+                          echo "3. 每天任务                 4. 每小时任务"
+                          echo "------------------------"
                           read -p "请输入你的选择: " dingshi
 
                           case $dingshi in
                               1)
+                                  read -p "选择每月的几号执行任务？ (1-30): " day
+                                  (crontab -l ; echo "0 0 $day * * $newquest") | crontab - > /dev/null 2>&1
+                                  ;;
+                              2)
                                   read -p "选择周几执行任务？ (0-6，0代表星期日): " weekday
                                   (crontab -l ; echo "0 0 * * $weekday $newquest") | crontab - > /dev/null 2>&1
                                   ;;
-                              2)
+                              3)
                                   read -p "选择每天几点执行任务？（小时，0-23）: " hour
                                   (crontab -l ; echo "0 $hour * * * $newquest") | crontab - > /dev/null 2>&1
+                                  ;;
+                              4)
+                                  read -p "输入每小时的第几分钟执行任务？（分钟，0-60）: " minute
+                                  (crontab -l ; echo "$minute * * * * $newquest") | crontab - > /dev/null 2>&1
                                   ;;
                               *)
                                   break  # 跳出
@@ -5604,6 +5682,9 @@ EOF
                       2)
                           read -p "请输入需要删除任务的关键字: " kquest
                           crontab -l | grep -v "$kquest" | crontab -
+                          ;;
+                      3)
+                          crontab -e
                           ;;
                       0)
                           break  # 跳出循环，退出菜单
@@ -5872,6 +5953,10 @@ EOF
                   echo -e "[${lv}OK${bai}] 7/9. 设置时区到${huang}上海${bai}"
 
                   echo "------------------------------------------------"
+                  dns1_ipv4="1.1.1.1"
+                  dns2_ipv4="8.8.8.8"
+                  dns1_ipv6="2606:4700:4700::1111"
+                  dns2_ipv6="2001:4860:4860::8888"
                   set_dns
                   echo -e "[${lv}OK${bai}] 8/9. 优化DNS地址到${huang}1111 8888${bai}"
 
