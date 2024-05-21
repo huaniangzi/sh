@@ -8,3 +8,6 @@ cd /home/ && ls -t /home/*.tar.gz | head -1 | xargs -I {} sshpass -p 123456 scp 
 
 # Keep only 5 tar archives and delete the rest
 cd /home/ && ls -t /home/*.tar.gz | tail -n +4 | xargs -I {} rm {}
+
+# Keep only 3 tar archives and delete the rest on the remote server
+sshpass -p 123456 ssh -o StrictHostKeyChecking=no -p 22 root@0.0.0.0 'cd /home/ && ls -t /home/*.tar.gz | tail -n +4 | xargs -I {} rm {}'
