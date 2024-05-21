@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sh_v="1.8.6"
+sh_v="1.8.7"
 
 huang='\033[33m'    # 黄色    ${yellow}
 bai='\033[0m'       # 白色    ${white}
@@ -2889,7 +2889,7 @@ case $choice in
 
     32)
       clear
-      cd /home/ && tar czvf home_$(date +"%Y%m%d%H%M%S").tar.gz *
+      cd /home/ && tar czvf web_$(date +"%Y%m%d%H%M%S").tar.gz web
 
       while true; do
         clear
@@ -2905,8 +2905,8 @@ case $choice in
             if [ -n "$latest_tar" ]; then
               ssh-keygen -f "/root/.ssh/known_hosts" -R "$remote_ip"
               sleep 2  # 添加等待时间
-              scp -o StrictHostKeyChecking=no "$latest_tar" "root@$remote_ip:/"
-              echo "文件已传送至远程服务器根目录。"
+              scp -o StrictHostKeyChecking=no "$latest_tar" "root@$remote_ip:/home/"
+              echo "文件已传送至远程服务器home目录。"
             else
               echo "未找到要传送的文件。"
             fi
