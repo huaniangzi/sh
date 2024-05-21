@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sh_v="1.8.7"
+sh_v="1.8.8"
 
 huang='\033[33m'    # 黄色    ${yellow}
 bai='\033[0m'       # 白色    ${white}
@@ -2224,16 +2224,15 @@ case $choice in
     echo -e "\033[91m▼ LDNMP项目 ▼\033[0m"
     echo "---------------------------------------------------------"
     echo  "10. 安装vaultwarden密码管理  11. 安装Halo博客网站"
-    echo  "20. 自定义动态站点"
     echo "---------------------------------------------------------"
     echo -e "\033[91m▼ LDNMP工具 ▼\033[0m"
     echo "---------------------------------------------------------"
-    echo -e "21. 仅安装nginx                22. 站点重定向"
-    echo -e "23. 站点反向代理               24. 自定义静态站点"
+    echo -e  "${huang}20. 自定义动态站点${bai}"
+    echo  "21. 仅安装nginx                22. 站点重定向"
+    echo  "23. 站点反向代理               24. 自定义静态站点"
     echo "---------------------------------------------------------"
     echo  "31. 站点数据管理               32. 备份全站数据"
     echo  "33. 定时远程备份               34. 还原全站数据"
-    echo  "35. 迁移全站数据               36. 定时远程迁移"
     echo "---------------------------------------------------------"
     echo  "37. 站点防御程序               38. 优化LDNMP环境"
     echo  "39. 更新LDNMP环境              40. 卸载LDNMP环境"
@@ -2890,71 +2889,187 @@ case $choice in
 
     32)
       clear
-      cd /home/ && tar czvf web_$(date +"%Y%m%d%H%M%S").tar.gz web
-
       while true; do
-        clear
-        read -p "要传送文件到远程服务器吗？(Y/N): " choice
-        case "$choice" in
-          [Yy])
-            read -p "请输入远端服务器IP:  " remote_ip
-            if [ -z "$remote_ip" ]; then
-              echo "错误: 请输入远端服务器IP。"
-              continue
-            fi
-            latest_tar=$(ls -t /home/*.tar.gz | head -1)
-            if [ -n "$latest_tar" ]; then
-              ssh-keygen -f "/root/.ssh/known_hosts" -R "$remote_ip"
-              sleep 2  # 添加等待时间
-              scp -o StrictHostKeyChecking=no "$latest_tar" "root@$remote_ip:/home/"
-              echo "文件已传送至远程服务器home目录。"
-            else
-              echo "未找到要传送的文件。"
-            fi
-            break
-            ;;
-          [Nn])
-            break
-            ;;
-          *)
-            echo "无效的选择，请输入 Y 或 N。"
-            ;;
-        esac
+          echo -e "${hong}▶ 备份全站数据${bai}"
+          echo "------------------------"
+          echo "1. 打包备份 ▶"
+          echo "2. 数据迁移 ▶"
+          echo "------------------------"
+          echo "0. 返回上一级菜单菜单"
+          echo "------------------------"
+          read -p "请输入你的选择: " sub_choice
+
+          case $sub_choice in
+              1)
+                  clear
+                  cd /home/ && tar czvf web_$(date +"%Y%m%d%H%M%S").tar.gz web
+
+                  while true; do
+                    clear
+                    read -p "要传送文件到远程服务器吗？(Y/N): " choice
+                    case "$choice" in
+                      [Yy])
+                        read -p "请输入远端服务器IP:  " remote_ip
+                        if [ -z "$remote_ip" ]; then
+                          echo "错误: 请输入远端服务器IP。"
+                          continue
+                        fi
+                        latest_tar=$(ls -t /home/*.tar.gz | head -1)
+                        if [ -n "$latest_tar" ]; then
+                          ssh-keygen -f "/root/.ssh/known_hosts" -R "$remote_ip"
+                          sleep 2  # 添加等待时间
+                          scp -o StrictHostKeyChecking=no "$latest_tar" "root@$remote_ip:/home/"
+                          echo "文件已传送至远程服务器home目录。"
+                        else
+                          echo "未找到要传送的文件。"
+                        fi
+                        break
+                        ;;
+                      [Nn])
+                        break
+                        ;;
+                      *)
+                        echo "无效的选择，请输入 Y 或 N。"
+                        ;;
+                    esac
+                  done
+                  ;;
+              2)
+                  while true; do
+                  clear
+                  read -p "要迁移文件到远程服务器吗？(Y/N): " choice
+                  case "$choice" in
+                    [Yy])
+                      read -p "请输入目标服务器IP:  " destination_ip
+                      if [ -z "$destination_ip" ]; then
+                        echo "错误: 请输入目标服务器IP。"
+                        continue
+                      fi
+
+                      # 使用scp递归传输整个web目录
+                      ssh-keygen -f "/root/.ssh/known_hosts" -R "$destination_ip"
+                      sleep 2  # 添加等待时间
+                      scp -r -o StrictHostKeyChecking=no /home/web "root@$destination_ip:/home/web"
+                      echo "目录已传送至目标服务器的/home/web目录。"
+                      break
+                      ;;
+                    [Nn])
+                      break
+                      ;;
+                    *)
+                      echo "无效的选择，请输入 Y 或 N。"
+                      ;;
+                  esac
+                done
+                ;;
+              0)
+                  # 返回上一级菜单菜单
+                  break  # 使用 break 来跳出当前循环，返回上一级菜单
+                  ;;
+              00)
+                  # 返回主菜单
+                  huaniangzi
+                  ;;
+              *)
+                  echo "无效的输入!"
+                  ;;
+          esac
+          break_end
       done
       ;;
-
     33)
       clear
-      read -p "输入远程服务器IP: " useip
-      read -p "输入远程服务器密码: " usepasswd
+      while true; do
+          echo -e "${hong}▶ 定时远程备份${bai}"
+          echo "------------------------"
+          echo "1. 打包远程定时备份 ▶"
+          echo "2. 迁移远程定时备份 ▶"
+          echo "------------------------"
+          echo "0. 返回上一级菜单菜单"
+          echo "------------------------"
+          read -p "请输入你的选择: " sub_choice
 
-      cd ~
-      wget -O ${useip}_beifen.sh https://raw.githubusercontent.com/huaniangzi/sh/main/beifen.sh > /dev/null 2>&1
-      chmod +x ${useip}_beifen.sh
+          case $sub_choice in
+              1)
+                  clear
+                  read -p "输入远程服务器IP: " useip
+                  read -p "输入远程服务器密码: " usepasswd
 
-      sed -i "s/0.0.0.0/$useip/g" ${useip}_beifen.sh
-      sed -i "s/123456/$usepasswd/g" ${useip}_beifen.sh
+                  cd ~
+                  wget -O ${useip}_beifen.sh https://raw.githubusercontent.com/huaniangzi/sh/main/beifen.sh > /dev/null 2>&1
+                  chmod +x ${useip}_beifen.sh
 
-      echo "------------------------"
-      echo "1. 每周备份                 2. 每天备份"
-      read -p "请输入你的选择: " dingshi
+                  sed -i "s/0.0.0.0/$useip/g" ${useip}_beifen.sh
+                  sed -i "s/123456/$usepasswd/g" ${useip}_beifen.sh
 
-      case $dingshi in
-          1)
-              read -p "选择每周备份的星期几 (0-6，0代表星期日): " weekday
-              (crontab -l ; echo "0 0 * * $weekday ./${useip}_beifen.sh") | crontab - > /dev/null 2>&1
-              ;;
-          2)
-              read -p "选择每天备份的时间（小时，0-23）: " hour
-              (crontab -l ; echo "0 $hour * * * ./${useip}_beifen.sh") | crontab - > /dev/null 2>&1
-              ;;
-          *)
-              break  # 跳出
-              ;;
-      esac
+                  echo "------------------------"
+                  echo "1. 每周备份                 2. 每天备份"
+                  read -p "请输入你的选择: " dingshi
 
-      install sshpass
+                  case $dingshi in
+                      1)
+                          read -p "选择每周备份的星期几 (0-6，0代表星期日): " weekday
+                          (crontab -l ; echo "0 0 * * $weekday ./${useip}_beifen.sh") | crontab - > /dev/null 2>&1
+                          ;;
+                      2)
+                          read -p "选择每天备份的时间（小时，0-23）: " hour
+                          (crontab -l ; echo "0 $hour * * * ./${useip}_beifen.sh") | crontab - > /dev/null 2>&1
+                          ;;
+                      *)
+                          break  # 跳出
+                          ;;
+                  esac
 
+                  install sshpass
+
+                  ;;
+              2)
+                  clear
+                  read -p "输入远程服务器IP: " target_server_ip
+                  read -p "输入远程服务器密码: " password
+
+                  cd ~
+                  wget -O ${target_server_ip}_qianyi.sh https://raw.githubusercontent.com/huaniangzi/sh/main/qianyi.sh > /dev/null 2>&1
+                  chmod +x ${target_server_ip}_qianyi.sh
+
+                  sed -i "s/0.0.0.0/$target_server_ip/g" ${target_server_ip}_qianyi.sh
+                  sed -i "s/123456/$password/g" ${target_server_ip}_qianyi.sh
+
+                  echo "------------------------"
+                  echo "1. 一周迁移一次                 2. 每天迁移一次"
+                  read -p "请输入你的选择: " dingshi
+
+                  case $dingshi in
+                      1)
+                          read -p "选择每周备份的星期几 (0-6，0代表星期日): " weekday
+                          (crontab -l ; echo "0 0 * * $weekday ./${target_server_ip}_qianyi.sh") | crontab - > /dev/null 2>&1
+                          ;;
+                      2)
+                          read -p "选择每天备份的时间（小时，0-23）: " hour
+                          (crontab -l ; echo "0 $hour * * * ./${target_server_ip}_qianyi.sh") | crontab - > /dev/null 2>&1
+                          ;;
+                      *)
+                          break  # 跳出
+                          ;;
+                  esac
+
+                  install sshpass
+
+                  ;;
+              0)
+                  # 返回上一级菜单菜单
+                  break  # 使用 break 来跳出当前循环，返回上一级菜单
+                  ;;
+              00)
+                  # 返回主菜单
+                  huaniangzi
+                  ;;
+              *)
+                  echo "无效的输入!"
+                  ;;
+          esac
+          break_end
+      done
       ;;
 
     34)
@@ -2970,70 +3085,6 @@ case $choice in
       ;;
 
     35)
-      while true; do
-      clear
-      read -p "要迁移文件到远程服务器吗？(Y/N): " choice
-      case "$choice" in
-        [Yy])
-          read -p "请输入目标服务器IP:  " destination_ip
-          if [ -z "$destination_ip" ]; then
-            echo "错误: 请输入目标服务器IP。"
-            continue
-          fi
-
-          # 使用scp递归传输整个web目录
-          ssh-keygen -f "/root/.ssh/known_hosts" -R "$destination_ip"
-          sleep 2  # 添加等待时间
-          scp -r -o StrictHostKeyChecking=no /home/web "root@$destination_ip:/home/web"
-          echo "目录已传送至目标服务器的/home/web目录。"
-          break
-          ;;
-        [Nn])
-          break
-          ;;
-        *)
-          echo "无效的选择，请输入 Y 或 N。"
-          ;;
-      esac
-    done
-    ;;
-
-    35)
-      clear
-      read -p "输入远程服务器IP: " target_server_ip
-      read -p "输入远程服务器密码: " password
-
-      cd ~
-      wget -O ${target_server_ip}_qianyi.sh https://raw.githubusercontent.com/huaniangzi/sh/main/qianyi.sh > /dev/null 2>&1
-      chmod +x ${target_server_ip}_qianyi.sh
-
-      sed -i "s/0.0.0.0/$target_server_ip/g" ${target_server_ip}_qianyi.sh
-      sed -i "s/123456/$password/g" ${target_server_ip}_qianyi.sh
-
-      echo "------------------------"
-      echo "1. 一周迁移一次                 2. 每天迁移一次"
-      read -p "请输入你的选择: " dingshi
-
-      case $dingshi in
-          1)
-              read -p "选择每周备份的星期几 (0-6，0代表星期日): " weekday
-              (crontab -l ; echo "0 0 * * $weekday ./${target_server_ip}_beifen.sh") | crontab - > /dev/null 2>&1
-              ;;
-          2)
-              read -p "选择每天备份的时间（小时，0-23）: " hour
-              (crontab -l ; echo "0 $hour * * * ./${target_server_ip}_beifen.sh") | crontab - > /dev/null 2>&1
-              ;;
-          *)
-              break  # 跳出
-              ;;
-      esac
-
-      install sshpass
-
-      ;;
-
-
-    37)
 
         if docker inspect fail2ban &>/dev/null ; then
           while true; do
@@ -3204,7 +3255,7 @@ case $choice in
 
         ;;
 
-    38)
+    36)
           while true; do
               clear
               echo "优化LDNMP环境"
@@ -3281,7 +3332,7 @@ case $choice in
         ;;
 
 
-    39)
+    37)
       root_use
       docker rm -f nginx php php74 mysql redis
       docker rmi nginx nginx:alpine php:fpm php:fpm-alpine php:7.4.33-fpm php:7.4-fpm-alpine mysql redis redis:alpine
@@ -3294,7 +3345,7 @@ case $choice in
 
 
 
-    40)
+    38)
         root_use
         read -p "$(echo -e "${hong}强烈建议先备份全部网站数据，再卸载LDNMP环境。确定删除所有网站数据吗？(Y/N): ${bai}")" choice
         case "$choice" in
