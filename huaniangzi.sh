@@ -2233,9 +2233,10 @@ case $choice in
     echo "---------------------------------------------------------"
     echo  "31. 站点数据管理               32. 备份全站数据"
     echo  "33. 定时远程备份               34. 还原全站数据"
+    echo  "35. 迁移全站数据               36. 定时远程迁移"
     echo "---------------------------------------------------------"
-    echo  "35. 站点防御程序               36. 优化LDNMP环境"
-    echo  "37. 更新LDNMP环境              38. 卸载LDNMP环境"
+    echo  "37. 站点防御程序               38. 优化LDNMP环境"
+    echo  "39. 更新LDNMP环境              40. 卸载LDNMP环境"
     echo "---------------------------------------------------------"
     echo  "0. 返回主菜单"
     echo  "------------------------"
@@ -2969,6 +2970,70 @@ case $choice in
       ;;
 
     35)
+      while true; do
+      clear
+      read -p "要迁移文件到远程服务器吗？(Y/N): " choice
+      case "$choice" in
+        [Yy])
+          read -p "请输入目标服务器IP:  " destination_ip
+          if [ -z "$destination_ip" ]; then
+            echo "错误: 请输入目标服务器IP。"
+            continue
+          fi
+
+          # 使用scp递归传输整个web目录
+          ssh-keygen -f "/root/.ssh/known_hosts" -R "$destination_ip"
+          sleep 2  # 添加等待时间
+          scp -r -o StrictHostKeyChecking=no /home/web "root@$destination_ip:/home/web"
+          echo "目录已传送至目标服务器的/home/web目录。"
+          break
+          ;;
+        [Nn])
+          break
+          ;;
+        *)
+          echo "无效的选择，请输入 Y 或 N。"
+          ;;
+      esac
+    done
+    ;;
+
+    35)
+      clear
+      read -p "输入远程服务器IP: " target_server_ip
+      read -p "输入远程服务器密码: " password
+
+      cd ~
+      wget -O ${target_server_ip}_qianyi.sh https://raw.githubusercontent.com/huaniangzi/sh/main/qianyi.sh > /dev/null 2>&1
+      chmod +x ${target_server_ip}_qianyi.sh
+
+      sed -i "s/0.0.0.0/$target_server_ip/g" ${target_server_ip}_qianyi.sh
+      sed -i "s/123456/$password/g" ${target_server_ip}_qianyi.sh
+
+      echo "------------------------"
+      echo "1. 一周迁移一次                 2. 每天迁移一次"
+      read -p "请输入你的选择: " dingshi
+
+      case $dingshi in
+          1)
+              read -p "选择每周备份的星期几 (0-6，0代表星期日): " weekday
+              (crontab -l ; echo "0 0 * * $weekday ./${target_server_ip}_beifen.sh") | crontab - > /dev/null 2>&1
+              ;;
+          2)
+              read -p "选择每天备份的时间（小时，0-23）: " hour
+              (crontab -l ; echo "0 $hour * * * ./${target_server_ip}_beifen.sh") | crontab - > /dev/null 2>&1
+              ;;
+          *)
+              break  # 跳出
+              ;;
+      esac
+
+      install sshpass
+
+      ;;
+
+
+    37)
 
         if docker inspect fail2ban &>/dev/null ; then
           while true; do
@@ -3139,7 +3204,7 @@ case $choice in
 
         ;;
 
-    36)
+    38)
           while true; do
               clear
               echo "优化LDNMP环境"
@@ -3216,7 +3281,7 @@ case $choice in
         ;;
 
 
-    37)
+    39)
       root_use
       docker rm -f nginx php php74 mysql redis
       docker rmi nginx nginx:alpine php:fpm php:fpm-alpine php:7.4.33-fpm php:7.4-fpm-alpine mysql redis redis:alpine
@@ -3229,7 +3294,7 @@ case $choice in
 
 
 
-    38)
+    40)
         root_use
         read -p "$(echo -e "${hong}强烈建议先备份全部网站数据，再卸载LDNMP环境。确定删除所有网站数据吗？(Y/N): ${bai}")" choice
         case "$choice" in
