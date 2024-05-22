@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sh_v="1.8.8"
+sh_v="1.8.9"
 
 huang='\033[33m'    # 黄色    ${yellow}
 bai='\033[0m'       # 白色    ${white}
@@ -138,7 +138,7 @@ install_add_docker() {
 
 
 install_docker() {
-    if ! command -v docker &>/dev/null || ! command -v docker-compose &>/dev/null; then
+    if ! command -v docker compose &>/dev/null; then
         install_add_docker
     else
         echo "Docker环境已经安装"
@@ -334,7 +334,7 @@ install_ldnmp() {
 
 
 install_certbot() {
-    install certbot
+    install epel-release certbot
 
     # 切换到一个一致的目录（例如，家目录）
     cd ~ || exit
@@ -362,7 +362,9 @@ install_ssltls() {
       docker stop nginx > /dev/null 2>&1
       iptables_open
       cd ~
-      certbot certonly --standalone -d $yuming --email your@email.com --agree-tos --no-eff-email --force-renewal
+      # certbot certonly --standalone -d $yuming --email your@email.com --agree-tos --no-eff-email --force-renewal
+      certbot certonly --standalone -d $yuming --email your@email.com --agree-tos --no-eff-email --force-renewal --key-type ecdsa
+
       cp /etc/letsencrypt/live/$yuming/fullchain.pem /home/web/certs/${yuming}_cert.pem
       cp /etc/letsencrypt/live/$yuming/privkey.pem /home/web/certs/${yuming}_key.pem
       docker start nginx > /dev/null 2>&1
@@ -371,7 +373,15 @@ install_ssltls() {
 
 default_server_ssl() {
 install openssl
-openssl req -x509 -nodes -newkey rsa:2048 -keyout /home/web/certs/default_server.key -out /home/web/certs/default_server.crt -days 5475 -subj "/C=US/ST=State/L=City/O=Organization/OU=Organizational Unit/CN=Common Name"
+# openssl req -x509 -nodes -newkey rsa:2048 -keyout /home/web/certs/default_server.key -out /home/web/certs/default_server.crt -days 5475 -subj "/C=US/ST=State/L=City/O=Organization/OU=Organizational Unit/CN=Common Name"
+
+if command -v dnf &>/dev/null || command -v yum &>/dev/null; then
+    openssl req -x509 -nodes -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -keyout /home/web/certs/default_server.key -out /home/web/certs/default_server.crt -days 5475 -subj "/C=US/ST=State/L=City/O=Organization/OU=Organizational Unit/CN=Common Name"
+else
+    openssl genpkey -algorithm Ed25519 -out /home/web/certs/default_server.key
+    openssl req -x509 -key /home/web/certs/default_server.key -out /home/web/certs/default_server.crt -days 5475 -subj "/C=US/ST=State/L=City/O=Organization/OU=Organizational Unit/CN=Common Name"
+fi
+
 
 }
 
@@ -951,7 +961,8 @@ fi
 
 add_sshkey() {
 
-ssh-keygen -t rsa -b 4096 -C "xxxx@gmail.com" -f /root/.ssh/sshkey -N ""
+# ssh-keygen -t rsa -b 4096 -C "xxxx@gmail.com" -f /root/.ssh/sshkey -N ""
+ssh-keygen -t ed25519 -C "xxxx@gmail.com" -f /root/.ssh/sshkey -N ""
 
 cat ~/.ssh/sshkey.pub >> ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
@@ -1157,7 +1168,7 @@ case $choice in
         echo "2. BBR管理 ▶"
         echo "3. WARP管理 ▶ 解锁ChatGPT Netflix"
         echo "------------------------"
-        echo "0. 返回上一级菜单菜单"
+        echo "0. 返回上一级菜单"
         echo "------------------------"
         read -p "请输入你的选择: " sub_choice
 
@@ -1354,7 +1365,7 @@ case $choice in
                             ;;
 
                         0)
-                            # 返回上一级菜单菜单
+                            # 返回上一级菜单
                             break  # 使用 break 来跳出当前循环，返回上一级菜单
                             ;;
 
@@ -1421,7 +1432,7 @@ case $choice in
                 wget -N https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh && bash menu.sh [option] [lisence/url/token]
                 ;;
             0)
-                # 返回上一级菜单菜单
+                # 返回上一级菜单
                 break  # 使用 break 来跳出当前循环，返回上一级菜单
                 ;;
             00)
@@ -1443,16 +1454,17 @@ case $choice in
       echo "------------------------"
       echo "1. 安装更新Docker环境"
       echo "------------------------"
-      echo "2. 查看Dcoker全局状态"
+      echo "2. 查看Docker全局状态"
       echo "------------------------"
-      echo "3. Dcoker容器管理 ▶"
-      echo "4. Dcoker镜像管理 ▶"
-      echo "5. Dcoker网络管理 ▶"
-      echo "6. Dcoker卷管理 ▶"
+      echo "3. Docker容器管理 ▶"
+      echo "4. Docker镜像管理 ▶"
+      echo "5. Docker网络管理 ▶"
+      echo "6. Docker卷管理 ▶"
       echo "------------------------"
       echo "7. 清理无用的docker容器和镜像网络数据卷"
+      echo "8. 更换Docker源"
       echo "------------------------"
-      echo "8. 卸载Dcoker环境"
+      echo "9. 卸载Docker环境"
       echo "------------------------"
       echo "0. 返回主菜单"
       echo "------------------------"
@@ -1466,21 +1478,21 @@ case $choice in
               ;;
           2)
               clear
-              echo "Dcoker版本"
+              echo "Docker版本"
               docker -v
               docker compose version
 
               echo ""
-              echo "Dcoker镜像列表"
+              echo "Docker镜像列表"
               docker image ls
               echo ""
-              echo "Dcoker容器列表"
+              echo "Docker容器列表"
               docker ps -a
               echo ""
-              echo "Dcoker卷列表"
+              echo "Docker卷列表"
               docker volume ls
               echo ""
-              echo "Dcoker网络列表"
+              echo "Docker网络列表"
               docker network ls
               echo ""
 
@@ -1770,6 +1782,11 @@ case $choice in
               ;;
           8)
               clear
+              bash <(curl -sSL https://linuxmirrors.cn/docker.sh)
+              ;;
+
+          9)
+              clear
               read -p "$(echo -e "${hong}确定卸载docker环境吗？(Y/N): ${bai}")" choice
               case "$choice" in
                 [Yy])
@@ -1783,6 +1800,7 @@ case $choice in
                   ;;
               esac
               ;;
+
           0)
               huaniangzi
 
@@ -2895,7 +2913,7 @@ case $choice in
           echo "1. 打包备份 ▶"
           echo "2. 数据迁移 ▶"
           echo "------------------------"
-          echo "0. 返回上一级菜单菜单"
+          echo "0. 返回上一级菜单"
           echo "------------------------"
           read -p "请输入你的选择: " sub_choice
 
@@ -2963,7 +2981,7 @@ case $choice in
                 done
                 ;;
               0)
-                  # 返回上一级菜单菜单
+                  # 返回上一级菜单
                   break  # 使用 break 来跳出当前循环，返回上一级菜单
                   ;;
               00)
@@ -2979,97 +2997,36 @@ case $choice in
       ;;
     33)
       clear
-      while true; do
-          echo -e "${hong}▶ 定时远程备份${bai}"
-          echo "------------------------"
-          echo "1. 打包远程定时备份 ▶"
-          echo "2. 迁移远程定时备份 ▶"
-          echo "------------------------"
-          echo "0. 返回上一级菜单菜单"
-          echo "------------------------"
-          read -p "请输入你的选择: " sub_choice
+      read -p "输入远程服务器IP: " useip
+      read -p "输入远程服务器密码: " usepasswd
 
-          case $sub_choice in
-              1)
-                  clear
-                  read -p "输入远程服务器IP: " useip
-                  read -p "输入远程服务器密码: " usepasswd
+      cd ~
+      wget -O ${useip}_beifen.sh https://raw.githubusercontent.com/kejilion/sh/main/beifen.sh > /dev/null 2>&1
+      chmod +x ${useip}_beifen.sh
 
-                  cd ~
-                  wget -O ${useip}_beifen.sh https://raw.githubusercontent.com/huaniangzi/sh/main/beifen.sh > /dev/null 2>&1
-                  chmod +x ${useip}_beifen.sh
+      sed -i "s/0.0.0.0/$useip/g" ${useip}_beifen.sh
+      sed -i "s/123456/$usepasswd/g" ${useip}_beifen.sh
 
-                  sed -i "s/0.0.0.0/$useip/g" ${useip}_beifen.sh
-                  sed -i "s/123456/$usepasswd/g" ${useip}_beifen.sh
+      echo "------------------------"
+      echo "1. 每周备份                 2. 每天备份"
+      read -p "请输入你的选择: " dingshi
 
-                  echo "------------------------"
-                  echo "1. 每周备份                 2. 每天备份"
-                  read -p "请输入你的选择: " dingshi
+      case $dingshi in
+          1)
+              read -p "选择每周备份的星期几 (0-6，0代表星期日): " weekday
+              (crontab -l ; echo "0 0 * * $weekday ./${useip}_beifen.sh") | crontab - > /dev/null 2>&1
+              ;;
+          2)
+              read -p "选择每天备份的时间（小时，0-23）: " hour
+              (crontab -l ; echo "0 $hour * * * ./${useip}_beifen.sh") | crontab - > /dev/null 2>&1
+              ;;
+          *)
+              break  # 跳出
+              ;;
+      esac
 
-                  case $dingshi in
-                      1)
-                          read -p "选择每周备份的星期几 (0-6，0代表星期日): " weekday
-                          (crontab -l ; echo "0 0 * * $weekday ./${useip}_beifen.sh") | crontab - > /dev/null 2>&1
-                          ;;
-                      2)
-                          read -p "选择每天备份的时间（小时，0-23）: " hour
-                          (crontab -l ; echo "0 $hour * * * ./${useip}_beifen.sh") | crontab - > /dev/null 2>&1
-                          ;;
-                      *)
-                          break  # 跳出
-                          ;;
-                  esac
+      install sshpass
 
-                  install sshpass
-
-                  ;;
-              2)
-                  clear
-                  read -p "输入远程服务器IP: " target_server_ip
-                  read -p "输入远程服务器密码: " password
-
-                  cd ~
-                  wget -O ${target_server_ip}_qianyi.sh https://raw.githubusercontent.com/huaniangzi/sh/main/qianyi.sh > /dev/null 2>&1
-                  chmod +x ${target_server_ip}_qianyi.sh
-
-                  sed -i "s/0.0.0.0/$target_server_ip/g" ${target_server_ip}_qianyi.sh
-                  sed -i "s/123456/$password/g" ${target_server_ip}_qianyi.sh
-
-                  echo "------------------------"
-                  echo "1. 一周迁移一次                 2. 每天迁移一次"
-                  read -p "请输入你的选择: " dingshi
-
-                  case $dingshi in
-                      1)
-                          read -p "选择每周备份的星期几 (0-6，0代表星期日): " weekday
-                          (crontab -l ; echo "0 0 * * $weekday ./${target_server_ip}_qianyi.sh") | crontab - > /dev/null 2>&1
-                          ;;
-                      2)
-                          read -p "选择每天备份的时间（小时，0-23）: " hour
-                          (crontab -l ; echo "0 $hour * * * ./${target_server_ip}_qianyi.sh") | crontab - > /dev/null 2>&1
-                          ;;
-                      *)
-                          break  # 跳出
-                          ;;
-                  esac
-
-                  install sshpass
-
-                  ;;
-              0)
-                  # 返回上一级菜单菜单
-                  break  # 使用 break 来跳出当前循环，返回上一级菜单
-                  ;;
-              00)
-                  # 返回主菜单
-                  huaniangzi
-                  ;;
-              *)
-                  echo "无效的输入!"
-                  ;;
-          esac
-          break_end
-      done
       ;;
 
     34)
@@ -4751,183 +4708,176 @@ case $choice in
           }
 
 
-          root_use
-          echo "请备份数据，将为你重装系统，预计花费15分钟。"
-          echo -e "${hui}感谢MollyLau大佬和bin456789大佬的脚本支持！${bai} "
-          read -p "确定继续吗？(Y/N): " choice
+            while true; do
+              root_use
+              echo "请备份数据，将为你重装系统，预计花费15分钟。"
+              echo -e "${hui}感谢MollyLau大佬和bin456789大佬的脚本支持！${bai} "
+              echo "------------------------"
+              echo "1. Debian 12"
+              echo "2. Debian 11"
+              echo "3. Debian 10"
+              echo "4. Debian 9"
+              echo "------------------------"
+              echo "11. Ubuntu 24.04"
+              echo "12. Ubuntu 22.04"
+              echo "13. Ubuntu 20.04"
+              echo "14. Ubuntu 18.04"
+              echo "------------------------"
+              echo "21. CentOS 9"
+              echo "22. CentOS 8"
+              echo "23. CentOS 7"
+              echo "------------------------"
+              echo "31. Alpine 3.19"
+              echo "------------------------"
+              echo "41. Windows 11"
+              echo "42. Windows 10"
+              echo "43. Windows 7"
+              echo "44. Windows Server 2022"
+              echo "45. Windows Server 2019"
+              echo "46. Windows Server 2016"
+              echo "------------------------"
+              echo "0. 返回上一级选单"
+              echo "------------------------"
+              read -p "请选择要重装的系统: " sys_choice
 
-          case "$choice" in
-            [Yy])
-              while true; do
+              case "$sys_choice" in
+                1)
+                  dd_xitong_2
+                  bash InstallNET.sh -debian 12
+                  reboot
+                  exit
+                  ;;
 
-                echo "------------------------"
-                echo "1. Debian 12"
-                echo "2. Debian 11"
-                echo "3. Debian 10"
-                echo "4. Debian 9"
-                echo "------------------------"
-                echo "11. Ubuntu 24.04"
-                echo "12. Ubuntu 22.04"
-                echo "13. Ubuntu 20.04"
-                echo "14. Ubuntu 18.04"
-                echo "------------------------"
-                echo "21. CentOS 9"
-                echo "22. CentOS 8"
-                echo "23. CentOS 7"
-                echo "------------------------"
-                echo "31. Alpine 3.19"
-                echo "------------------------"
-                echo "41. Windows 11"
-                echo "42. Windows 10"
-                echo "43. Windows 7"
-                echo "44. Windows Server 2022"
-                echo "45. Windows Server 2019"
-                echo "46. Windows Server 2016"
-                echo "------------------------"
-                read -p "请选择要重装的系统: " sys_choice
+                2)
+                  dd_xitong_2
+                  bash InstallNET.sh -debian 11
+                  reboot
+                  exit
+                  ;;
 
-                case "$sys_choice" in
-                  1)
-                    dd_xitong_2
-                    bash InstallNET.sh -debian 12
-                    reboot
-                    exit
-                    ;;
+                3)
+                  dd_xitong_2
+                  bash InstallNET.sh -debian 10
+                  reboot
+                  exit
+                  ;;
+                4)
+                  dd_xitong_2
+                  bash InstallNET.sh -debian 9
+                  reboot
+                  exit
+                  ;;
 
-                  2)
-                    dd_xitong_2
-                    bash InstallNET.sh -debian 11
-                    reboot
-                    exit
-                    ;;
+                11)
+                  dd_xitong_2
+                  bash InstallNET.sh -ubuntu 24.04
+                  reboot
+                  exit
+                  ;;
+                12)
+                  dd_xitong_2
+                  bash InstallNET.sh -ubuntu 22.04
+                  reboot
+                  exit
+                  ;;
 
-                  3)
-                    dd_xitong_2
-                    bash InstallNET.sh -debian 10
-                    reboot
-                    exit
-                    ;;
-                  4)
-                    dd_xitong_2
-                    bash InstallNET.sh -debian 9
-                    reboot
-                    exit
-                    ;;
-
-                  11)
-                    dd_xitong_2
-                    bash InstallNET.sh -ubuntu 24.04
-                    reboot
-                    exit
-                    ;;
-                  12)
-                    dd_xitong_2
-                    bash InstallNET.sh -ubuntu 22.04
-                    reboot
-                    exit
-                    ;;
-
-                  13)
-                    dd_xitong_2
-                    bash InstallNET.sh -ubuntu 20.04
-                    reboot
-                    exit
-                    ;;
-                  14)
-                    dd_xitong_2
-                    bash InstallNET.sh -ubuntu 18.04
-                    reboot
-                    exit
-                    ;;
+                13)
+                  dd_xitong_2
+                  bash InstallNET.sh -ubuntu 20.04
+                  reboot
+                  exit
+                  ;;
+                14)
+                  dd_xitong_2
+                  bash InstallNET.sh -ubuntu 18.04
+                  reboot
+                  exit
+                  ;;
 
 
-                  21)
-                    dd_xitong_2
-                    bash InstallNET.sh -centos 9
-                    reboot
-                    exit
-                    ;;
+                21)
+                  dd_xitong_2
+                  bash InstallNET.sh -centos 9
+                  reboot
+                  exit
+                  ;;
 
 
-                  22)
-                    dd_xitong_2
-                    bash InstallNET.sh -centos 8
-                    reboot
-                    exit
-                    ;;
+                22)
+                  dd_xitong_2
+                  bash InstallNET.sh -centos 8
+                  reboot
+                  exit
+                  ;;
 
-                  23)
-                    dd_xitong_2
-                    bash InstallNET.sh -centos 7
-                    reboot
-                    exit
-                    ;;
+                23)
+                  dd_xitong_2
+                  bash InstallNET.sh -centos 7
+                  reboot
+                  exit
+                  ;;
 
-                  31)
-                    dd_xitong_2
-                    bash InstallNET.sh -alpine
-                    reboot
-                    exit
-                    ;;
+                31)
+                  dd_xitong_2
+                  bash InstallNET.sh -alpine
+                  reboot
+                  exit
+                  ;;
 
-                  41)
-                    dd_xitong_3
-                    bash InstallNET.sh -windows 11 -lang "cn"
-                    reboot
-                    exit
-                    ;;
+                41)
+                  dd_xitong_3
+                  bash InstallNET.sh -windows 11 -lang "cn"
+                  reboot
+                  exit
+                  ;;
 
-                  42)
-                    dd_xitong_3
-                    bash InstallNET.sh -windows 10 -lang "cn"
-                    reboot
-                    exit
-                    ;;
+                42)
+                  dd_xitong_3
+                  bash InstallNET.sh -windows 10 -lang "cn"
+                  reboot
+                  exit
+                  ;;
 
-                  43)
-                    dd_xitong_4
-                    bash reinstall.sh windows --image-name 'Windows 7 Professional' --lang zh-cn
-                    reboot
-                    exit
-                    ;;
+                43)
+                  dd_xitong_4
+                  bash reinstall.sh windows --image-name 'Windows 7 Professional' --lang zh-cn
+                  reboot
+                  exit
+                  ;;
 
-                  44)
-                    dd_xitong_4
-                    bash reinstall.sh windows --image-name 'Windows Server 2022 SERVERDATACENTER' --lang zh-cn
-                    reboot
-                    exit
-                    ;;
+                44)
+                  dd_xitong_4
+                  bash reinstall.sh windows --image-name 'Windows Server 2022 SERVERDATACENTER' --lang zh-cn
+                  reboot
+                  exit
+                  ;;
 
-                  45)
-                    dd_xitong_3
-                    bash InstallNET.sh -windows 2019 -lang "cn"
-                    reboot
-                    exit
-                    ;;
+                45)
+                  dd_xitong_3
+                  bash InstallNET.sh -windows 2019 -lang "cn"
+                  reboot
+                  exit
+                  ;;
 
-                  46)
-                    dd_xitong_3
-                    bash InstallNET.sh -windows 2016 -lang "cn"
-                    reboot
-                    exit
-                    ;;
+                46)
+                  dd_xitong_3
+                  bash InstallNET.sh -windows 2016 -lang "cn"
+                  reboot
+                  exit
+                  ;;
 
+                0)
+                  break
+                  ;;
 
-                  *)
-                    echo "无效的选择，请重新输入。"
-                    ;;
-                esac
-              done
+                *)
+                  echo "无效的选择，请重新输入。"
+                  break
+                  ;;
+              esac
+            done
+
               ;;
-            [Nn])
-              echo "已取消"
-              ;;
-            *)
-              echo "无效的选择，请输入 Y 或 N。"
-              ;;
-          esac
-              ;;
-
           9)
             root_use
 
