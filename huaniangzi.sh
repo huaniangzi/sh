@@ -4376,8 +4376,8 @@ case $choice in
     while true; do
       clear
       echo -e "${hong}▶ 我的工作区${bai}"
-      echo "系统将为你提供5个后台运行的工作区，你可以用来执行长时间的任务"
-      echo "即使你断开SSH，工作区中的任务也不会中断，非常方便！来试试吧！"
+      echo "系统将为你提供可以后台常驻运行的工作区，你可以用来执行长时间的任务"
+      echo "即使你断开SSH，工作区中的任务也不会中断，后台常驻任务。"
       echo -e "${huang}注意: 进入工作区后使用Ctrl+b再单独按d，退出工作区！${bai}"
       echo "------------------------"
       echo "1. 1号工作区"
@@ -4390,10 +4390,9 @@ case $choice in
       echo "8. 8号工作区"
       echo "9. 9号工作区"
       echo "10. 10号工作区"
+      echo "11. 自定义工作区"
       echo "------------------------"
-      echo "99. 工作区状态"
-      echo "------------------------"
-      echo "b. 卸载工作区"
+      echo "99. 工作区状态管理"
       echo "------------------------"
       echo "0. 返回主菜单"
       echo "------------------------"
@@ -4401,10 +4400,6 @@ case $choice in
 
       case $sub_choice in
 
-          b)
-              clear
-              remove tmux
-              ;;
           1)
               clear
               install tmux
@@ -4467,10 +4462,41 @@ case $choice in
               tmux_run
               ;;
 
-          99)
+          11)
               clear
               install tmux
+              clear
+              echo "当前已存在的工作区列表"
+              echo "------------------------"
               tmux list-sessions
+              echo "------------------------"
+              read -p "请输入您自定义的工作区名称，如1001 kj001 work10: " SESSION_NAME
+              tmux_run
+              ;;
+
+          99)
+            while true; do
+              clear
+              echo "当前已存在的工作区列表"
+              echo "------------------------"
+              tmux list-sessions
+              echo "------------------------"
+
+              read -p "1. 删除指定工作区    0. 退出: " gongzuoqu_del
+              case "$gongzuoqu_del" in
+                1)
+                  read -p "请输入要删除的工作区名称: " gongzuoqu_name
+                  tmux kill-window -t $gongzuoqu_name
+                  ;;
+                0)
+                  break
+                  ;;
+                *)
+                  echo "无效的选择，请输入 Y 或 N。"
+                  ;;
+              esac
+            done
+
               ;;
           0)
               huaniangzi
