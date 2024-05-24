@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sh_v="1.8.9"
+sh_v="1.9.0"
 
 huang='\033[33m'    # 黄色    ${yellow}
 bai='\033[0m'       # 白色    ${white}
