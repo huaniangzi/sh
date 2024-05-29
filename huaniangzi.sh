@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sh_v="1.9.1"
+sh_v="1.9.2"
 
 huang='\033[33m'    # 黄色    ${yellow}
 bai='\033[0m'       # 白色    ${white}
@@ -119,6 +119,7 @@ check_port() {
         echo ""
     fi
 }
+
 
 install_add_docker() {
     if [ -f "/etc/alpine-release" ]; then
@@ -975,26 +976,7 @@ linux_clean() {
 
 }
 
-new_ssh_port() {
 
-
-  # 备份 SSH 配置文件
-  cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
-
-  sed -i 's/^\s*#\?\s*Port/Port/' /etc/ssh/sshd_config
-
-  # 替换 SSH 配置文件中的端口号
-  sed -i "s/Port [0-9]\+/Port $new_port/g" /etc/ssh/sshd_config
-
-  # 重启 SSH 服务
-  service sshd restart
-  echo "SSH 端口已修改为: $new_port"
-
-  clear
-  iptables_open
-  remove iptables-persistent ufw firewalld iptables-services > /dev/null 2>&1
-
-}
 
 
 bbr_on() {
@@ -1051,6 +1033,29 @@ fi
 }
 
 
+new_ssh_port() {
+
+
+  # 备份 SSH 配置文件
+  cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
+
+  sed -i 's/^\s*#\?\s*Port/Port/' /etc/ssh/sshd_config
+
+  # 替换 SSH 配置文件中的端口号
+  sed -i "s/Port [0-9]\+/Port $new_port/g" /etc/ssh/sshd_config
+
+  rm -rf /etc/ssh/sshd_config.d/* /etc/ssh/ssh_config.d/*
+
+  # 重启 SSH 服务
+  restart_ssh
+  echo "SSH 端口已修改为: $new_port"
+
+  clear
+  iptables_open
+  remove iptables-persistent ufw firewalld iptables-services > /dev/null 2>&1
+
+}
+
 
 
 add_sshkey() {
@@ -1064,6 +1069,7 @@ chmod 600 ~/.ssh/authorized_keys
 
 ip_address
 echo -e "私钥信息已生成，务必复制保存，可保存成 ${huang}${ipv4_address}_ssh.key${bai} 文件，用于以后的SSH登录"
+
 echo "--------------------------------"
 cat ~/.ssh/sshkey
 echo "--------------------------------"
@@ -5043,14 +5049,23 @@ case $choice in
 
                 43)
                   dd_xitong_4
-                  bash reinstall.sh windows --image-name 'Windows 7 Professional' --lang zh-cn
+                  URL="https://massgrave.dev/windows_7_links"
+                  web_content=$(wget -q -O - "$URL")
+                  iso_link=$(echo "$web_content" | grep -oP '(?<=href=")[^"]*cn[^"]*windows_7[^"]*professional[^"]*x64[^"]*\.iso')
+                  # bash reinstall.sh windows --image-name 'Windows 7 Professional' --lang zh-cn
+                  # bash reinstall.sh windows --iso='$iso_link' --image-name='Windows 7 PROFESSIONAL'
+                  bash reinstall.sh windows --iso="$iso_link" --image-name='Windows 7 PROFESSIONAL'
+
                   reboot
                   exit
                   ;;
 
                 44)
                   dd_xitong_4
-                  bash reinstall.sh windows --image-name 'Windows Server 2022 SERVERDATACENTER' --lang zh-cn
+                  URL="https://massgrave.dev/windows_server_links"
+                  web_content=$(wget -q -O - "$URL")
+                  iso_link=$(echo "$web_content" | grep -oP '(?<=href=")[^"]*cn[^"]*windows_server[^"]*2022[^"]*x64[^"]*\.iso')
+                  bash reinstall.sh windows --iso="$iso_link" --image-name='Windows Server 2022 SERVERDATACENTER'
                   reboot
                   exit
                   ;;
