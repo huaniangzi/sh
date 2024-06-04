@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sh_v="1.9.3"
+sh_v="1.9.31"
 
 huang='\033[33m'    # 黄色    ${yellow}
 bai='\033[0m'       # 白色    ${white}
@@ -466,6 +466,15 @@ nginx_status() {
 }
 
 repeat_add_yuming() {
+
+domain_regex="^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$"
+if [[ $yuming =~ $domain_regex ]]; then
+  echo "域名格式正确"
+else
+  echo "域名格式不正确，请重新输入"
+  break_end
+  kejilion
+fi
 
 if [ -e /home/web/conf.d/$yuming.conf ]; then
     echo -e "${huang}当前 ${yuming} 域名已被使用，请前往31站点管理，删除站点，再部署 ${webname} ！${bai}"
@@ -1560,7 +1569,10 @@ case $choice in
       echo "7. 清理无用的docker容器和镜像网络数据卷"
       echo "8. 更换Docker源"
       echo "------------------------"
-      echo "9. 卸载Docker环境"
+      echo "11. 开启Docker-ipv6访问"
+      echo "12. 关闭Docker-ipv6访问"
+      echo "------------------------"
+      echo "20. 卸载Docker环境"
       echo "------------------------"
       echo "0. 返回主菜单"
       echo "------------------------"
@@ -6275,6 +6287,7 @@ EOF
                   install_add_docker
                   install wget sudo tar unzip socat btop
                   echo -e "[${lv}OK${bai}] 9/9. 安装常用工具${huang}docker wget sudo tar unzip socat btop${bai}"
+                  echo "------------------------------------------------"
                   echo -e "${lv}一条龙系统调优已完成${bai}"
 
                   ;;
@@ -6492,8 +6505,7 @@ EOF
     echo "全部日志: https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi_sh_log.txt"
     echo "------------------------"
     curl -s https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi_sh_log.txt | tail -n 35
-    echo ""
-    echo ""
+
     sh_v_new=$(curl -s https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi.sh | grep -o 'sh_v="[0-9.]*"' | cut -d '"' -f 2)
 
     if [ "$sh_v" = "$sh_v_new" ]; then
@@ -6507,6 +6519,7 @@ EOF
             [Yy])
                 clear
                 curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi.sh && chmod +x huaniangzi.sh
+                cp ./huaniangzi.sh /usr/local/bin/k > /dev/null 2>&1
                 echo -e "${lv}脚本已更新到最新版本！${huang}v$sh_v_new${bai}"
                 break_end
                 huaniangzi
