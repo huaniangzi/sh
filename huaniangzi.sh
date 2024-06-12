@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sh_v="1.9.31"
+sh_v="1.9.4"
 
 huang='\033[33m'    # 黄色    ${yellow}
 bai='\033[0m'       # 白色    ${white}
@@ -375,12 +375,6 @@ install_certbot() {
 
     if command -v yum &>/dev/null; then
         install epel-release certbot
-    elif command -v apt &>/dev/null; then
-        install snapd
-        snap install core
-        snap install --classic certbot
-        rm /usr/bin/certbot
-        ln -s /snap/bin/certbot /usr/bin/certbot
     else
         install certbot
     fi
@@ -1567,6 +1561,7 @@ case $choice in
       echo "6. Docker卷管理 ▶"
       echo "------------------------"
       echo "7. 清理无用的docker容器和镜像网络数据卷"
+      echo "------------------------"
       echo "8. 更换Docker源"
       echo "------------------------"
       echo "11. 开启Docker-ipv6访问"
@@ -1921,7 +1916,6 @@ case $choice in
 
           0)
               huaniangzi
-
               ;;
           *)
               echo "无效的输入!"
@@ -2487,7 +2481,7 @@ case $choice in
       cd /home/web/html
       mkdir $yuming
       cd $yuming
-      wget -O latest.zip https://github.com/kalcaddle/kodbox/archive/refs/tags/1.42.04.zip
+      wget -O latest.zip https://github.com/kalcaddle/kodbox/archive/refs/tags/1.50.02.zip
       unzip -o latest.zip
       rm latest.zip
 
@@ -2828,7 +2822,7 @@ case $choice in
       install_docker
       install_certbot
 
-      cd /home && mkdir -p web/html web/mysql web/certs web/conf.d web/redis web/log/nginx
+      cd /home && mkdir -p web/html web/mysql web/certs web/conf.d web/redis web/log/nginx && touch web/docker-compose.yml
 
       wget -O /home/web/nginx.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/nginx10.conf
       wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/default10.conf
