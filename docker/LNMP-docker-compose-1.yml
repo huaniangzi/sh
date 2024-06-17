@@ -29,5 +29,5 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=webroot
       - MYSQL_DATABASE=web
-      - MYSQL_USER=huaniangzi
-      - MYSQL_PASSWORD=huaniangziYYDS
+      - MYSQL_USER=siilao
+      - MYSQL_PASSWORD=siilaoYYDS
