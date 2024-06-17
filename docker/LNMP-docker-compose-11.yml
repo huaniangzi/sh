@@ -39,8 +39,8 @@ services:
       - ./mysql:/var/lib/mysql
     environment:
       MYSQL_ROOT_PASSWORD: webroot
-      MYSQL_USER: huaniangzi  
-      MYSQL_PASSWORD: huaniangziYYDS
+      MYSQL_USER: siilao  
+      MYSQL_PASSWORD: siilaoYYDS
 
   redis:
     image: redis:alpine
