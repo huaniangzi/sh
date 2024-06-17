@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sh_v="1.9.4"
+sh_v="1.9.4.1"
 
 huang='\033[33m'    # 黄色    ${yellow}
 bai='\033[0m'       # 白色    ${white}
@@ -12,7 +12,7 @@ hua='\033[96m'      # 浅青色   ${cyan}
 hui='\e[37m'        # 灰色
 re='\033[0m'        # 重置颜色    ${re}
 
-cp ./huaniangzi.sh /usr/local/bin/hua > /dev/null 2>&1
+cp ./siilao.sh /usr/local/bin/hua > /dev/null 2>&1
 
 
 ip_address() {
@@ -88,8 +88,8 @@ break_end() {
       clear
 }
 
-huaniangzi() {
-            hua
+siilao() {
+            s
             exit
 }
 
@@ -112,7 +112,7 @@ check_port() {
             echo -e "${hong}端口 ${huang}$PORT${hong} 已被占用，无法安装环境，卸载以下程序后重试！${bai}"
             echo "$result"
             break_end
-            huaniangzi
+            siilao
 
         fi
     else
@@ -383,7 +383,7 @@ install_certbot() {
     cd ~ || exit
 
     # 下载并使脚本可执行
-    curl -O https://raw.githubusercontent.com/huaniangzi/sh/main/auto_cert_renewal.sh
+    curl -O https://raw.githubusercontent.com/siilao/sh/main/auto_cert_renewal.sh
     chmod +x auto_cert_renewal.sh
 
     # 设置定时任务字符串
@@ -502,7 +502,7 @@ add_db() {
 
 reverse_proxy() {
       ip_address
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/reverse-proxy.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/reverse-proxy.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
       sed -i "s/0.0.0.0/$ipv4_address/g" /home/web/conf.d/$yuming.conf
       sed -i "s/0000/$duankou/g" /home/web/conf.d/$yuming.conf
@@ -639,7 +639,7 @@ fi
 
 cluster_python3() {
     cd ~/cluster/
-    curl -sS -O https://raw.githubusercontent.com/huaniangzi/python-for-vps/main/cluster/$py_task
+    curl -sS -O https://raw.githubusercontent.com/siilao/python-for-vps/main/cluster/$py_task
     python3 ~/cluster/$py_task
 }
 
@@ -687,19 +687,19 @@ f2b_install_sshd() {
     sleep 3
     if grep -q 'Alpine' /etc/issue; then
         cd /path/to/fail2ban/config/fail2ban/filter.d
-        curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/config/fail2ban/alpine-sshd.conf
-        curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/config/fail2ban/alpine-sshd-ddos.conf
+        curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/config/fail2ban/alpine-sshd.conf
+        curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/config/fail2ban/alpine-sshd-ddos.conf
         cd /path/to/fail2ban/config/fail2ban/jail.d/
-        curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/config/fail2ban/alpine-ssh.conf
+        curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/config/fail2ban/alpine-ssh.conf
     elif grep -qi 'CentOS' /etc/redhat-release; then
         cd /path/to/fail2ban/config/fail2ban/jail.d/
-        curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/config/fail2ban/centos-ssh.conf
+        curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/config/fail2ban/centos-ssh.conf
     else
         install rsyslog
         systemctl start rsyslog
         systemctl enable rsyslog
         cd /path/to/fail2ban/config/fail2ban/jail.d/
-        curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/config/fail2ban/linux-ssh.conf
+        curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/config/fail2ban/linux-ssh.conf
     fi
 }
 
@@ -780,7 +780,7 @@ ldnmp_install_status() {
    else
     echo -e "${huang}LDNMP环境未安装，请先安装LDNMP环境，再部署网站${bai}"
     break_end
-    huaniangzi
+    siilao
 
    fi
 
@@ -794,7 +794,7 @@ nginx_install_status() {
    else
     echo -e "${huang}nginx未安装，请先安装nginx环境，再部署网站${bai}"
     break_end
-    huaniangzi
+    siilao
 
    fi
 
@@ -1101,7 +1101,7 @@ echo -e "${lv}ROOT登录设置完毕！${bai}"
 
 root_use() {
 clear
-[ "$EUID" -ne 0 ] && echo -e "${huang}请注意，该功能需要root用户才能运行！${bai}" && break_end && huaniangzi
+[ "$EUID" -ne 0 ] && echo -e "${huang}请注意，该功能需要root用户才能运行！${bai}" && break_end && siilao
 }
 
 
@@ -1536,7 +1536,7 @@ case $choice in
                 ;;
             00)
                 # 返回主菜单
-                huaniangzi
+                siilao
                 ;;
             *)
                 echo "无效的输入!"
@@ -1915,7 +1915,7 @@ case $choice in
               ;;
 
           0)
-              huaniangzi
+              siilao
               ;;
           *)
               echo "无效的输入!"
@@ -2052,7 +2052,7 @@ case $choice in
 
 
           0)
-              huaniangzi
+              siilao
 
               ;;
           *)
@@ -2327,7 +2327,7 @@ case $choice in
                     break_end
                 ;;
             0)
-                huaniangzi
+                siilao
                 ;;
             *)
                 echo "无效的输入!"
@@ -2384,19 +2384,19 @@ case $choice in
       # 创建必要的目录和文件
       cd /home && mkdir -p web/html web/mysql web/certs web/conf.d web/redis web/log/nginx && touch web/docker-compose.yml
 
-      wget -O /home/web/nginx.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/nginx10.conf
-      wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/default10.conf
+      wget -O /home/web/nginx.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/nginx10.conf
+      wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/default10.conf
       default_server_ssl
 
       # 下载 docker-compose.yml 文件并进行替换
-      wget -O /home/web/docker-compose.yml https://raw.githubusercontent.com/huaniangzi/sh/main/docker/LNMP-docker-compose-10.yml
+      wget -O /home/web/docker-compose.yml https://raw.githubusercontent.com/siilao/sh/main/docker/LNMP-docker-compose-10.yml
 
       dbrootpasswd=$(openssl rand -base64 16) && dbuse=$(openssl rand -hex 4) && dbusepasswd=$(openssl rand -base64 8)
 
       # 在 docker-compose.yml 文件中进行替换
       sed -i "s/webroot/$dbrootpasswd/g" /home/web/docker-compose.yml
-      sed -i "s/huaniangziYYDS/$dbusepasswd/g" /home/web/docker-compose.yml
-      sed -i "s/huaniangzi/$dbuse/g" /home/web/docker-compose.yml
+      sed -i "s/siilaoYYDS/$dbusepasswd/g" /home/web/docker-compose.yml
+      sed -i "s/siilao/$dbuse/g" /home/web/docker-compose.yml
 
       install_ldnmp
 
@@ -2410,7 +2410,7 @@ case $choice in
       install_ssltls
       add_db
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/ngxin/wordpress.com.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/ngxin/wordpress.com.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
 
       cd /home/web/html
@@ -2442,14 +2442,14 @@ case $choice in
       install_ssltls
       add_db
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/discuz.com.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/discuz.com.conf
 
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
 
       cd /home/web/html
       mkdir $yuming
       cd $yuming
-      wget -O latest.zip https://github.com/huaniangzi/sh/raw/main/file/Discuz_X3.5_SC_UTF8_20230520.zip
+      wget -O latest.zip https://github.com/siilao/sh/raw/main/file/Discuz_X3.5_SC_UTF8_20230520.zip
       unzip latest.zip
       rm latest.zip
 
@@ -2475,7 +2475,7 @@ case $choice in
       install_ssltls
       add_db
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main.nginx/kdy.com.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main.nginx/kdy.com.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
 
       cd /home/web/html
@@ -2505,7 +2505,7 @@ case $choice in
       install_ssltls
       add_db
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/maccms.com.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/maccms.com.conf
 
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
 
@@ -2514,10 +2514,10 @@ case $choice in
       cd $yuming
       # wget https://github.com/magicblack/maccms_down/raw/master/maccms10.zip && unzip maccms10.zip && rm maccms10.zip
       wget https://github.com/magicblack/maccms_down/raw/master/maccms10.zip && unzip maccms10.zip && mv maccms10-*/* . && rm -r maccms10-* && rm maccms10.zip
-      cd /home/web/html/$yuming/template/ && wget https://github.com/huaniangzi/sh/raw/main/file/DYXS2.zip && unzip DYXS2.zip && rm /home/web/html/$yuming/template/DYXS2.zip
+      cd /home/web/html/$yuming/template/ && wget https://github.com/siilao/sh/raw/main/file/DYXS2.zip && unzip DYXS2.zip && rm /home/web/html/$yuming/template/DYXS2.zip
       cp /home/web/html/$yuming/template/DYXS2/asset/admin/Dyxs2.php /home/web/html/$yuming/application/admin/controller
       cp /home/web/html/$yuming/template/DYXS2/asset/admin/dycms.html /home/web/html/$yuming/application/admin/view/system
-      mv /home/web/html/$yuming/admin.php /home/web/html/$yuming/vip.php && wget -O /home/web/html/$yuming/application/extra/maccms.php https://raw.githubusercontent.com/huaniangzi/sh/main/file/maccms.php
+      mv /home/web/html/$yuming/admin.php /home/web/html/$yuming/vip.php && wget -O /home/web/html/$yuming/application/extra/maccms.php https://raw.githubusercontent.com/siilao/sh/main/file/maccms.php
 
       restart_ldnmp
 
@@ -2544,7 +2544,7 @@ case $choice in
       install_ssltls
       add_db
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/dujiaoka.com.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/dujiaoka.com.conf
 
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
 
@@ -2588,7 +2588,7 @@ case $choice in
       install_ssltls
       add_db
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/flarum.com.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/flarum.com.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
 
       cd /home/web/html
@@ -2626,7 +2626,7 @@ case $choice in
       install_ssltls
       add_db
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/typecho.com.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/typecho.com.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
 
       cd /home/web/html
@@ -2701,7 +2701,7 @@ case $choice in
       install_ssltls
       add_db
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/index_php.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/index_php.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
 
       cd /home/web/html
@@ -2824,8 +2824,8 @@ case $choice in
 
       cd /home && mkdir -p web/html web/mysql web/certs web/conf.d web/redis web/log/nginx && touch web/docker-compose.yml
 
-      wget -O /home/web/nginx.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/nginx10.conf
-      wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/default10.conf
+      wget -O /home/web/nginx.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/nginx10.conf
+      wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/default10.conf
       default_server_ssl
       docker rm -f nginx >/dev/null 2>&1
       docker rmi nginx nginx:alpine >/dev/null 2>&1
@@ -2849,7 +2849,7 @@ case $choice in
 
       install_ssltls
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/rewrite.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/rewrite.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
       sed -i "s/baidu.com/$reverseproxy/g" /home/web/conf.d/$yuming.conf
 
@@ -2871,7 +2871,7 @@ case $choice in
 
       install_ssltls
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/reverse-proxy.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/reverse-proxy.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
       sed -i "s/0.0.0.0/$reverseproxy/g" /home/web/conf.d/$yuming.conf
       sed -i "s/0000/$port/g" /home/web/conf.d/$yuming.conf
@@ -2911,7 +2911,7 @@ case $choice in
       add_yuming
       install_ssltls
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/html.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/html.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
 
       cd /home/web/html
@@ -3151,7 +3151,7 @@ case $choice in
                   ;;
               00)
                   # 返回主菜单
-                  huaniangzi
+                  siilao
                   ;;
               *)
                   echo "无效的输入!"
@@ -3309,16 +3309,16 @@ case $choice in
                       read -p "输入CF的账号: " cfuser
                       read -p "输入CF的Global API Key: " cftoken
 
-                      wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/default11.conf
+                      wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/default11.conf
                       docker restart nginx
 
                       cd /path/to/fail2ban/config/fail2ban/jail.d/
-                      curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/config/fail2ban/nginx-docker-cc.conf
+                      curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/config/fail2ban/nginx-docker-cc.conf
 
                       cd /path/to/fail2ban/config/fail2ban/action.d
-                      curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/config/fail2ban/cloudflare-docker.conf
+                      curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/config/fail2ban/cloudflare-docker.conf
 
-                      sed -i "s/huaniangzi@outlook.com/$cfuser/g" /path/to/fail2ban/config/fail2ban/action.d/cloudflare-docker.conf
+                      sed -i "s/siilao@outlook.com/$cfuser/g" /path/to/fail2ban/config/fail2ban/action.d/cloudflare-docker.conf
                       sed -i "s/APIKEY00000/$cftoken/g" /path/to/fail2ban/config/fail2ban/action.d/cloudflare-docker.conf
                       f2b_status
 
@@ -3359,8 +3359,8 @@ case $choice in
           install_docker
 
           docker rm -f nginx
-          wget -O /home/web/nginx.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/nginx10.conf
-          wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/default10.conf
+          wget -O /home/web/nginx.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/nginx10.conf
+          wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/default10.conf
           default_server_ssl
           docker run -d --name nginx --restart always --network web_default -p 80:80 -p 443:443 -p 443:443/udp -v /home/web/nginx.conf:/etc/nginx/nginx.conf -v /home/web/conf.d:/etc/nginx/conf.d -v /home/web/certs:/etc/nginx/certs -v /home/web/html:/var/www/html -v /home/web/log/nginx:/var/log/nginx nginx:alpine
           docker exec -it nginx chmod -R 777 /var/www/html
@@ -3368,9 +3368,9 @@ case $choice in
           f2b_install_sshd
 
           cd /path/to/fail2ban/config/fail2ban/filter.d
-          curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/fail2ban-nginx-cc.conf
+          curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/fail2ban-nginx-cc.conf
           cd /path/to/fail2ban/config/fail2ban/jail.d/
-          curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/config/fail2ban/nginx-docker-cc.conf
+          curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/config/fail2ban/nginx-docker-cc.conf
           sed -i "/cloudflare/d" /path/to/fail2ban/config/fail2ban/jail.d/nginx-docker-cc.conf
 
           cd ~
@@ -3397,19 +3397,19 @@ case $choice in
                   sed -i 's/worker_connections.*/worker_connections 1024;/' /home/web/nginx.conf
 
                   # php调优
-                  wget -O /home/optimized_php.ini https://raw.githubusercontent.com/huaniangzi/sh/main/optimized_php.ini
+                  wget -O /home/optimized_php.ini https://raw.githubusercontent.com/siilao/sh/main/optimized_php.ini
                   docker cp /home/optimized_php.ini php:/usr/local/etc/php/conf.d/optimized_php.ini
                   docker cp /home/optimized_php.ini php74:/usr/local/etc/php/conf.d/optimized_php.ini
                   rm -rf /home/optimized_php.ini
 
                   # php调优
-                  wget -O /home/www.conf https://raw.githubusercontent.com/huaniangzi/sh/main/www-1.conf
+                  wget -O /home/www.conf https://raw.githubusercontent.com/siilao/sh/main/www-1.conf
                   docker cp /home/www.conf php:/usr/local/etc/php-fpm.d/www.conf
                   docker cp /home/www.conf php74:/usr/local/etc/php-fpm.d/www.conf
                   rm -rf /home/www.conf
 
                   # mysql调优
-                  wget -O /home/custom_mysql_config.cnf https://raw.githubusercontent.com/huaniangzi/sh/main/custom_mysql_config-1.cnf
+                  wget -O /home/custom_mysql_config.cnf https://raw.githubusercontent.com/siilao/sh/main/custom_mysql_config-1.cnf
                   docker cp /home/custom_mysql_config.cnf mysql:/etc/mysql/conf.d/
                   rm -rf /home/custom_mysql_config.cnf
 
@@ -3427,13 +3427,13 @@ case $choice in
                   sed -i 's/worker_connections.*/worker_connections 10240;/' /home/web/nginx.conf
 
                   # php调优
-                  wget -O /home/www.conf https://raw.githubusercontent.com/huaniangzi/sh/main/www.conf
+                  wget -O /home/www.conf https://raw.githubusercontent.com/siilao/sh/main/www.conf
                   docker cp /home/www.conf php:/usr/local/etc/php-fpm.d/www.conf
                   docker cp /home/www.conf php74:/usr/local/etc/php-fpm.d/www.conf
                   rm -rf /home/www.conf
 
                   # mysql调优
-                  wget -O /home/custom_mysql_config.cnf https://raw.githubusercontent.com/huaniangzi/sh/main/custom_mysql_config.cnf
+                  wget -O /home/custom_mysql_config.cnf https://raw.githubusercontent.com/siilao/sh/main/custom_mysql_config.cnf
                   docker cp /home/custom_mysql_config.cnf mysql:/etc/mysql/conf.d/
                   rm -rf /home/custom_mysql_config.cnf
 
@@ -3491,7 +3491,7 @@ case $choice in
         ;;
 
     0)
-        huaniangzi
+        siilao
       ;;
 
     *)
@@ -4019,7 +4019,7 @@ case $choice in
                             docker rmi -f p3terx/aria2-pro
 
                             cd /home/ && mkdir -p web/docker/cloud && cd web/docker/cloud && mkdir temp_data && mkdir -vp cloudreve/{uploads,avatar} && touch cloudreve/conf.ini && touch cloudreve/cloudreve.db && mkdir -p aria2/config && mkdir -p data/aria2 && chmod -R 777 data/aria2
-                            curl -o /home/web/docker/cloud/docker-compose.yml https://raw.githubusercontent.com/huaniangzi/sh/main/docker/cloudreve-docker-compose.yml
+                            curl -o /home/web/docker/cloud/docker-compose.yml https://raw.githubusercontent.com/siilao/sh/main/docker/cloudreve-docker-compose.yml
                             cd /home/web/docker/cloud/ && docker compose up -d
 
 
@@ -4069,7 +4069,7 @@ case $choice in
                     clear
                     install_docker
                     cd /home/ && mkdir -p web/docker/cloud && cd web/docker/cloud && mkdir temp_data && mkdir -vp cloudreve/{uploads,avatar} && touch cloudreve/conf.ini && touch cloudreve/cloudreve.db && mkdir -p aria2/config && mkdir -p data/aria2 && chmod -R 777 data/aria2
-                    curl -o /home/web/docker/cloud/docker-compose.yml https://raw.githubusercontent.com/huaniangzi/sh/main/docker/cloudreve-docker-compose.yml
+                    curl -o /home/web/docker/cloud/docker-compose.yml https://raw.githubusercontent.com/siilao/sh/main/docker/cloudreve-docker-compose.yml
                     cd /home/web/docker/cloud/ && docker compose up -d
 
 
@@ -4567,7 +4567,7 @@ case $choice in
           curl -L https://raw.githubusercontent.com/oneclickvirt/pve/main/scripts/install_pve.sh -o install_pve.sh && chmod +x install_pve.sh && bash install_pve.sh
               ;;
           0)
-              huaniangzi
+              siilao
               ;;
           *)
               echo "无效的输入!"
@@ -4705,7 +4705,7 @@ case $choice in
 
               ;;
           0)
-              huaniangzi
+              siilao
               ;;
           *)
               echo "无效的输入!"
@@ -4748,7 +4748,7 @@ case $choice in
           1)
               clear
               read -p "请输入你的快捷按键: " kuaijiejian
-              echo "alias $kuaijiejian='~/huaniangzi.sh'" >> ~/.bashrc
+              echo "alias $kuaijiejian='~/siilao.sh'" >> ~/.bashrc
               source ~/.bashrc
               echo "快捷键已设置"
               ;;
@@ -5446,13 +5446,13 @@ case $choice in
                         update-grub
 
                         # wget -qO - https://dl.xanmod.org/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
-                        wget -qO - https://raw.githubusercontent.com/huaniangzi/sh/main/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
+                        wget -qO - https://raw.githubusercontent.com/siilao/sh/main/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
 
                         # 步骤3：添加存储库
                         echo 'deb [signed-by=/usr/share/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main' | tee /etc/apt/sources.list.d/xanmod-release.list
 
                         # version=$(wget -q https://dl.xanmod.org/check_x86-64_psabi.sh && chmod +x check_x86-64_psabi.sh && ./check_x86-64_psabi.sh | grep -oP 'x86-64-v\K\d+|x86-64-v\d+')
-                        version=$(wget -q https://raw.githubusercontent.com/huaniangzi/sh/main/check_x86-64_psabi.sh && chmod +x check_x86-64_psabi.sh && ./check_x86-64_psabi.sh | grep -oP 'x86-64-v\K\d+|x86-64-v\d+')
+                        version=$(wget -q https://raw.githubusercontent.com/siilao/sh/main/check_x86-64_psabi.sh && chmod +x check_x86-64_psabi.sh && ./check_x86-64_psabi.sh | grep -oP 'x86-64-v\K\d+|x86-64-v\d+')
 
                         apt update -y
                         apt install -y linux-xanmod-x64v$version
@@ -5516,13 +5516,13 @@ case $choice in
             install wget gnupg
 
             # wget -qO - https://dl.xanmod.org/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
-            wget -qO - https://raw.githubusercontent.com/huaniangzi/sh/main/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
+            wget -qO - https://raw.githubusercontent.com/siilao/sh/main/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
 
             # 步骤3：添加存储库
             echo 'deb [signed-by=/usr/share/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main' | tee /etc/apt/sources.list.d/xanmod-release.list
 
             # version=$(wget -q https://dl.xanmod.org/check_x86-64_psabi.sh && chmod +x check_x86-64_psabi.sh && ./check_x86-64_psabi.sh | grep -oP 'x86-64-v\K\d+|x86-64-v\d+')
-            version=$(wget -q https://raw.githubusercontent.com/huaniangzi/sh/main/check_x86-64_psabi.sh && chmod +x check_x86-64_psabi.sh && ./check_x86-64_psabi.sh | grep -oP 'x86-64-v\K\d+|x86-64-v\d+')
+            version=$(wget -q https://raw.githubusercontent.com/siilao/sh/main/check_x86-64_psabi.sh && chmod +x check_x86-64_psabi.sh && ./check_x86-64_psabi.sh | grep -oP 'x86-64-v\K\d+|x86-64-v\d+')
 
             apt update -y
             apt install -y linux-xanmod-x64v$version
@@ -6032,7 +6032,7 @@ EOF
 
                   case $host_dns in
                       1)
-                          read -p "请输入新的解析记录 格式: 110.25.5.33 huaniangzi.pro : " addhost
+                          read -p "请输入新的解析记录 格式: 110.25.5.33 siilao.pro : " addhost
                           echo "$addhost" >> /etc/hosts
 
                           ;;
@@ -6171,7 +6171,7 @@ EOF
                 echo "如果实际服务器就100G流量，可设置阈值为95G，提前关机，以免出现流量误差或溢出."
                 read -p "请输入流量阈值（单位为GB）: " threshold_gb
                 cd ~
-                curl -Ss -O https://raw.githubusercontent.com/huaniangzi/sh/main/Limiting_Shut_down.sh
+                curl -Ss -O https://raw.githubusercontent.com/siilao/sh/main/Limiting_Shut_down.sh
                 chmod +x ~/Limiting_Shut_down.sh
                 sed -i "s/110/$threshold_gb/g" ~/Limiting_Shut_down.sh
                 crontab -l | grep -v '~/Limiting_Shut_down.sh' | crontab -
@@ -6300,7 +6300,7 @@ EOF
               server_reboot
               ;;
           0)
-              huaniangzi
+              siilao
 
               ;;
           *)
@@ -6389,7 +6389,7 @@ EOF
                           nano ~/cluster/servers.py
                           ;;
                       11)
-                          py_task=install_huaniangzi.py
+                          py_task=install_siilao.py
                           cluster_python3
                           ;;
                       12)
@@ -6425,7 +6425,7 @@ EOF
                           read -p "请输入批量执行的命令: " mingling
                           py_task=custom_tasks.py
                           cd ~/cluster/
-                          curl -sS -O https://raw.githubusercontent.com/huaniangzi/python-for-vps/main/cluster/$py_task
+                          curl -sS -O https://raw.githubusercontent.com/siilao/python-for-vps/main/cluster/$py_task
                           sed -i "s#Customtasks#$mingling#g" ~/cluster/$py_task
                           python3 ~/cluster/$py_task
                           ;;
@@ -6479,7 +6479,7 @@ EOF
               ;;
 
           0)
-              huaniangzi
+              siilao
               ;;
           *)
               echo "无效的输入!"
@@ -6496,11 +6496,11 @@ EOF
     clear
     echo "更新日志"
     echo "------------------------"
-    echo "全部日志: https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi_sh_log.txt"
+    echo "全部日志: https://raw.githubusercontent.com/siilao/sh/main/siilao_sh_log.txt"
     echo "------------------------"
-    curl -s https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi_sh_log.txt | tail -n 35
+    curl -s https://raw.githubusercontent.com/siilao/sh/main/siilao_sh_log.txt | tail -n 35
 
-    sh_v_new=$(curl -s https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi.sh | grep -o 'sh_v="[0-9.]*"' | cut -d '"' -f 2)
+    sh_v_new=$(curl -s https://raw.githubusercontent.com/siilao/sh/main/siilao.sh | grep -o 'sh_v="[0-9.]*"' | cut -d '"' -f 2)
 
     if [ "$sh_v" = "$sh_v_new" ]; then
         echo -e "${lv}你已经是最新版本！${huang}v$sh_v${bai}"
@@ -6512,11 +6512,11 @@ EOF
         case "$choice" in
             [Yy])
                 clear
-                curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi.sh && chmod +x huaniangzi.sh
-                cp ./huaniangzi.sh /usr/local/bin/k > /dev/null 2>&1
+                curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/siilao.sh && chmod +x siilao.sh
+                cp ./siilao.sh /usr/local/bin/k > /dev/null 2>&1
                 echo -e "${lv}脚本已更新到最新版本！${huang}v$sh_v_new${bai}"
                 break_end
-                huaniangzi
+                siilao
                 ;;
             [Nn])
                 echo "已取消"
