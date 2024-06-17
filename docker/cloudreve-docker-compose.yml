@@ -19,7 +19,7 @@ services:
     image: p3terx/aria2-pro
     restart: unless-stopped
     environment:
-      - RPC_SECRET= KEJILION
+      - RPC_SECRET= SIILAO
       - RPC_PORT=6800
     volumes:
       - ./aria2/config:/config
