@@ -51,5 +51,5 @@ or
 GitHub版一键脚本 部分小伙伴会遇到官网版出现大段乱码！就用GitHub版本吧！
 
 ```
-curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/huaniangzi.sh && chmod +x siilao.sh && ./siilao.sh
+curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/siilao.sh && chmod +x siilao.sh && ./siilao.sh
 ```
