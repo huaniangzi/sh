@@ -53,3 +53,8 @@ GitHub版一键脚本 部分小伙伴会遇到官网版出现大段乱码！就�
 ```
 curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/siilao.sh && chmod +x siilao.sh && ./siilao.sh
 ```
+若提示没有curl或wget，先安装即可
+Ubuntu/Debian：apt-get install -y curl wget
+Alpine：apk add curl wget
+Fedora：dnf install -y curl wget
+CentOS/Rocky/Almalinux/Oracle-linux/Amazon-linux：yum install -y curl wget
