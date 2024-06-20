@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sh_v="1.9.4.1"
+sh_v="1.9.5"
 
 huang='\033[33m'    # 黄色    ${yellow}
 bai='\033[0m'       # 白色    ${white}
@@ -12,7 +12,7 @@ hua='\033[96m'      # 浅青色   ${cyan}
 hui='\e[37m'        # 灰色
 re='\033[0m'        # 重置颜色    ${re}
 
-cp ./siilao.sh /usr/local/bin/hua > /dev/null 2>&1
+cp ./siilao.sh /usr/local/bin/s > /dev/null 2>&1
 
 
 ip_address() {
@@ -128,7 +128,20 @@ install_add_docker() {
         rc-update add docker default
         service docker start
     else
-        curl -fsSL https://get.docker.com | sh
+        country=$(curl -s ipinfo.io/country)
+        if [ "$country" = "CN" ]; then
+            cd ~
+            curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/docker/install && chmod +x install
+            sh install --mirror Aliyun
+            rm -f install
+            cat > /etc/docker/daemon.json << EOF
+{
+    "registry-mirrors": ["https://docker.trii.cn"]
+}
+EOF
+        else
+            curl -fsSL https://get.docker.com | sh
+        fi
         systemctl start docker
         systemctl enable docker
     fi
@@ -405,8 +418,18 @@ install_ssltls() {
       docker stop nginx > /dev/null 2>&1
       iptables_open
       cd ~
-      # certbot certonly --standalone -d $yuming --email your@email.com --agree-tos --no-eff-email --force-renewal
-      certbot certonly --standalone -d $yuming --email your@email.com --agree-tos --no-eff-email --force-renewal --key-type ecdsa
+
+      certbot_version=$(certbot --version 2>&1 | grep -oP "\d+\.\d+\.\d+")
+
+      version_ge() {
+          [ "$(printf '%s\n' "$1" "$2" | sort -V | head -n1)" != "$1" ]
+      }
+
+      if version_ge "$certbot_version" "1.10.0"; then
+          certbot certonly --standalone -d $yuming --email your@email.com --agree-tos --no-eff-email --force-renewal --key-type ecdsa
+      else
+          certbot certonly --standalone -d $yuming --email your@email.com --agree-tos --no-eff-email --force-renewal
+      fi
 
       cp /etc/letsencrypt/live/$yuming/fullchain.pem /home/web/certs/${yuming}_cert.pem
       cp /etc/letsencrypt/live/$yuming/privkey.pem /home/web/certs/${yuming}_key.pem
@@ -1115,7 +1138,7 @@ echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
 echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
 echo "                                "
 echo -e "${hua}花娘子一键脚本工具 v$sh_v （支持Ubuntu/Debian/CentOS/Alpine系统）${bai}"
-echo -e "${hua}-输入${huang}hua${hua}可快速启动此脚本${bai}"
+echo -e "${hua}-输入${huang}s${hua}可快速启动此脚本${bai}"
 echo "------------------------"
 echo "1. 系统信息查询"
 echo "2. 系统更新"
@@ -1563,6 +1586,7 @@ case $choice in
       echo "7. 清理无用的docker容器和镜像网络数据卷"
       echo "------------------------"
       echo "8. 更换Docker源"
+      echo "9. 编辑daemon.json文件"
       echo "------------------------"
       echo "11. 开启Docker-ipv6访问"
       echo "12. 关闭Docker-ipv6访问"
@@ -1886,6 +1910,17 @@ case $choice in
           8)
               clear
               bash <(curl -sSL https://linuxmirrors.cn/docker.sh)
+              ;;
+
+          9)
+              clear
+              install nano
+              mkdir -p /etc/docker && nano /etc/docker/daemon.json
+              if command -v dnf &>/dev/null || command -v yum &>/dev/null; then
+                  systemctl restart docker
+              else
+                  service docker restart
+              fi
               ;;
 
           11)
@@ -6513,7 +6548,7 @@ EOF
             [Yy])
                 clear
                 curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/siilao.sh && chmod +x siilao.sh
-                cp ./siilao.sh /usr/local/bin/k > /dev/null 2>&1
+                cp ./siilao.sh /usr/local/bin/s > /dev/null 2>&1
                 echo -e "${lv}脚本已更新到最新版本！${huang}v$sh_v_new${bai}"
                 break_end
                 siilao
