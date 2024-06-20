@@ -1133,11 +1133,11 @@ clear
 while true; do
 clear
 
-echo -e "${hua}_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
-echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
-echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
+echo -e "${hua}___ _   _    _    _  "
+echo "|_  |   |   /_\  / \ "
+echo "__| |   |__ | |  \_/ "
 echo "                                "
-echo -e "${hua}花娘子一键脚本工具 v$sh_v （支持Ubuntu/Debian/CentOS/Alpine系统）${bai}"
+echo -e "${hua}肆佬一键脚本工具 v$sh_v （支持Ubuntu/Debian/CentOS/Alpine系统）${bai}"
 echo -e "${hua}-输入${huang}s${hua}可快速启动此脚本${bai}"
 echo "------------------------"
 echo "1. 系统信息查询"
@@ -6392,7 +6392,7 @@ EOF
                   echo "------------------------"
                   echo "1. 添加服务器                2. 删除服务器             3. 编辑服务器"
                   echo "------------------------"
-                  echo "11. 安装花娘子脚本         12. 更新系统              13. 清理系统"
+                  echo "11. 安装肆佬脚本         12. 更新系统              13. 清理系统"
                   echo "14. 安装docker               15. 安装BBR3              16. 设置1G虚拟内存"
                   echo "17. 设置时区到上海           18. 开放所有端口"
                   echo "------------------------"
