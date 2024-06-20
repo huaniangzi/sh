@@ -18,26 +18,6 @@
 
 ------
 
-## 使用方法
-
-### Debian / Ubuntu 安装下载工具
-
-```
-apt update -y  && apt install -y curl
-```
-
-
-
-### CentOS 安装下载工具
-
-```
-apt update -y  && apt install -y curl
-```
-
-
-
-------
-
 ### 一键脚本
 
 官网版一键脚本
