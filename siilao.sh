@@ -2111,10 +2111,6 @@ case $choice in
         echo "5.解除GitHub限制                6.DisneyPlus檢測"
         echo "7.Netflix檢測"
         echo "---------------------------------------------------------"
-        echo -e "${fen}▼ 系统工具 ▼${bai}"
-        echo "------------------------"
-        echo "20.安裝極光面板 "
-        echo "------------------------"
         echo -e "${fen}▼ 一条龙服务 ▼${bai}"
         echo "------------------------"
         echo -e "       Sing-box多合一             Argo-tunnel"
@@ -2130,6 +2126,7 @@ case $choice in
         echo -e " 50. M佬Juicity一键脚本         54.伊朗版Xray面板一键脚本"
         echo -e " 51. M佬Tuic-v5一键脚本         55.OpenVPN一键安装脚本"
         echo -e " 52. Brutal-Reality一键脚本     56.一键搭建TG代理"
+        echo -e " 57. 老王Reality一键脚本        58.sing-box面板(sui) ▶"
         echo "---------------------------------------------------------"
         echo "0. 返回主菜单"
         echo "------------------------"
@@ -2167,109 +2164,84 @@ case $choice in
                 clear
                 wget -O nf https://github.com/sjlleo/netflix-verify/releases/download/2.01/nf_2.01_linux_amd64 && chmod +x nf && clear && ./nf
                 ;;
-            20)
-                clear
-                bash <(curl -fsSL https://raw.githubusercontent.com/Aurora-Admin-Panel/deploy/main/install.sh)
-                ;;
             41)
                 clear
                     bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sing-box/main/sing-box.sh)
-                    sleep 2
                     break_end
                 ;;
             42)
                 clear
                     bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/beta.sh)
-                    sleep 2
                     break_end
                 ;;
             43)
                 clear
                     bash <(curl -Ls https://gitlab.com/rwkgyg/sing-box-yg/raw/main/sb.sh)
-                    sleep 2
                     break_end
                 ;;
             44)
                 clear
                     install wget
                     wget -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 777 install.sh && bash install.sh
-                    sleep 2
                     break_end
                 ;;
             45)
                 clear
                     bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/argox/main/argox.sh)
-                    sleep 2
                     break_end
                 ;;
             46)
                 clear
                     curl https://www.baipiao.eu.org/suoha.sh -o suoha.sh && bash suoha.sh
-                    sleep 2
                     break_end
                 ;;
             47)
                 clear
                     bash <(curl -sL https://raw.githubusercontent.com/dsadsadsss/vps-argo/main/install.sh)
-                    sleep 1
                     break_end
                 ;;
             48)
                 clear
                     # 检查系统中是否安装screen
-                    if command -v screen &>/dev/null; then
-                        echo -e "${green}Screen已经安装${re}"
-                    else
-                        # 如果系统中未安装screen，则根据对应系统安装
-                        install screen
-                    fi
+                    install screen
 
                     # 检查系统中是否存在nodejs
                     install_nodejs
+                    break_end
+                    clear
                     # 提示输入订阅端口
-                    echo -e "${yellow}注意：NAT小鸡需输入指定端口范围内的端口，否则无法使用订阅功能${re}"
-                    while true; do
-                        read -p $'\033[1;35m请输入节点订阅端口: \033[0m' port
+                    echo -e "${huang}注意：NAT小鸡需输入指定端口范围内的端口，否则无法使用订阅功能${bai}"
 
-                        if [[ $port =~ ^[0-9]+$ ]]; then
-                            # 检查输入是否为正整数
-                            if [ "$port" -gt 0 ] 2>/dev/null; then
-                                # 输入有效，跳出循环
-                                break
-                            else
-                                echo -e "${red}端口输入错误，端口应为数字且为正整数${re}"
-                            fi
+                    while true; do
+                        read -p $'\033[1;35m请输入节点订阅端口[回车将使用随机端口]: \033[0m' port
+                        # 如果端口号为空，则生成随机端口号
+                        if [[ -z $port ]]; then
+                            port=$(shuf -i 2000-65000 -n 1)
+                            break
                         else
-                            echo -e "${red}端口输入错误，端口应为数字且为正整数${re}"
+                            # 如果端口号不为空，则验证是否为小于65535的正整数
+                            if [[ $port =~ ^[0-9]+$ ]]; then
+                                # 检查输入是否为小于65535的正整数
+                                if [ "$port" -gt 0 ] && [ "$port" -lt 65535 ] 2>/dev/null; then
+                                    # 输入有效，跳出循环
+                                    break
+                                else
+                                    echo -e "${hong}端口输入错误，端口应为小于65535的正整数${bai}"
+                                fi
+                            else
+                                echo -e "${hong}端口输入错误，端口应为数字且为正整数${bai}"
+                            fi
                         fi
                     done
-
-                    echo -e "${yellow}正在开放端口中...${re}"
-                        open_port() {
-                            if command -v iptables &> /dev/null; then
-                                iptables -A INPUT -p tcp --dport $port -j ACCEPT
-                                echo -e "${green}${port}端口已开放${re}"
-                            else
-                                echo "iptables未安装，尝试安装..."
-
-                                install iptables
-
-                                if [ $? -eq 0 ]; then
-                                    clear
-                                    echo -e "${green}iptables安装成功${re}"
-                                    iptables -A INPUT -p tcp --dport $port -j ACCEPT
-                                    echo -e "${green}${port}端口已开放${re}"
-                                else
-                                    echo -e "${red}iptables安装失败，尝试关闭防火墙${re}"
-                                    sudo systemctl stop ufw.service && sudo systemctl disable ufw.service && (sudo ufw status | grep -q 'Status: inactive' && echo "防火墙已关闭成功" || echo "防火墙已关闭失败，请手动关闭")
-                                fi
-                            fi
-                        }
-                        open_port
-
+                    # 开放订阅端口
+                    echo -e "${hong}正在开放端口中...${bai}"
+                    install iptables
+                    iptables -A INPUT -p tcp --dport $port -j ACCEPT
+                    echo -e "${lv}${port}端口已开放${bai}"
+                    clear
                     ipv4=$(curl -s ipv4.ip.sb)
 
-                    echo -e "${green}你的节点订阅链接为：http://$ipv4:$port/sub${re}"
+                    echo -e "${lv}你的节点订阅链接为：http://$ipv4:$port/sub${bai}"
 
                     # 判断是否要安装哪吒
                     read -p $'\033[1;33m是否需要一起安装哪吒探针？(y/n): \033[0m' nezha
@@ -2293,42 +2265,114 @@ case $choice in
                     fi
                 ;;
             49)
-                clear
-                    install wget && wget -N --no-check-certificate https://raw.githubusercontent.com/Misaka-blog/hysteria-install/main/hy2/hysteria.sh && bash hysteria.sh
-                    sleep 2
-                    break_end
-                ;;
+                    while true; do
+                    clear
+                      echo "--------------"
+                      echo -e "${lv}1.安装Hysteria2${bai}"
+                      echo -e "${hong}2.卸载Hysteria2${bai}"
+                      echo -e "${huang}3.更换Hysteria2端口${bai}"
+                      echo "--------------"
+                      echo -e "${lan}0. 返回上一级菜单${bai}"
+                      echo "--------------"
+                      read -p $'\033[1;91m请输入你的选择: \033[0m' sub_choice
+                        case $sub_choice in
+                            1)
+                              clear
+                                read -p $'\033[1;35m请输入Hysteria2节点端口(nat小鸡请输入可用端口范围内的端口),回车跳过则使用随机端口：\033[0m' port
+                                [[ -z $port ]]
+                                until [[ -z $(netstat -tuln | grep -w udp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; do
+                                    if [[ -n $(netstat -tuln | grep -w udp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; then
+                                        echo -e "${hong}${port}端口已经被其他程序占用，请更换端口重试${bai}"
+                                        read -p $'\033[1;35m设置Hysteria2端口[1-65535]（回车将使用随机端口）：\033[0m' port
+                                        [[ -z $HY2_PORT ]] && port=8880
+                                    fi
+                                done
+                                if [ -f "/etc/alpine-release" ]; then
+                                    SERVER_PORT=$port bash -c "$(curl -L https://raw.githubusercontent.com/eooce/scripts/master/containers-shell/hy2.sh)"
+                                else
+                                    HY2_PORT=$port bash -c "$(curl -L https://raw.githubusercontent.com/eooce/scripts/master/Hysteria2.sh)"
+                                fi
+                                break_end
+
+                                ;;
+                            2)
+                                if [ -f "/etc/alpine-release" ]; then
+                                    pkill -f '[w]eb'
+                                    pkill -f '[n]pm'
+                                    cd && rm -rf web npm server.crt server.key config.yaml
+                                else
+                                    systemctl stop hysteria-server.service
+                                    rm /usr/local/bin/hysteria
+                                    rm /etc/systemd/system/hysteria-server.service
+                                    rm /etc/hysteria/config.yaml
+                                    sudo systemctl daemon-reload
+                                    clear
+                                fi
+                                echo -e "${lv}Hysteria2已卸载${bai}"
+                                break_end
+                                ;;
+                            3)
+                                clear
+                                    read -p $'\033[1;35m设置Hysteria2端口[1-65535]（回车跳过将使用随机端口）：\033[0m' new_port
+                                    [[ -z $new_port ]] && new_port=$(shuf -i 2000-65000 -n 1)
+                                    until [[ -z $(netstat -tuln | grep -w udp | awk '{print $4}' | sed 's/.*://g' | grep -w "$new_port") ]]; do
+                                        if [[ -n $(netstat -tuln | grep -w udp | awk '{print $4}' | sed 's/.*://g' | grep -w "$new_port") ]]; then
+                                            echo -e "${hong}${new_port}端口已经被其他程序占用，请更换端口重试${bai}"
+                                            read -p $'\033[1;35m设置Hysteria2端口[1-65535]（回车跳过将使用随机端口）：\033[0m' new_port
+                                            [[ -z $new_port ]] && new_port=$(shuf -i 2000-65000 -n 1)
+                                        fi
+                                    done
+                                    if [ -f "/etc/alpine-release" ]; then
+                                        sed -i "s/^listen: :[0-9]*/listen: :$new_port/" /root/config.yaml
+                                        pkill -f '[w]eb'
+                                        nohup ./web server config.yaml >/dev/null 2>&1 &
+                                    else
+                                        clear
+                                        sed -i "s/^listen: :[0-9]*/listen: :$new_port/" /etc/hysteria/config.yaml
+                                        systemctl restart hysteria-server.service
+                                    fi
+                                    echo -e "${lv}Hysteria2端口已更换成$new_port,请手动更改客户端配置!${bai}"
+                                    break_end
+                                ;;
+
+                            0)
+                                break
+
+                                ;;
+                            *)
+                                echo -e "${hong}无效的输入!${bai}"
+                                ;;
+                        esac
+                    done
+                    ;;
             50)
                 clear
                     install wget && wget -N https://raw.githubusercontent.com/Misaka-blog/juicity-script/main/juicity.sh && bash juicity.sh
-                    sleep 2
                     break_end
                 ;;
             51)
                 clear
-                    install wget && wget -N --no-check-certificate https://gitlab.com/Misaka-blog/tuic-script/-/raw/main/tuic.sh && bash tuic.sh
-                    sleep 2
+                    bash -c "$(curl -L https://raw.githubusercontent.com/eooce/scripts/master/tuic.sh)"
                     break_end
                 ;;
             52)
                 clear
                     echo ""
-                    echo -e "${purple}安装Tcp-Brutal-Reality需要内核高于5.8，不符合请手动升级5.8内核以上再安装${re}"
+                    echo -e "${hong}安装Tcp-Brutal-Reality需要内核高于5.8，不符合请手动升级5.8内核以上再安装${bai}"
 
                     current_kernel_version=$(uname -r | cut -d'-' -f1 | awk -F'.' '{print $1 * 100 + $2}')
                     target_kernel_version=508
 
                     # 比较内核版本
                     if [ "$current_kernel_version" -lt "$target_kernel_version" ]; then
-                        echo -e "${red}当前系统内核版本小于 $target_kernel_version，请手动升级内核后重试，正在退出...${re}"
+                        echo -e "${hong}当前系统内核版本小于 $target_kernel_version，请手动升级内核后重试，正在退出...${bai}"
                         sleep 2
                         main_menu
                     else
                         echo ""
-                        echo -e "${green}当前系统内核版本 $current_kernel_version，符合安装要求${re}"
-                        sleep 1
+                        echo -e "${lv}当前系统内核版本 $current_kernel_version，符合安装要求${bai}"
+                        break_end
                         bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/tcp-brutal-reality.sh)
-                        sleep 2
                         break_end
                     fi
 
@@ -2336,30 +2380,158 @@ case $choice in
             53)
                 clear
                     bash <(curl -Ls https://raw.githubusercontent.com/slobys/x-ui/main/install.sh)
-                    sleep 2
                     break_end
                 ;;
             54)
                 clear
                     bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
-                    sleep 2
                     break_end
                 ;;
             55)
                 clear
                     install wget && wget https://git.io/vpn -O openvpn-install.sh && bash openvpn-install.sh
-                    sleep 2
                     break_end
                 ;;
             56)
                 clear
-
-                    echo "自動創建TG代理目錄：/home/tg/mtproxy"
-                    mkdir -p /home/tg/mtproxy && cd /home/tg/mtproxy
-
-                    curl -s -o mtproxy.sh https://raw.githubusercontent.com/sunpma/mtp/master/mtproxy.sh && chmod +x mtproxy.sh && bash mtproxy.sh
-                    sleep 2
+                    rm -rf /home/mtproxy && mkdir /home/mtproxy && cd /home/mtproxy
+                    curl -fsSL -o mtproxy.sh https://github.com/ellermister/mtproxy/raw/master/mtproxy.sh && chmod +x mtproxy.sh && bash mtproxy.sh
                     break_end
+                ;;
+            57)
+                while true; do
+                clear
+                  echo "--------------"
+                  echo -e "${lv}1.安装Reality${bai}"
+                  echo -e "${hong}2.卸载Reality${bai}"
+                  echo -e "${huang}3.更换Reality端口${bai}"
+                  echo "--------------"
+                  echo -e "${lan}0. 返回上一级菜单${bai}"
+                  echo "--------------"
+                  read -p $'\033[1;91m请输入你的选择: \033[0m' sub_choice
+                    case $sub_choice in
+                        1)
+                          clear
+                            read -p $'\033[1;35m请输入reality节点端口(nat小鸡请输入可用端口范围内的端口),回车跳过则使用随机端口：\033[0m' port
+                            [[ -z $port ]]
+                            until [[ -z $(netstat -tuln | grep -w tcp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; do
+                                if [[ -n $(netstat -tuln | grep -w tcp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; then
+                                    echo -e "${hong}${port}端口已经被其他程序占用，请更换端口重试${bai}"
+                                    read -p $'\033[1;35m设置 reality 端口[1-65535]（回车跳过将使用随机端口）：\033[0m' port
+                                    [[ -z $PORT ]] && port=$(shuf -i 2000-65000 -n 1)
+                                fi
+                            done
+                            if [ -f "/etc/alpine-release" ]; then
+                                PORT=$port bash -c "$(curl -L https://raw.githubusercontent.com/eooce/scripts/master/test.sh)"
+                            else
+                                PORT=$port bash -c "$(curl -L https://raw.githubusercontent.com/eooce/xray-reality/master/reality.sh)"
+                            fi
+                            break_end
+                            ;;
+                        2)
+                        if [ -f "/etc/alpine-release" ]; then
+                            pkill -f '[w]eb'
+                            pkill -f '[n]pm'
+                            cd && rm -rf app
+                            clear
+                        else
+                            sudo systemctl stop xray
+                            sudo rm /usr/local/bin/xray
+                            sudo rm /etc/systemd/system/xray.service
+                            sudo rm /usr/local/etc/xray/config.json
+                            sudo rm /usr/local/share/xray/geoip.dat
+                            sudo rm /usr/local/share/xray/geosite.dat
+                            sudo rm /etc/systemd/system/xray@.service
+
+                            # Reload the systemd daemon
+                            sudo systemctl daemon-reload
+
+                            # Remove any leftover Xray files or directories
+                            sudo rm -rf /var/log/xray /var/lib/xray
+                            clear
+                          fi
+
+                            echo -e "\e[1;32mReality已卸载\033[0m"
+                            break_end
+                            ;;
+                        3)
+                            clear
+                                read -p $'\033[1;35m设置 reality 端口[1-65535]（回车跳过将使用随机端口）：\033[0m' new_port
+                                [[ -z $new_port ]] && new_port=$(shuf -i 2000-65000 -n 1)
+                                until [[ -z $(netstat -tuln | grep -w tcp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; do
+                                    if [[ -n $(netstat -tuln | grep -w tcp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; then
+                                        echo -e "${hong}${new_port}端口已经被其他程序占用，请更换端口重试${bai}"
+                                        read -p $'\033[1;35m设置reality端口[1-65535]（回车跳过将使用随机端口）：\033[0m' new_port
+                                        [[ -z $new_port ]] && new_port=$(shuf -i 2000-65000 -n 1)
+                                    fi
+                                done
+                                install jq
+                                if [ -f "/etc/alpine-release" ]; then
+                                    jq --argjson new_port "$new_port" '.inbounds[0].port = $new_port' /root/app/config.json > tmp.json && mv tmp.json /root/app/config.json
+                                    pkill -f '[w]eb'
+                                    cd ~ && cd app
+                                    nohup ./web -c config.json >/dev/null 2>&1 &
+                                else
+                                    clear
+                                    jq --argjson new_port "$new_port" '.inbounds[0].port = $new_port' /usr/local/etc/xray/config.json > tmp.json && mv tmp.json /usr/local/etc/xray/config.json
+                                    systemctl restart xray.service
+                                fi
+                                echo -e "${hong}Reality端口已更换成$new_port,请手动更改客户端配置!${bai}"
+                                break_end
+                            ;;
+                        0)
+                            break
+
+                            ;;
+                        *)
+                            echo -e "${hong}无效的输入!${bai}"
+                            ;;
+                    esac
+                done
+                ;;
+
+            58)
+                while true; do
+                clear
+                  echo -e "${lan}▶ Sui面板${bai}"
+                  echo "--------------"
+                  echo -e "${lv}1.安装sui面板${bai}"
+                  echo -e "${hong}2.卸载sui面板${bai}"
+                  echo "--------------"
+                  echo -e "${lan}0. 返回上一级菜单${bai}"
+                  echo "--------------"
+                  read -p $'\033[1;91m请输入你的选择: \033[0m' sub_choice
+                    case $sub_choice in
+                        1)
+                            bash <(curl -Ls https://raw.githubusercontent.com/Misaka-blog/s-ui/master/install.sh)
+                            sleep 2
+                            echo ""
+                            break_end
+
+                            ;;
+                        2)
+                            systemctl disable sing-box --now
+                            systemctl disable s-ui --now
+
+                            rm -f /etc/systemd/system/s-ui.service
+                            rm -f /etc/systemd/system/sing-box.service
+                            systemctl daemon-reload
+
+                            rm -fr /usr/local/s-ui
+                            clear
+                            echo -e "${lv}sui面板已卸载${bai}"
+                            break_end
+
+                            ;;
+                        0)
+                            break
+
+                            ;;
+                        *)
+                            echo -e "${hong}无效的输入!${bai}"
+                            ;;
+                    esac
+                done
                 ;;
             0)
                 siilao
