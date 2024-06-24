@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sh_v="1.8.6"
+sh_v="1.9.6"
 
 huang='\033[33m'    # 黄色    ${yellow}
 bai='\033[0m'       # 白色    ${white}
@@ -12,7 +12,7 @@ hua='\033[96m'      # 浅青色   ${cyan}
 hui='\e[37m'        # 灰色
 re='\033[0m'        # 重置颜色    ${re}
 
-cp ./huaniangzi.sh /usr/local/bin/hua > /dev/null 2>&1
+cp ./siilao.sh /usr/local/bin/s > /dev/null 2>&1
 
 
 ip_address() {
@@ -88,8 +88,8 @@ break_end() {
       clear
 }
 
-huaniangzi() {
-            hua
+siilao() {
+            s
             exit
 }
 
@@ -112,13 +112,14 @@ check_port() {
             echo -e "${hong}端口 ${huang}$PORT${hong} 已被占用，无法安装环境，卸载以下程序后重试！${bai}"
             echo "$result"
             break_end
-            huaniangzi
+            siilao
 
         fi
     else
         echo ""
     fi
 }
+
 
 install_add_docker() {
     if [ -f "/etc/alpine-release" ]; then
@@ -127,8 +128,20 @@ install_add_docker() {
         rc-update add docker default
         service docker start
     else
-        curl -fsSL https://get.docker.com | sh
-        # curl -fsSL https://get.docker.com | sh -s docker --mirror Aliyun
+        country=$(curl -s ipinfo.io/country)
+        if [ "$country" = "CN" ]; then
+            cd ~
+            curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/docker/install && chmod +x install
+            sh install --mirror Aliyun
+            rm -f install
+            cat > /etc/docker/daemon.json << EOF
+{
+    "registry-mirrors": ["https://docker.trii.cn"]
+}
+EOF
+        else
+            curl -fsSL https://get.docker.com | sh
+        fi
         systemctl start docker
         systemctl enable docker
     fi
@@ -138,12 +151,52 @@ install_add_docker() {
 
 
 install_docker() {
-    if ! command -v docker &>/dev/null || ! command -v docker-compose &>/dev/null; then
+    if ! command -v docker &>/dev/null; then
         install_add_docker
     else
         echo "Docker环境已经安装"
     fi
 }
+
+docker_restart() {
+if [ -f "/etc/alpine-release" ]; then
+    service docker restart
+else
+    systemctl restart docker
+fi
+
+}
+
+docker_ipv6_on() {
+mkdir -p /etc/docker &>/dev/null
+
+cat > /etc/docker/daemon.json << EOF
+
+{
+  "ipv6": true,
+  "fixed-cidr-v6": "2001:db8:1::/64"
+}
+
+EOF
+
+docker_restart
+
+echo "Docker已开启v6访问"
+
+}
+
+
+docker_ipv6_off() {
+
+rm -rf etc/docker/daemon.json &>/dev/null
+
+docker_restart
+
+echo "Docker已关闭v6访问"
+
+}
+
+
 
 
 
@@ -240,9 +293,7 @@ install_ldnmp() {
           # "docker exec php sed -i "s/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g" /etc/apk/repositories > /dev/null 2>&1"
           # "docker exec php74 sed -i "s/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g" /etc/apk/repositories > /dev/null 2>&1"
 
-          "docker exec php apt update > /dev/null 2>&1"
           "docker exec php apk update > /dev/null 2>&1"
-          "docker exec php74 apt update > /dev/null 2>&1"
           "docker exec php74 apk update > /dev/null 2>&1"
 
           # php安装包管理
@@ -334,13 +385,18 @@ install_ldnmp() {
 
 
 install_certbot() {
-    install certbot
+
+    if command -v yum &>/dev/null; then
+        install epel-release certbot
+    else
+        install certbot
+    fi
 
     # 切换到一个一致的目录（例如，家目录）
     cd ~ || exit
 
     # 下载并使脚本可执行
-    curl -O https://raw.githubusercontent.com/huaniangzi/sh/main/auto_cert_renewal.sh
+    curl -O https://raw.githubusercontent.com/siilao/sh/main/auto_cert_renewal.sh
     chmod +x auto_cert_renewal.sh
 
     # 设置定时任务字符串
@@ -362,7 +418,19 @@ install_ssltls() {
       docker stop nginx > /dev/null 2>&1
       iptables_open
       cd ~
-      certbot certonly --standalone -d $yuming --email your@email.com --agree-tos --no-eff-email --force-renewal
+
+      certbot_version=$(certbot --version 2>&1 | grep -oP "\d+\.\d+\.\d+")
+
+      version_ge() {
+          [ "$(printf '%s\n' "$1" "$2" | sort -V | head -n1)" != "$1" ]
+      }
+
+      if version_ge "$certbot_version" "1.10.0"; then
+          certbot certonly --standalone -d $yuming --email your@email.com --agree-tos --no-eff-email --force-renewal --key-type ecdsa
+      else
+          certbot certonly --standalone -d $yuming --email your@email.com --agree-tos --no-eff-email --force-renewal
+      fi
+
       cp /etc/letsencrypt/live/$yuming/fullchain.pem /home/web/certs/${yuming}_cert.pem
       cp /etc/letsencrypt/live/$yuming/privkey.pem /home/web/certs/${yuming}_key.pem
       docker start nginx > /dev/null 2>&1
@@ -371,7 +439,15 @@ install_ssltls() {
 
 default_server_ssl() {
 install openssl
-openssl req -x509 -nodes -newkey rsa:2048 -keyout /home/web/certs/default_server.key -out /home/web/certs/default_server.crt -days 5475 -subj "/C=US/ST=State/L=City/O=Organization/OU=Organizational Unit/CN=Common Name"
+# openssl req -x509 -nodes -newkey rsa:2048 -keyout /home/web/certs/default_server.key -out /home/web/certs/default_server.crt -days 5475 -subj "/C=US/ST=State/L=City/O=Organization/OU=Organizational Unit/CN=Common Name"
+
+if command -v dnf &>/dev/null || command -v yum &>/dev/null; then
+    openssl req -x509 -nodes -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -keyout /home/web/certs/default_server.key -out /home/web/certs/default_server.crt -days 5475 -subj "/C=US/ST=State/L=City/O=Organization/OU=Organizational Unit/CN=Common Name"
+else
+    openssl genpkey -algorithm Ed25519 -out /home/web/certs/default_server.key
+    openssl req -x509 -key /home/web/certs/default_server.key -out /home/web/certs/default_server.crt -days 5475 -subj "/C=US/ST=State/L=City/O=Organization/OU=Organizational Unit/CN=Common Name"
+fi
+
 
 }
 
@@ -408,6 +484,15 @@ nginx_status() {
 
 repeat_add_yuming() {
 
+domain_regex="^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$"
+if [[ $yuming =~ $domain_regex ]]; then
+  echo "域名格式正确"
+else
+  echo "域名格式不正确，请重新输入"
+  break_end
+  kejilion
+fi
+
 if [ -e /home/web/conf.d/$yuming.conf ]; then
     echo -e "${huang}当前 ${yuming} 域名已被使用，请前往31站点管理，删除站点，再部署 ${webname} ！${bai}"
     break_end
@@ -417,7 +502,6 @@ else
 fi
 
 }
-
 
 
 add_yuming() {
@@ -441,7 +525,7 @@ add_db() {
 
 reverse_proxy() {
       ip_address
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/reverse-proxy.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/reverse-proxy.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
       sed -i "s/0.0.0.0/$ipv4_address/g" /home/web/conf.d/$yuming.conf
       sed -i "s/0000/$duankou/g" /home/web/conf.d/$yuming.conf
@@ -460,12 +544,38 @@ restart_ldnmp() {
 }
 
 
+
+
+has_ipv4_has_ipv6() {
+
+ip_address
+if [ -z "$ipv4_address" ]; then
+    has_ipv4=false
+else
+    has_ipv4=true
+fi
+
+if [ -z "$ipv6_address" ]; then
+    has_ipv6=false
+else
+    has_ipv6=true
+fi
+
+
+}
+
 docker_app() {
+
+has_ipv4_has_ipv6
 if docker inspect "$docker_name" &>/dev/null; then
     clear
     echo "$docker_name 已安装，访问地址: "
-    ip_address
-    echo "http:$ipv4_address:$docker_port"
+    if $has_ipv4; then
+        echo "http:$ipv4_address:$docker_port"
+    fi
+    if $has_ipv6; then
+        echo "http:[$ipv6_address]:$docker_port"
+    fi
     echo ""
     echo "应用操作"
     echo "------------------------"
@@ -485,10 +595,14 @@ if docker inspect "$docker_name" &>/dev/null; then
             clear
             echo "$docker_name 已经安装完成"
             echo "------------------------"
-            # 获取外部 IP 地址
-            ip_address
             echo "您可以使用以下地址访问:"
-            echo "http:$ipv4_address:$docker_port"
+            if $has_ipv4; then
+                echo "http:$ipv4_address:$docker_port"
+            fi
+            if $has_ipv6; then
+                echo "http:[$ipv6_address]:$docker_port"
+            fi
+            echo ""
             $docker_use
             $docker_passwd
             ;;
@@ -524,10 +638,14 @@ else
             clear
             echo "$docker_name 已经安装完成"
             echo "------------------------"
-            # 获取外部 IP 地址
-            ip_address
             echo "您可以使用以下地址访问:"
-            echo "http:$ipv4_address:$docker_port"
+            if $has_ipv4; then
+                echo "http:$ipv4_address:$docker_port"
+            fi
+            if $has_ipv6; then
+                echo "http:[$ipv6_address]:$docker_port"
+            fi
+            echo ""
             $docker_use
             $docker_passwd
             ;;
@@ -544,7 +662,7 @@ fi
 
 cluster_python3() {
     cd ~/cluster/
-    curl -sS -O https://raw.githubusercontent.com/huaniangzi/python-for-vps/main/cluster/$py_task
+    curl -sS -O https://raw.githubusercontent.com/siilao/python-for-vps/main/cluster/$py_task
     python3 ~/cluster/$py_task
 }
 
@@ -592,19 +710,19 @@ f2b_install_sshd() {
     sleep 3
     if grep -q 'Alpine' /etc/issue; then
         cd /path/to/fail2ban/config/fail2ban/filter.d
-        curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/config/fail2ban/alpine-sshd.conf
-        curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/config/fail2ban/alpine-sshd-ddos.conf
+        curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/config/fail2ban/alpine-sshd.conf
+        curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/config/fail2ban/alpine-sshd-ddos.conf
         cd /path/to/fail2ban/config/fail2ban/jail.d/
-        curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/config/fail2ban/alpine-ssh.conf
+        curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/config/fail2ban/alpine-ssh.conf
     elif grep -qi 'CentOS' /etc/redhat-release; then
         cd /path/to/fail2ban/config/fail2ban/jail.d/
-        curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/config/fail2ban/centos-ssh.conf
+        curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/config/fail2ban/centos-ssh.conf
     else
         install rsyslog
         systemctl start rsyslog
         systemctl enable rsyslog
         cd /path/to/fail2ban/config/fail2ban/jail.d/
-        curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/config/fail2ban/linux-ssh.conf
+        curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/config/fail2ban/linux-ssh.conf
     fi
 }
 
@@ -665,6 +783,19 @@ output_status() {
 }
 
 
+ldnmp_install_status_one() {
+
+   if docker inspect "php" &>/dev/null; then
+    echo -e "${huang}LDNMP环境已安装。无法再次安装。可以使用37. 更新LDNMP环境${bai}"
+    break_end
+    kejilion
+   else
+    echo
+   fi
+
+}
+
+
 ldnmp_install_status() {
 
    if docker inspect "php" &>/dev/null; then
@@ -672,7 +803,7 @@ ldnmp_install_status() {
    else
     echo -e "${huang}LDNMP环境未安装，请先安装LDNMP环境，再部署网站${bai}"
     break_end
-    huaniangzi
+    siilao
 
    fi
 
@@ -686,7 +817,7 @@ nginx_install_status() {
    else
     echo -e "${huang}nginx未安装，请先安装nginx环境，再部署网站${bai}"
     break_end
-    huaniangzi
+    siilao
 
    fi
 
@@ -871,26 +1002,7 @@ linux_clean() {
 
 }
 
-new_ssh_port() {
 
-
-  # 备份 SSH 配置文件
-  cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
-
-  sed -i 's/^\s*#\?\s*Port/Port/' /etc/ssh/sshd_config
-
-  # 替换 SSH 配置文件中的端口号
-  sed -i "s/Port [0-9]\+/Port $new_port/g" /etc/ssh/sshd_config
-
-  # 重启 SSH 服务
-  service sshd restart
-  echo "SSH 端口已修改为: $new_port"
-
-  clear
-  iptables_open
-  remove iptables-persistent ufw firewalld iptables-services > /dev/null 2>&1
-
-}
 
 
 bbr_on() {
@@ -947,11 +1059,34 @@ fi
 }
 
 
+new_ssh_port() {
+
+
+  # 备份 SSH 配置文件
+  cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
+
+  sed -i 's/^\s*#\?\s*Port/Port/' /etc/ssh/sshd_config
+
+  # 替换 SSH 配置文件中的端口号
+  sed -i "s/Port [0-9]\+/Port $new_port/g" /etc/ssh/sshd_config
+
+  rm -rf /etc/ssh/sshd_config.d/* /etc/ssh/ssh_config.d/*
+
+  # 重启 SSH 服务
+  restart_ssh
+  echo "SSH 端口已修改为: $new_port"
+
+  iptables_open
+  remove iptables-persistent ufw firewalld iptables-services > /dev/null 2>&1
+
+}
+
 
 
 add_sshkey() {
 
-ssh-keygen -t rsa -b 4096 -C "xxxx@gmail.com" -f /root/.ssh/sshkey -N ""
+# ssh-keygen -t rsa -b 4096 -C "xxxx@gmail.com" -f /root/.ssh/sshkey -N ""
+ssh-keygen -t ed25519 -C "xxxx@gmail.com" -f /root/.ssh/sshkey -N ""
 
 cat ~/.ssh/sshkey.pub >> ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
@@ -959,6 +1094,7 @@ chmod 600 ~/.ssh/authorized_keys
 
 ip_address
 echo -e "私钥信息已生成，务必复制保存，可保存成 ${huang}${ipv4_address}_ssh.key${bai} 文件，用于以后的SSH登录"
+
 echo "--------------------------------"
 cat ~/.ssh/sshkey
 echo "--------------------------------"
@@ -982,17 +1118,14 @@ sed -i 's/^\s*#\?\s*PasswordAuthentication.*/PasswordAuthentication yes/g' /etc/
 rm -rf /etc/ssh/sshd_config.d/* /etc/ssh/ssh_config.d/*
 restart_ssh
 echo -e "${lv}ROOT登录设置完毕！${bai}"
-server_reboot
-
 
 }
 
 
 root_use() {
 clear
-[ "$EUID" -ne 0 ] && echo -e "${huang}请注意，该功能需要root用户才能运行！${bai}" && break_end && huaniangzi
+[ "$EUID" -ne 0 ] && echo -e "${huang}请注意，该功能需要root用户才能运行！${bai}" && break_end && siilao
 }
-
 
 
 
@@ -1000,12 +1133,12 @@ clear
 while true; do
 clear
 
-echo -e "${hua}_ _ _ _  _   _  _ _  _  _  _  ___  ___ _ "
-echo "|_| | | /_\  |\ | | /_\ |\ | |  _   /  | "
-echo "| | |_| | |  | \| | | | | \| |__|  /__ | "
+echo -e "${hua}___ _   _    _    _  "
+echo "|_  |   |   /_\  / \ "
+echo "__| |   |__ | |  \_/ "
 echo "                                "
-echo -e "${hua}花娘子一键脚本工具 v$sh_v （支持Ubuntu/Debian/CentOS/Alpine系统）${bai}"
-echo -e "${hua}-输入${huang}hua${hua}可快速启动此脚本${bai}"
+echo -e "${hua}肆佬一键脚本工具 v$sh_v （支持Ubuntu/Debian/CentOS/Alpine系统）${bai}"
+echo -e "${hua}-输入${huang}s${hua}可快速启动此脚本${bai}"
 echo "------------------------"
 echo "1. 系统信息查询"
 echo "2. 系统更新"
@@ -1157,7 +1290,7 @@ case $choice in
         echo "2. BBR管理 ▶"
         echo "3. WARP管理 ▶ 解锁ChatGPT Netflix"
         echo "------------------------"
-        echo "0. 返回上一级菜单菜单"
+        echo "0. 返回上一级菜单"
         echo "------------------------"
         read -p "请输入你的选择: " sub_choice
 
@@ -1354,7 +1487,7 @@ case $choice in
                             ;;
 
                         0)
-                            # 返回上一级菜单菜单
+                            # 返回上一级菜单
                             break  # 使用 break 来跳出当前循环，返回上一级菜单
                             ;;
 
@@ -1421,12 +1554,12 @@ case $choice in
                 wget -N https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh && bash menu.sh [option] [lisence/url/token]
                 ;;
             0)
-                # 返回上一级菜单菜单
+                # 返回上一级菜单
                 break  # 使用 break 来跳出当前循环，返回上一级菜单
                 ;;
             00)
                 # 返回主菜单
-                huaniangzi
+                siilao
                 ;;
             *)
                 echo "无效的输入!"
@@ -1443,16 +1576,22 @@ case $choice in
       echo "------------------------"
       echo "1. 安装更新Docker环境"
       echo "------------------------"
-      echo "2. 查看Dcoker全局状态"
+      echo "2. 查看Docker全局状态"
       echo "------------------------"
-      echo "3. Dcoker容器管理 ▶"
-      echo "4. Dcoker镜像管理 ▶"
-      echo "5. Dcoker网络管理 ▶"
-      echo "6. Dcoker卷管理 ▶"
+      echo "3. Docker容器管理 ▶"
+      echo "4. Docker镜像管理 ▶"
+      echo "5. Docker网络管理 ▶"
+      echo "6. Docker卷管理 ▶"
       echo "------------------------"
       echo "7. 清理无用的docker容器和镜像网络数据卷"
       echo "------------------------"
-      echo "8. 卸载Dcoker环境"
+      echo "8. 更换Docker源"
+      echo "9. 编辑daemon.json文件"
+      echo "------------------------"
+      echo "11. 开启Docker-ipv6访问"
+      echo "12. 关闭Docker-ipv6访问"
+      echo "------------------------"
+      echo "20. 卸载Docker环境"
       echo "------------------------"
       echo "0. 返回主菜单"
       echo "------------------------"
@@ -1466,21 +1605,21 @@ case $choice in
               ;;
           2)
               clear
-              echo "Dcoker版本"
+              echo "Docker版本"
               docker -v
               docker compose version
 
               echo ""
-              echo "Dcoker镜像列表"
+              echo "Docker镜像列表"
               docker image ls
               echo ""
-              echo "Dcoker容器列表"
+              echo "Docker容器列表"
               docker ps -a
               echo ""
-              echo "Dcoker卷列表"
+              echo "Docker卷列表"
               docker volume ls
               echo ""
-              echo "Dcoker网络列表"
+              echo "Docker网络列表"
               docker network ls
               echo ""
 
@@ -1770,6 +1909,32 @@ case $choice in
               ;;
           8)
               clear
+              bash <(curl -sSL https://linuxmirrors.cn/docker.sh)
+              ;;
+
+          9)
+              clear
+              install nano
+              mkdir -p /etc/docker && nano /etc/docker/daemon.json
+              if command -v dnf &>/dev/null || command -v yum &>/dev/null; then
+                  systemctl restart docker
+              else
+                  service docker restart
+              fi
+              ;;
+
+          11)
+              clear
+              docker_ipv6_on
+              ;;
+
+          12)
+              clear
+              docker_ipv6_off
+              ;;
+
+          20)
+              clear
               read -p "$(echo -e "${hong}确定卸载docker环境吗？(Y/N): ${bai}")" choice
               case "$choice" in
                 [Yy])
@@ -1783,9 +1948,9 @@ case $choice in
                   ;;
               esac
               ;;
-          0)
-              huaniangzi
 
+          0)
+              siilao
               ;;
           *)
               echo "无效的输入!"
@@ -1922,7 +2087,7 @@ case $choice in
 
 
           0)
-              huaniangzi
+              siilao
 
               ;;
           *)
@@ -1946,10 +2111,6 @@ case $choice in
         echo "5.解除GitHub限制                6.DisneyPlus檢測"
         echo "7.Netflix檢測"
         echo "---------------------------------------------------------"
-        echo -e "${fen}▼ 系统工具 ▼${bai}"
-        echo "------------------------"
-        echo "20.安裝極光面板 "
-        echo "------------------------"
         echo -e "${fen}▼ 一条龙服务 ▼${bai}"
         echo "------------------------"
         echo -e "       Sing-box多合一             Argo-tunnel"
@@ -1965,6 +2126,7 @@ case $choice in
         echo -e " 50. M佬Juicity一键脚本         54.伊朗版Xray面板一键脚本"
         echo -e " 51. M佬Tuic-v5一键脚本         55.OpenVPN一键安装脚本"
         echo -e " 52. Brutal-Reality一键脚本     56.一键搭建TG代理"
+        echo -e " 57. 老王Reality一键脚本        58.sing-box面板(sui) ▶"
         echo "---------------------------------------------------------"
         echo "0. 返回主菜单"
         echo "------------------------"
@@ -2002,109 +2164,84 @@ case $choice in
                 clear
                 wget -O nf https://github.com/sjlleo/netflix-verify/releases/download/2.01/nf_2.01_linux_amd64 && chmod +x nf && clear && ./nf
                 ;;
-            20)
-                clear
-                bash <(curl -fsSL https://raw.githubusercontent.com/Aurora-Admin-Panel/deploy/main/install.sh)
-                ;;
             41)
                 clear
                     bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/sing-box/main/sing-box.sh)
-                    sleep 2
                     break_end
                 ;;
             42)
                 clear
                     bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/beta.sh)
-                    sleep 2
                     break_end
                 ;;
             43)
                 clear
                     bash <(curl -Ls https://gitlab.com/rwkgyg/sing-box-yg/raw/main/sb.sh)
-                    sleep 2
                     break_end
                 ;;
             44)
                 clear
                     install wget
                     wget -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 777 install.sh && bash install.sh
-                    sleep 2
                     break_end
                 ;;
             45)
                 clear
                     bash <(wget -qO- https://raw.githubusercontent.com/fscarmen/argox/main/argox.sh)
-                    sleep 2
                     break_end
                 ;;
             46)
                 clear
                     curl https://www.baipiao.eu.org/suoha.sh -o suoha.sh && bash suoha.sh
-                    sleep 2
                     break_end
                 ;;
             47)
                 clear
                     bash <(curl -sL https://raw.githubusercontent.com/dsadsadsss/vps-argo/main/install.sh)
-                    sleep 1
                     break_end
                 ;;
             48)
                 clear
                     # 检查系统中是否安装screen
-                    if command -v screen &>/dev/null; then
-                        echo -e "${green}Screen已经安装${re}"
-                    else
-                        # 如果系统中未安装screen，则根据对应系统安装
-                        install screen
-                    fi
+                    install screen
 
                     # 检查系统中是否存在nodejs
                     install_nodejs
+                    break_end
+                    clear
                     # 提示输入订阅端口
-                    echo -e "${yellow}注意：NAT小鸡需输入指定端口范围内的端口，否则无法使用订阅功能${re}"
-                    while true; do
-                        read -p $'\033[1;35m请输入节点订阅端口: \033[0m' port
+                    echo -e "${huang}注意：NAT小鸡需输入指定端口范围内的端口，否则无法使用订阅功能${bai}"
 
-                        if [[ $port =~ ^[0-9]+$ ]]; then
-                            # 检查输入是否为正整数
-                            if [ "$port" -gt 0 ] 2>/dev/null; then
-                                # 输入有效，跳出循环
-                                break
-                            else
-                                echo -e "${red}端口输入错误，端口应为数字且为正整数${re}"
-                            fi
+                    while true; do
+                        read -p $'\033[1;35m请输入节点订阅端口[回车将使用随机端口]: \033[0m' port
+                        # 如果端口号为空，则生成随机端口号
+                        if [[ -z $port ]]; then
+                            port=$(shuf -i 2000-65000 -n 1)
+                            break
                         else
-                            echo -e "${red}端口输入错误，端口应为数字且为正整数${re}"
+                            # 如果端口号不为空，则验证是否为小于65535的正整数
+                            if [[ $port =~ ^[0-9]+$ ]]; then
+                                # 检查输入是否为小于65535的正整数
+                                if [ "$port" -gt 0 ] && [ "$port" -lt 65535 ] 2>/dev/null; then
+                                    # 输入有效，跳出循环
+                                    break
+                                else
+                                    echo -e "${hong}端口输入错误，端口应为小于65535的正整数${bai}"
+                                fi
+                            else
+                                echo -e "${hong}端口输入错误，端口应为数字且为正整数${bai}"
+                            fi
                         fi
                     done
-
-                    echo -e "${yellow}正在开放端口中...${re}"
-                        open_port() {
-                            if command -v iptables &> /dev/null; then
-                                iptables -A INPUT -p tcp --dport $port -j ACCEPT
-                                echo -e "${green}${port}端口已开放${re}"
-                            else
-                                echo "iptables未安装，尝试安装..."
-
-                                install iptables
-
-                                if [ $? -eq 0 ]; then
-                                    clear
-                                    echo -e "${green}iptables安装成功${re}"
-                                    iptables -A INPUT -p tcp --dport $port -j ACCEPT
-                                    echo -e "${green}${port}端口已开放${re}"
-                                else
-                                    echo -e "${red}iptables安装失败，尝试关闭防火墙${re}"
-                                    sudo systemctl stop ufw.service && sudo systemctl disable ufw.service && (sudo ufw status | grep -q 'Status: inactive' && echo "防火墙已关闭成功" || echo "防火墙已关闭失败，请手动关闭")
-                                fi
-                            fi
-                        }
-                        open_port
-
+                    # 开放订阅端口
+                    echo -e "${hong}正在开放端口中...${bai}"
+                    install iptables
+                    iptables -A INPUT -p tcp --dport $port -j ACCEPT
+                    echo -e "${lv}${port}端口已开放${bai}"
+                    clear
                     ipv4=$(curl -s ipv4.ip.sb)
 
-                    echo -e "${green}你的节点订阅链接为：http://$ipv4:$port/sub${re}"
+                    echo -e "${lv}你的节点订阅链接为：http://$ipv4:$port/sub${bai}"
 
                     # 判断是否要安装哪吒
                     read -p $'\033[1;33m是否需要一起安装哪吒探针？(y/n): \033[0m' nezha
@@ -2128,42 +2265,114 @@ case $choice in
                     fi
                 ;;
             49)
-                clear
-                    install wget && wget -N --no-check-certificate https://raw.githubusercontent.com/Misaka-blog/hysteria-install/main/hy2/hysteria.sh && bash hysteria.sh
-                    sleep 2
-                    break_end
-                ;;
+                    while true; do
+                    clear
+                      echo "--------------"
+                      echo -e "${lv}1.安装Hysteria2${bai}"
+                      echo -e "${hong}2.卸载Hysteria2${bai}"
+                      echo -e "${huang}3.更换Hysteria2端口${bai}"
+                      echo "--------------"
+                      echo -e "${lan}0. 返回上一级菜单${bai}"
+                      echo "--------------"
+                      read -p $'\033[1;91m请输入你的选择: \033[0m' sub_choice
+                        case $sub_choice in
+                            1)
+                              clear
+                                read -p $'\033[1;35m请输入Hysteria2节点端口(nat小鸡请输入可用端口范围内的端口),回车跳过则使用随机端口：\033[0m' port
+                                [[ -z $port ]]
+                                until [[ -z $(netstat -tuln | grep -w udp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; do
+                                    if [[ -n $(netstat -tuln | grep -w udp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; then
+                                        echo -e "${hong}${port}端口已经被其他程序占用，请更换端口重试${bai}"
+                                        read -p $'\033[1;35m设置Hysteria2端口[1-65535]（回车将使用随机端口）：\033[0m' port
+                                        [[ -z $HY2_PORT ]] && port=8880
+                                    fi
+                                done
+                                if [ -f "/etc/alpine-release" ]; then
+                                    SERVER_PORT=$port bash -c "$(curl -L https://raw.githubusercontent.com/eooce/scripts/master/containers-shell/hy2.sh)"
+                                else
+                                    HY2_PORT=$port bash -c "$(curl -L https://raw.githubusercontent.com/eooce/scripts/master/Hysteria2.sh)"
+                                fi
+                                break_end
+
+                                ;;
+                            2)
+                                if [ -f "/etc/alpine-release" ]; then
+                                    pkill -f '[w]eb'
+                                    pkill -f '[n]pm'
+                                    cd && rm -rf web npm server.crt server.key config.yaml
+                                else
+                                    systemctl stop hysteria-server.service
+                                    rm /usr/local/bin/hysteria
+                                    rm /etc/systemd/system/hysteria-server.service
+                                    rm /etc/hysteria/config.yaml
+                                    sudo systemctl daemon-reload
+                                    clear
+                                fi
+                                echo -e "${lv}Hysteria2已卸载${bai}"
+                                break_end
+                                ;;
+                            3)
+                                clear
+                                    read -p $'\033[1;35m设置Hysteria2端口[1-65535]（回车跳过将使用随机端口）：\033[0m' new_port
+                                    [[ -z $new_port ]] && new_port=$(shuf -i 2000-65000 -n 1)
+                                    until [[ -z $(netstat -tuln | grep -w udp | awk '{print $4}' | sed 's/.*://g' | grep -w "$new_port") ]]; do
+                                        if [[ -n $(netstat -tuln | grep -w udp | awk '{print $4}' | sed 's/.*://g' | grep -w "$new_port") ]]; then
+                                            echo -e "${hong}${new_port}端口已经被其他程序占用，请更换端口重试${bai}"
+                                            read -p $'\033[1;35m设置Hysteria2端口[1-65535]（回车跳过将使用随机端口）：\033[0m' new_port
+                                            [[ -z $new_port ]] && new_port=$(shuf -i 2000-65000 -n 1)
+                                        fi
+                                    done
+                                    if [ -f "/etc/alpine-release" ]; then
+                                        sed -i "s/^listen: :[0-9]*/listen: :$new_port/" /root/config.yaml
+                                        pkill -f '[w]eb'
+                                        nohup ./web server config.yaml >/dev/null 2>&1 &
+                                    else
+                                        clear
+                                        sed -i "s/^listen: :[0-9]*/listen: :$new_port/" /etc/hysteria/config.yaml
+                                        systemctl restart hysteria-server.service
+                                    fi
+                                    echo -e "${lv}Hysteria2端口已更换成$new_port,请手动更改客户端配置!${bai}"
+                                    break_end
+                                ;;
+
+                            0)
+                                break
+
+                                ;;
+                            *)
+                                echo -e "${hong}无效的输入!${bai}"
+                                ;;
+                        esac
+                    done
+                    ;;
             50)
                 clear
                     install wget && wget -N https://raw.githubusercontent.com/Misaka-blog/juicity-script/main/juicity.sh && bash juicity.sh
-                    sleep 2
                     break_end
                 ;;
             51)
                 clear
-                    install wget && wget -N --no-check-certificate https://gitlab.com/Misaka-blog/tuic-script/-/raw/main/tuic.sh && bash tuic.sh
-                    sleep 2
+                    bash -c "$(curl -L https://raw.githubusercontent.com/eooce/scripts/master/tuic.sh)"
                     break_end
                 ;;
             52)
                 clear
                     echo ""
-                    echo -e "${purple}安装Tcp-Brutal-Reality需要内核高于5.8，不符合请手动升级5.8内核以上再安装${re}"
+                    echo -e "${hong}安装Tcp-Brutal-Reality需要内核高于5.8，不符合请手动升级5.8内核以上再安装${bai}"
 
                     current_kernel_version=$(uname -r | cut -d'-' -f1 | awk -F'.' '{print $1 * 100 + $2}')
                     target_kernel_version=508
 
                     # 比较内核版本
                     if [ "$current_kernel_version" -lt "$target_kernel_version" ]; then
-                        echo -e "${red}当前系统内核版本小于 $target_kernel_version，请手动升级内核后重试，正在退出...${re}"
+                        echo -e "${hong}当前系统内核版本小于 $target_kernel_version，请手动升级内核后重试，正在退出...${bai}"
                         sleep 2
                         main_menu
                     else
                         echo ""
-                        echo -e "${green}当前系统内核版本 $current_kernel_version，符合安装要求${re}"
-                        sleep 1
+                        echo -e "${lv}当前系统内核版本 $current_kernel_version，符合安装要求${bai}"
+                        break_end
                         bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/tcp-brutal-reality.sh)
-                        sleep 2
                         break_end
                     fi
 
@@ -2171,33 +2380,161 @@ case $choice in
             53)
                 clear
                     bash <(curl -Ls https://raw.githubusercontent.com/slobys/x-ui/main/install.sh)
-                    sleep 2
                     break_end
                 ;;
             54)
                 clear
                     bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
-                    sleep 2
                     break_end
                 ;;
             55)
                 clear
                     install wget && wget https://git.io/vpn -O openvpn-install.sh && bash openvpn-install.sh
-                    sleep 2
                     break_end
                 ;;
             56)
                 clear
-
-                    echo "自動創建TG代理目錄：/home/tg/mtproxy"
-                    mkdir -p /home/tg/mtproxy && cd /home/tg/mtproxy
-
-                    curl -s -o mtproxy.sh https://raw.githubusercontent.com/sunpma/mtp/master/mtproxy.sh && chmod +x mtproxy.sh && bash mtproxy.sh
-                    sleep 2
+                    rm -rf /home/mtproxy && mkdir /home/mtproxy && cd /home/mtproxy
+                    curl -fsSL -o mtproxy.sh https://github.com/ellermister/mtproxy/raw/master/mtproxy.sh && chmod +x mtproxy.sh && bash mtproxy.sh
                     break_end
                 ;;
+            57)
+                while true; do
+                clear
+                  echo "--------------"
+                  echo -e "${lv}1.安装Reality${bai}"
+                  echo -e "${hong}2.卸载Reality${bai}"
+                  echo -e "${huang}3.更换Reality端口${bai}"
+                  echo "--------------"
+                  echo -e "${lan}0. 返回上一级菜单${bai}"
+                  echo "--------------"
+                  read -p $'\033[1;91m请输入你的选择: \033[0m' sub_choice
+                    case $sub_choice in
+                        1)
+                          clear
+                            read -p $'\033[1;35m请输入reality节点端口(nat小鸡请输入可用端口范围内的端口),回车跳过则使用随机端口：\033[0m' port
+                            [[ -z $port ]]
+                            until [[ -z $(netstat -tuln | grep -w tcp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; do
+                                if [[ -n $(netstat -tuln | grep -w tcp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; then
+                                    echo -e "${hong}${port}端口已经被其他程序占用，请更换端口重试${bai}"
+                                    read -p $'\033[1;35m设置 reality 端口[1-65535]（回车跳过将使用随机端口）：\033[0m' port
+                                    [[ -z $PORT ]] && port=$(shuf -i 2000-65000 -n 1)
+                                fi
+                            done
+                            if [ -f "/etc/alpine-release" ]; then
+                                PORT=$port bash -c "$(curl -L https://raw.githubusercontent.com/eooce/scripts/master/test.sh)"
+                            else
+                                PORT=$port bash -c "$(curl -L https://raw.githubusercontent.com/eooce/xray-reality/master/reality.sh)"
+                            fi
+                            break_end
+                            ;;
+                        2)
+                        if [ -f "/etc/alpine-release" ]; then
+                            pkill -f '[w]eb'
+                            pkill -f '[n]pm'
+                            cd && rm -rf app
+                            clear
+                        else
+                            sudo systemctl stop xray
+                            sudo rm /usr/local/bin/xray
+                            sudo rm /etc/systemd/system/xray.service
+                            sudo rm /usr/local/etc/xray/config.json
+                            sudo rm /usr/local/share/xray/geoip.dat
+                            sudo rm /usr/local/share/xray/geosite.dat
+                            sudo rm /etc/systemd/system/xray@.service
+
+                            # Reload the systemd daemon
+                            sudo systemctl daemon-reload
+
+                            # Remove any leftover Xray files or directories
+                            sudo rm -rf /var/log/xray /var/lib/xray
+                            clear
+                          fi
+
+                            echo -e "\e[1;32mReality已卸载\033[0m"
+                            break_end
+                            ;;
+                        3)
+                            clear
+                                read -p $'\033[1;35m设置 reality 端口[1-65535]（回车跳过将使用随机端口）：\033[0m' new_port
+                                [[ -z $new_port ]] && new_port=$(shuf -i 2000-65000 -n 1)
+                                until [[ -z $(netstat -tuln | grep -w tcp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; do
+                                    if [[ -n $(netstat -tuln | grep -w tcp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; then
+                                        echo -e "${hong}${new_port}端口已经被其他程序占用，请更换端口重试${bai}"
+                                        read -p $'\033[1;35m设置reality端口[1-65535]（回车跳过将使用随机端口）：\033[0m' new_port
+                                        [[ -z $new_port ]] && new_port=$(shuf -i 2000-65000 -n 1)
+                                    fi
+                                done
+                                install jq
+                                if [ -f "/etc/alpine-release" ]; then
+                                    jq --argjson new_port "$new_port" '.inbounds[0].port = $new_port' /root/app/config.json > tmp.json && mv tmp.json /root/app/config.json
+                                    pkill -f '[w]eb'
+                                    cd ~ && cd app
+                                    nohup ./web -c config.json >/dev/null 2>&1 &
+                                else
+                                    clear
+                                    jq --argjson new_port "$new_port" '.inbounds[0].port = $new_port' /usr/local/etc/xray/config.json > tmp.json && mv tmp.json /usr/local/etc/xray/config.json
+                                    systemctl restart xray.service
+                                fi
+                                echo -e "${hong}Reality端口已更换成$new_port,请手动更改客户端配置!${bai}"
+                                break_end
+                            ;;
+                        0)
+                            break
+
+                            ;;
+                        *)
+                            echo -e "${hong}无效的输入!${bai}"
+                            ;;
+                    esac
+                done
+                ;;
+
+            58)
+                while true; do
+                clear
+                  echo -e "${lan}▶ Sui面板${bai}"
+                  echo "--------------"
+                  echo -e "${lv}1.安装sui面板${bai}"
+                  echo -e "${hong}2.卸载sui面板${bai}"
+                  echo "--------------"
+                  echo -e "${lan}0. 返回上一级菜单${bai}"
+                  echo "--------------"
+                  read -p $'\033[1;91m请输入你的选择: \033[0m' sub_choice
+                    case $sub_choice in
+                        1)
+                            bash <(curl -Ls https://raw.githubusercontent.com/Misaka-blog/s-ui/master/install.sh)
+                            sleep 2
+                            echo ""
+                            break_end
+
+                            ;;
+                        2)
+                            systemctl disable sing-box --now
+                            systemctl disable s-ui --now
+
+                            rm -f /etc/systemd/system/s-ui.service
+                            rm -f /etc/systemd/system/sing-box.service
+                            systemctl daemon-reload
+
+                            rm -fr /usr/local/s-ui
+                            clear
+                            echo -e "${lv}sui面板已卸载${bai}"
+                            break_end
+
+                            ;;
+                        0)
+                            break
+
+                            ;;
+                        *)
+                            echo -e "${hong}无效的输入!${bai}"
+                            ;;
+                    esac
+                done
+                ;;
             0)
-                huaniangzi
+                siilao
                 ;;
             *)
                 echo "无效的输入!"
@@ -2223,13 +2560,13 @@ case $choice in
     echo "---------------------------------------------------------"
     echo -e "\033[91m▼ LDNMP项目 ▼\033[0m"
     echo "---------------------------------------------------------"
-    echo  "10. 安装vaultwarden密码管理  11. 安装Halo博客网站"
-    echo  "20. 自定义动态站点"
+    echo  "10. 安装vaultwarden密码管理    11. 安装Halo博客网站"
     echo "---------------------------------------------------------"
     echo -e "\033[91m▼ LDNMP工具 ▼\033[0m"
     echo "---------------------------------------------------------"
-    echo -e "21. 仅安装nginx                22. 站点重定向"
-    echo -e "23. 站点反向代理               24. 自定义静态站点"
+    echo -e  "${huang}20. 自定义动态站点${hong}NEW${bai}          21. 仅安装nginx"
+    echo  "22. 站点重定向                 23. 站点反向代理-IP+端口"
+    echo  "24. 站点反向代理-域名          25. 自定义静态站点"
     echo "---------------------------------------------------------"
     echo  "31. 站点数据管理               32. 备份全站数据"
     echo  "33. 定时远程备份               34. 还原全站数据"
@@ -2245,6 +2582,7 @@ case $choice in
     case $sub_choice in
       1)
       root_use
+      ldnmp_install_status_one
       check_port
       install_dependency
       install_docker
@@ -2253,19 +2591,19 @@ case $choice in
       # 创建必要的目录和文件
       cd /home && mkdir -p web/html web/mysql web/certs web/conf.d web/redis web/log/nginx && touch web/docker-compose.yml
 
-      wget -O /home/web/nginx.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/nginx10.conf
-      wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/default10.conf
+      wget -O /home/web/nginx.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/nginx10.conf
+      wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/default10.conf
       default_server_ssl
 
       # 下载 docker-compose.yml 文件并进行替换
-      wget -O /home/web/docker-compose.yml https://raw.githubusercontent.com/huaniangzi/sh/main/docker/LNMP-docker-compose-10.yml
+      wget -O /home/web/docker-compose.yml https://raw.githubusercontent.com/siilao/sh/main/docker/LNMP-docker-compose-10.yml
 
       dbrootpasswd=$(openssl rand -base64 16) && dbuse=$(openssl rand -hex 4) && dbusepasswd=$(openssl rand -base64 8)
 
       # 在 docker-compose.yml 文件中进行替换
       sed -i "s/webroot/$dbrootpasswd/g" /home/web/docker-compose.yml
-      sed -i "s/huaniangziYYDS/$dbusepasswd/g" /home/web/docker-compose.yml
-      sed -i "s/huaniangzi/$dbuse/g" /home/web/docker-compose.yml
+      sed -i "s/siilaoYYDS/$dbusepasswd/g" /home/web/docker-compose.yml
+      sed -i "s/siilao/$dbuse/g" /home/web/docker-compose.yml
 
       install_ldnmp
 
@@ -2279,7 +2617,7 @@ case $choice in
       install_ssltls
       add_db
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/ngxin/wordpress.com.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/ngxin/wordpress.com.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
 
       cd /home/web/html
@@ -2311,16 +2649,16 @@ case $choice in
       install_ssltls
       add_db
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/discuz.com.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/discuz.com.conf
 
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
 
       cd /home/web/html
       mkdir $yuming
       cd $yuming
-      wget https://github.com/huaniangzi/sh/raw/main/file/Discuz_X3.5_SC_UTF8_20230520.zip
-      unzip -o Discuz_X3.5_SC_UTF8_20230520.zip
-      rm Discuz_X3.5_SC_UTF8_20230520.zip
+      wget -O latest.zip https://github.com/siilao/sh/raw/main/file/Discuz_X3.5_SC_UTF8_20230520.zip
+      unzip latest.zip
+      rm latest.zip
 
       restart_ldnmp
 
@@ -2344,18 +2682,17 @@ case $choice in
       install_ssltls
       add_db
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main.nginx/kdy.com.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main.nginx/kdy.com.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
 
       cd /home/web/html
       mkdir $yuming
       cd $yuming
-      wget https://github.com/kalcaddle/kodbox/archive/refs/tags/1.42.04.zip
-      unzip -o 1.42.04.zip
-      rm 1.42.04.zip
+      wget -O latest.zip https://github.com/kalcaddle/kodbox/archive/refs/tags/1.50.02.zip
+      unzip -o latest.zip
+      rm latest.zip
 
       restart_ldnmp
-
 
       ldnmp_web_on
       echo "数据库地址: mysql"
@@ -2375,7 +2712,7 @@ case $choice in
       install_ssltls
       add_db
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/maccms.com.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/maccms.com.conf
 
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
 
@@ -2384,10 +2721,10 @@ case $choice in
       cd $yuming
       # wget https://github.com/magicblack/maccms_down/raw/master/maccms10.zip && unzip maccms10.zip && rm maccms10.zip
       wget https://github.com/magicblack/maccms_down/raw/master/maccms10.zip && unzip maccms10.zip && mv maccms10-*/* . && rm -r maccms10-* && rm maccms10.zip
-      cd /home/web/html/$yuming/template/ && wget https://github.com/huaniangzi/sh/raw/main/file/DYXS2.zip && unzip DYXS2.zip && rm /home/web/html/$yuming/template/DYXS2.zip
+      cd /home/web/html/$yuming/template/ && wget https://github.com/siilao/sh/raw/main/file/DYXS2.zip && unzip DYXS2.zip && rm /home/web/html/$yuming/template/DYXS2.zip
       cp /home/web/html/$yuming/template/DYXS2/asset/admin/Dyxs2.php /home/web/html/$yuming/application/admin/controller
       cp /home/web/html/$yuming/template/DYXS2/asset/admin/dycms.html /home/web/html/$yuming/application/admin/view/system
-      mv /home/web/html/$yuming/admin.php /home/web/html/$yuming/vip.php && wget -O /home/web/html/$yuming/application/extra/maccms.php https://raw.githubusercontent.com/huaniangzi/sh/main/file/maccms.php
+      mv /home/web/html/$yuming/admin.php /home/web/html/$yuming/vip.php && wget -O /home/web/html/$yuming/application/extra/maccms.php https://raw.githubusercontent.com/siilao/sh/main/file/maccms.php
 
       restart_ldnmp
 
@@ -2414,7 +2751,7 @@ case $choice in
       install_ssltls
       add_db
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/dujiaoka.com.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/dujiaoka.com.conf
 
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
 
@@ -2458,7 +2795,7 @@ case $choice in
       install_ssltls
       add_db
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/flarum.com.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/flarum.com.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
 
       cd /home/web/html
@@ -2496,7 +2833,7 @@ case $choice in
       install_ssltls
       add_db
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/typecho.com.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/typecho.com.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
 
       cd /home/web/html
@@ -2529,7 +2866,7 @@ case $choice in
       docker run -d \
         --name vaultwarden \
         -p 3280:80 \
-        -v /home/docker/vaultwarden/data:/data \
+        -v /home/web/docker/vaultwarden/data:/data \
         -e LOGIN_RATELIMIT_MAX_BURST=10 \
         -e LOGIN_RATELIMIT_SECONDS=60 \
         -e ADMIN_RATELIMIT_MAX_BURST=10 \
@@ -2571,7 +2908,7 @@ case $choice in
       install_ssltls
       add_db
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/index_php.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/index_php.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
 
       cd /home/web/html
@@ -2579,7 +2916,7 @@ case $choice in
       cd $yuming
 
       clear
-      echo -e "[${huang}1/5${bai}] 上传PHP源码"
+      echo -e "[${huang}1/6${bai}] 上传PHP源码"
       echo "-------------"
       echo "目前只允许上传zip格式的源码包，请将源码包放到/home/web/html/${yuming}目录下"
       read -p "也可以输入下载链接，远程下载源码包，直接回车将跳过远程下载： " url_download
@@ -2592,7 +2929,7 @@ case $choice in
       rm -f $(ls -t *.zip | head -n 1)
 
       clear
-      echo -e "[${huang}2/5${bai}] index.php所在路径"
+      echo -e "[${huang}2/6${bai}] index.php所在路径"
       echo "-------------"
       find "$(realpath .)" -name "index.php" -print
 
@@ -2602,7 +2939,7 @@ case $choice in
       sed -i "s#/home/web/#/var/www/#g" /home/web/conf.d/$yuming.conf
 
       clear
-      echo -e "[${huang}3/5${bai}] 请选择PHP版本"
+      echo -e "[${huang}3/6${bai}] 请选择PHP版本"
       echo "-------------"
       read -p "1. php最新版 | 2. php7.4 : " pho_v
       case "$pho_v" in
@@ -2621,7 +2958,7 @@ case $choice in
 
 
       clear
-      echo -e "[${huang}4/5${bai}] 安装指定扩展"
+      echo -e "[${huang}4/6${bai}] 安装指定扩展"
       echo "-------------"
       echo "已经安装的扩展"
       docker exec php php -m
@@ -2633,12 +2970,43 @@ case $choice in
 
 
       clear
-      echo -e "[${huang}5/5${bai}] 编辑站点配置"
+      echo -e "[${huang}5/6${bai}] 编辑站点配置"
       echo "-------------"
       echo "按任意键继续，可以详细设置站点配置，如伪静态等内容"
       read -n 1 -s -r -p ""
       install nano
       nano /home/web/conf.d/$yuming.conf
+
+
+      clear
+      echo -e "[${huang}6/6${bai}] 数据库管理"
+      echo "-------------"
+      read -p "1. 我搭建新站        2. 我搭建老站有数据库备份： " use_db
+      case $use_db in
+          1)
+              echo
+              ;;
+          2)
+              echo "数据库备份必须是.gz结尾的压缩包。请放到/home/目录下，支持宝塔/1panel备份数据导入。"
+              read -p "也可以输入下载链接，远程下载备份数据，直接回车将跳过远程下载： " url_download_db
+
+              cd /home/
+              if [ -n "$url_download_db" ]; then
+                  wget "$url_download_db"
+              fi
+              gunzip $(ls -t *.gz | head -n 1)
+              latest_sql=$(ls -t *.sql | head -n 1)
+              dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
+              docker exec -i mysql mysql -u root -p"$dbrootpasswd" $dbname < "/home/$latest_sql"
+              echo "数据库导入的表数据"
+              docker exec -i mysql mysql -u root -p"$dbrootpasswd" -e "USE $dbname; SHOW TABLES;"
+              rm -f *.sql
+              echo "数据库导入完成"
+              ;;
+          *)
+              echo
+              ;;
+      esac
 
       restart_ldnmp
 
@@ -2661,10 +3029,10 @@ case $choice in
       install_docker
       install_certbot
 
-      cd /home && mkdir -p web/html web/mysql web/certs web/conf.d web/redis web/log/nginx
+      cd /home && mkdir -p web/html web/mysql web/certs web/conf.d web/redis web/log/nginx && touch web/docker-compose.yml
 
-      wget -O /home/web/nginx.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/nginx10.conf
-      wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/default10.conf
+      wget -O /home/web/nginx.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/nginx10.conf
+      wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/default10.conf
       default_server_ssl
       docker rm -f nginx >/dev/null 2>&1
       docker rmi nginx nginx:alpine >/dev/null 2>&1
@@ -2688,7 +3056,7 @@ case $choice in
 
       install_ssltls
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/rewrite.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/rewrite.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
       sed -i "s/baidu.com/$reverseproxy/g" /home/web/conf.d/$yuming.conf
 
@@ -2701,7 +3069,7 @@ case $choice in
 
       23)
       clear
-      webname="站点反向代理"
+      webname="反向代理-IP+端口"
       nginx_install_status
       ip_address
       add_yuming
@@ -2710,7 +3078,7 @@ case $choice in
 
       install_ssltls
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/reverse-proxy.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/reverse-proxy.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
       sed -i "s/0.0.0.0/$reverseproxy/g" /home/web/conf.d/$yuming.conf
       sed -i "s/0000/$port/g" /home/web/conf.d/$yuming.conf
@@ -2723,12 +3091,34 @@ case $choice in
 
       24)
       clear
+      webname="反向代理-域名"
+      nginx_install_status
+      ip_address
+      add_yuming
+      echo -e "域名格式: ${huang}http://www.google.com${bai}"
+      read -p "请输入你的反代域名: " fandai_yuming
+
+      install_ssltls
+
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/kejilion/nginx/main/reverse-proxy-domain.conf
+      sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
+      sed -i "s|fandaicom|$fandai_yuming|g" /home/web/conf.d/$yuming.conf
+
+      docker restart nginx
+
+      nginx_web_on
+      nginx_status
+        ;;
+
+
+      25)
+      clear
       webname="静态站点"
       nginx_install_status
       add_yuming
       install_ssltls
 
-      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/html.conf
+      wget -O /home/web/conf.d/$yuming.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/html.conf
       sed -i "s/yuming.com/$yuming/g" /home/web/conf.d/$yuming.conf
 
       cd /home/web/html
@@ -2889,36 +3279,92 @@ case $choice in
 
     32)
       clear
-      cd /home/ && tar czvf home_$(date +"%Y%m%d%H%M%S").tar.gz *
-
       while true; do
-        clear
-        read -p "要传送文件到远程服务器吗？(Y/N): " choice
-        case "$choice" in
-          [Yy])
-            read -p "请输入远端服务器IP:  " remote_ip
-            if [ -z "$remote_ip" ]; then
-              echo "错误: 请输入远端服务器IP。"
-              continue
-            fi
-            latest_tar=$(ls -t /home/*.tar.gz | head -1)
-            if [ -n "$latest_tar" ]; then
-              ssh-keygen -f "/root/.ssh/known_hosts" -R "$remote_ip"
-              sleep 2  # 添加等待时间
-              scp -o StrictHostKeyChecking=no "$latest_tar" "root@$remote_ip:/"
-              echo "文件已传送至远程服务器根目录。"
-            else
-              echo "未找到要传送的文件。"
-            fi
-            break
-            ;;
-          [Nn])
-            break
-            ;;
-          *)
-            echo "无效的选择，请输入 Y 或 N。"
-            ;;
-        esac
+          echo -e "${hong}▶ 备份全站数据${bai}"
+          echo "------------------------"
+          echo "1. 打包备份 ▶"
+          echo "2. 数据迁移 ▶"
+          echo "------------------------"
+          echo "0. 返回上一级菜单"
+          echo "------------------------"
+          read -p "请输入你的选择: " sub_choice
+
+          case $sub_choice in
+              1)
+                  clear
+                  cd /home/ && tar czvf web_$(date +"%Y%m%d%H%M%S").tar.gz web
+
+                  while true; do
+                    clear
+                    read -p "要传送文件到远程服务器吗？(Y/N): " choice
+                    case "$choice" in
+                      [Yy])
+                        read -p "请输入远端服务器IP:  " remote_ip
+                        if [ -z "$remote_ip" ]; then
+                          echo "错误: 请输入远端服务器IP。"
+                          continue
+                        fi
+                        latest_tar=$(ls -t /home/*.tar.gz | head -1)
+                        if [ -n "$latest_tar" ]; then
+                          ssh-keygen -f "/root/.ssh/known_hosts" -R "$remote_ip"
+                          sleep 2  # 添加等待时间
+                          scp -o StrictHostKeyChecking=no "$latest_tar" "root@$remote_ip:/home/"
+                          echo "文件已传送至远程服务器home目录。"
+                        else
+                          echo "未找到要传送的文件。"
+                        fi
+                        break
+                        ;;
+                      [Nn])
+                        break
+                        ;;
+                      *)
+                        echo "无效的选择，请输入 Y 或 N。"
+                        ;;
+                    esac
+                  done
+                  ;;
+              2)
+                  while true; do
+                  clear
+                  read -p "要迁移文件到远程服务器吗？(Y/N): " choice
+                  case "$choice" in
+                    [Yy])
+                      read -p "请输入目标服务器IP:  " destination_ip
+                      if [ -z "$destination_ip" ]; then
+                        echo "错误: 请输入目标服务器IP。"
+                        continue
+                      fi
+
+                      # 使用scp递归传输整个web目录
+                      ssh-keygen -f "/root/.ssh/known_hosts" -R "$destination_ip"
+                      sleep 2  # 添加等待时间
+                      scp -r -o StrictHostKeyChecking=no /home/web "root@$destination_ip:/home/web"
+                      echo "目录已传送至目标服务器的/home/web目录。"
+                      break
+                      ;;
+                    [Nn])
+                      break
+                      ;;
+                    *)
+                      echo "无效的选择，请输入 Y 或 N。"
+                      ;;
+                  esac
+                done
+                ;;
+              0)
+                  # 返回上一级菜单
+                  break  # 使用 break 来跳出当前循环，返回上一级菜单
+                  ;;
+              00)
+                  # 返回主菜单
+                  siilao
+                  ;;
+              *)
+                  echo "无效的输入!"
+                  ;;
+          esac
+          break_end
       done
       ;;
 
@@ -2928,7 +3374,7 @@ case $choice in
       read -p "输入远程服务器密码: " usepasswd
 
       cd ~
-      wget -O ${useip}_beifen.sh https://raw.githubusercontent.com/huaniangzi/sh/main/beifen.sh > /dev/null 2>&1
+      wget -O ${useip}_beifen.sh https://raw.githubusercontent.com/kejilion/sh/main/beifen.sh > /dev/null 2>&1
       chmod +x ${useip}_beifen.sh
 
       sed -i "s/0.0.0.0/$useip/g" ${useip}_beifen.sh
@@ -2958,6 +3404,9 @@ case $choice in
 
     34)
       root_use
+      echo "请确认home目录中已经放置网站备份的gz压缩包，按任意键继续……"
+      read -n 1 -s -r -p ""
+      echo "开始解压……"
       cd /home/ && ls -t /home/*.tar.gz | head -1 | xargs -I {} tar -xzf {}
       check_port
       install_dependency
@@ -3067,16 +3516,16 @@ case $choice in
                       read -p "输入CF的账号: " cfuser
                       read -p "输入CF的Global API Key: " cftoken
 
-                      wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/default11.conf
+                      wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/default11.conf
                       docker restart nginx
 
                       cd /path/to/fail2ban/config/fail2ban/jail.d/
-                      curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/config/fail2ban/nginx-docker-cc.conf
+                      curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/config/fail2ban/nginx-docker-cc.conf
 
                       cd /path/to/fail2ban/config/fail2ban/action.d
-                      curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/config/fail2ban/cloudflare-docker.conf
+                      curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/config/fail2ban/cloudflare-docker.conf
 
-                      sed -i "s/huaniangzi@outlook.com/$cfuser/g" /path/to/fail2ban/config/fail2ban/action.d/cloudflare-docker.conf
+                      sed -i "s/siilao@outlook.com/$cfuser/g" /path/to/fail2ban/config/fail2ban/action.d/cloudflare-docker.conf
                       sed -i "s/APIKEY00000/$cftoken/g" /path/to/fail2ban/config/fail2ban/action.d/cloudflare-docker.conf
                       f2b_status
 
@@ -3117,8 +3566,8 @@ case $choice in
           install_docker
 
           docker rm -f nginx
-          wget -O /home/web/nginx.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/nginx10.conf
-          wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/huaniangzi/sh/main/nginx/default10.conf
+          wget -O /home/web/nginx.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/nginx10.conf
+          wget -O /home/web/conf.d/default.conf https://raw.githubusercontent.com/siilao/sh/main/nginx/default10.conf
           default_server_ssl
           docker run -d --name nginx --restart always --network web_default -p 80:80 -p 443:443 -p 443:443/udp -v /home/web/nginx.conf:/etc/nginx/nginx.conf -v /home/web/conf.d:/etc/nginx/conf.d -v /home/web/certs:/etc/nginx/certs -v /home/web/html:/var/www/html -v /home/web/log/nginx:/var/log/nginx nginx:alpine
           docker exec -it nginx chmod -R 777 /var/www/html
@@ -3126,9 +3575,9 @@ case $choice in
           f2b_install_sshd
 
           cd /path/to/fail2ban/config/fail2ban/filter.d
-          curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/fail2ban-nginx-cc.conf
+          curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/fail2ban-nginx-cc.conf
           cd /path/to/fail2ban/config/fail2ban/jail.d/
-          curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/config/fail2ban/nginx-docker-cc.conf
+          curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/config/fail2ban/nginx-docker-cc.conf
           sed -i "/cloudflare/d" /path/to/fail2ban/config/fail2ban/jail.d/nginx-docker-cc.conf
 
           cd ~
@@ -3155,19 +3604,19 @@ case $choice in
                   sed -i 's/worker_connections.*/worker_connections 1024;/' /home/web/nginx.conf
 
                   # php调优
-                  wget -O /home/optimized_php.ini https://raw.githubusercontent.com/huaniangzi/sh/main/optimized_php.ini
+                  wget -O /home/optimized_php.ini https://raw.githubusercontent.com/siilao/sh/main/optimized_php.ini
                   docker cp /home/optimized_php.ini php:/usr/local/etc/php/conf.d/optimized_php.ini
                   docker cp /home/optimized_php.ini php74:/usr/local/etc/php/conf.d/optimized_php.ini
                   rm -rf /home/optimized_php.ini
 
                   # php调优
-                  wget -O /home/www.conf https://raw.githubusercontent.com/huaniangzi/sh/main/www-1.conf
+                  wget -O /home/www.conf https://raw.githubusercontent.com/siilao/sh/main/www-1.conf
                   docker cp /home/www.conf php:/usr/local/etc/php-fpm.d/www.conf
                   docker cp /home/www.conf php74:/usr/local/etc/php-fpm.d/www.conf
                   rm -rf /home/www.conf
 
                   # mysql调优
-                  wget -O /home/custom_mysql_config.cnf https://raw.githubusercontent.com/huaniangzi/sh/main/custom_mysql_config-1.cnf
+                  wget -O /home/custom_mysql_config.cnf https://raw.githubusercontent.com/siilao/sh/main/custom_mysql_config-1.cnf
                   docker cp /home/custom_mysql_config.cnf mysql:/etc/mysql/conf.d/
                   rm -rf /home/custom_mysql_config.cnf
 
@@ -3185,13 +3634,13 @@ case $choice in
                   sed -i 's/worker_connections.*/worker_connections 10240;/' /home/web/nginx.conf
 
                   # php调优
-                  wget -O /home/www.conf https://raw.githubusercontent.com/huaniangzi/sh/main/www.conf
+                  wget -O /home/www.conf https://raw.githubusercontent.com/siilao/sh/main/www.conf
                   docker cp /home/www.conf php:/usr/local/etc/php-fpm.d/www.conf
                   docker cp /home/www.conf php74:/usr/local/etc/php-fpm.d/www.conf
                   rm -rf /home/www.conf
 
                   # mysql调优
-                  wget -O /home/custom_mysql_config.cnf https://raw.githubusercontent.com/huaniangzi/sh/main/custom_mysql_config.cnf
+                  wget -O /home/custom_mysql_config.cnf https://raw.githubusercontent.com/siilao/sh/main/custom_mysql_config.cnf
                   docker cp /home/custom_mysql_config.cnf mysql:/etc/mysql/conf.d/
                   rm -rf /home/custom_mysql_config.cnf
 
@@ -3249,7 +3698,7 @@ case $choice in
         ;;
 
     0)
-        huaniangzi
+        siilao
       ;;
 
     *)
@@ -3270,16 +3719,19 @@ case $choice in
       echo "5. AList多存储文件列表程序              6. Ubuntu远程桌面网页版"
       echo "7. 哪吒探针VPS监控面板                  8. QB离线BT磁力下载面板"
       echo "9. Poste.io邮件服务器程序               10. RocketChat多人在线聊天系统"
+      echo "------------------------"
       echo "11. 禅道项目管理软件                    12. 青龙面板定时任务管理平台"
       echo "13. Cloudreve网盘                       14. 简单图床图片管理程序"
       echo "15. emby多媒体管理系统                  16. Speedtest测速面板"
       echo "17. AdGuardHome去广告软件               18. onlyoffice在线办公OFFICE"
       echo "19. 雷池WAF防火墙面板                   20. portainer容器管理面板"
+      echo "------------------------"
       echo "21. VScode网页版                        22. UptimeKuma监控工具"
       echo "23. Memos网页备忘录                     24. Webtop远程桌面网页版"
       echo "25. Nextcloud网盘                       26. QD-Today定时任务管理框架"
       echo "27. Dockge容器堆栈管理面板              28. LibreSpeed测速工具"
       echo "29. searxng聚合搜索站                   30. PhotoPrism私有相册系统"
+      echo "------------------------"
       echo "31. StirlingPDF工具大全                 32. drawio免费的在线图表软件"
       echo "33. Sun-Panel导航面板                   34. Pingvin-Share文件分享平台"
       echo "35. 极简朋友圈                          36. LobeChatAI聊天聚合网站"
@@ -3372,8 +3824,8 @@ case $choice in
                           -p 80:80 \
                           -p 81:$docker_port \
                           -p 443:443 \
-                          -v /home/docker/npm/data:/data \
-                          -v /home/docker/npm/letsencrypt:/etc/letsencrypt \
+                          -v /home/web/docker/npm/data:/data \
+                          -v /home/web/docker/npm/letsencrypt:/etc/letsencrypt \
                           --restart=always \
                           $docker_img"
             docker_describe="如果您已经安装了其他面板工具或者LDNMP建站环境，建议先卸载，再安装npm！"
@@ -3392,7 +3844,7 @@ case $choice in
             docker_port=5244
             docker_rum="docker run -d \
                                 --restart=always \
-                                -v /home/docker/alist:/opt/alist/data \
+                                -v /home/web/docker/alist:/opt/alist/data \
                                 -p 5244:5244 \
                                 -e PUID=0 \
                                 -e PGID=0 \
@@ -3416,7 +3868,7 @@ case $choice in
             docker_rum="docker run -d \
                                 --name ubuntu-novnc \
                                 -p 6080:80 \
-                                -v /home/docker/ubuntu-novnc:/workspace:rw \
+                                -v /home/web/docker/ubuntu-novnc:/workspace:rw \
                                 -e HTTP_PASSWORD=$rootpasswd \
                                 -e RESOLUTION=1280x720 \
                                 --restart=always \
@@ -3449,8 +3901,8 @@ case $choice in
                                   -p 8081:8081 \
                                   -p 6881:6881 \
                                   -p 6881:6881/udp \
-                                  -v /home/docker/qbittorrent/config:/config \
-                                  -v /home/docker/qbittorrent/downloads:/downloads \
+                                  -v /home/web/docker/qbittorrent/config:/config \
+                                  -v /home/web/docker/qbittorrent/downloads:/downloads \
                                   --restart unless-stopped \
                                   lscr.io/linuxserver/qbittorrent:latest"
             docker_describe="qbittorrent离线BT磁力下载服务"
@@ -3467,7 +3919,7 @@ case $choice in
 
                     clear
                     echo "poste.io已安装，访问地址: "
-                    yuming=$(cat /home/docker/mail.txt)
+                    yuming=$(cat /home/web/docker/mail.txt)
                     echo "https://$yuming"
                     echo ""
 
@@ -3485,11 +3937,11 @@ case $choice in
                             docker rm -f mailserver
                             docker rmi -f analogic/poste.io
 
-                            yuming=$(cat /home/docker/mail.txt)
+                            yuming=$(cat /home/web/docker/mail.txt)
                             docker run \
                                 --net=host \
                                 -e TZ=Europe/Prague \
-                                -v /home/docker/mail:/data \
+                                -v /home/web/docker/mail:/data \
                                 --name "mailserver" \
                                 -h "$yuming" \
                                 --restart=always \
@@ -3506,8 +3958,8 @@ case $choice in
                             clear
                             docker rm -f mailserver
                             docker rmi -f analogic/poste.io
-                            rm /home/docker/mail.txt
-                            rm -rf /home/docker/mail
+                            rm /home/web/docker/mail.txt
+                            rm -rf /home/web/docker/mail
                             echo "应用已卸载"
                             ;;
                         0)
@@ -3548,8 +4000,8 @@ case $choice in
                     clear
 
                     read -p "请设置邮箱域名 例如 mail.yuming.com : " yuming
-                    mkdir -p /home/docker      # 递归创建目录
-                    echo "$yuming" > /home/docker/mail.txt  # 写入文件
+                    mkdir -p /home/web/docker      # 递归创建目录
+                    echo "$yuming" > /home/web/docker/mail.txt  # 写入文件
                     echo "------------------------"
                     ip_address
                     echo "先解析这些DNS记录"
@@ -3570,7 +4022,7 @@ case $choice in
                     docker run \
                         --net=host \
                         -e TZ=Europe/Prague \
-                        -v /home/docker/mail:/data \
+                        -v /home/web/docker/mail:/data \
                         --name "mailserver" \
                         -h "$yuming" \
                         --restart=always \
@@ -3593,13 +4045,19 @@ case $choice in
               ;;
 
           10)
-            if docker inspect rocketchat &>/dev/null; then
 
+            has_ipv4_has_ipv6
+
+            if docker inspect rocketchat &>/dev/null; then
 
                     clear
                     echo "rocket.chat已安装，访问地址: "
-                    ip_address
-                    echo "http:$ipv4_address:3897"
+                    if $has_ipv4; then
+                        echo "http:$ipv4_address:3897"
+                    fi
+                    if $has_ipv6; then
+                        echo "http:[$ipv6_address]:3897"
+                    fi
                     echo ""
 
                     echo "应用操作"
@@ -3624,7 +4082,12 @@ case $choice in
                             echo "rocket.chat已经安装完成"
                             echo "------------------------"
                             echo "多等一会，您可以使用以下地址访问rocket.chat:"
-                            echo "http:$ipv4_address:3897"
+                            if $has_ipv4; then
+                                echo "http:$ipv4_address:3897"
+                            fi
+                            if $has_ipv6; then
+                                echo "http:[$ipv6_address]:3897"
+                            fi
                             echo ""
                             ;;
                         2)
@@ -3635,7 +4098,7 @@ case $choice in
                             docker rm -f db
                             docker rmi -f mongo:latest
                             # docker rmi -f mongo:6
-                            rm -rf /home/docker/mongo
+                            rm -rf /home/web/docker/mongo
                             echo "应用已卸载"
                             ;;
                         0)
@@ -3659,7 +4122,7 @@ case $choice in
                     clear
                     install_docker
                     docker run --name db -d --restart=always \
-                        -v /home/docker/mongo/dump:/dump \
+                        -v /home/web/docker/mongo/dump:/dump \
                         mongo:latest --replSet rs5 --oplogSize 256
                     sleep 1
                     docker exec -it db mongosh --eval "printjson(rs.initiate())"
@@ -3672,7 +4135,12 @@ case $choice in
                     echo "rocket.chat已经安装完成"
                     echo "------------------------"
                     echo "多等一会，您可以使用以下地址访问rocket.chat:"
-                    echo "http:$ipv4_address:3897"
+                    if $has_ipv4; then
+                        echo "http:$ipv4_address:3897"
+                    fi
+                    if $has_ipv6; then
+                        echo "http:[$ipv6_address]:3897"
+                    fi
                     echo ""
 
                         ;;
@@ -3693,7 +4161,7 @@ case $choice in
             docker_rum="docker run -d -p 82:80 -p 3308:3306 \
                               -e ADMINER_USER="root" -e ADMINER_PASSWD="password" \
                               -e BIND_ADDRESS="false" \
-                              -v /home/docker/zentao-server/:/opt/zbox/ \
+                              -v /home/web/docker/zentao-server/:/opt/zbox/ \
                               --add-host smtp.exmail.qq.com:163.177.90.125 \
                               --name zentao-server \
                               --restart=always \
@@ -3711,7 +4179,7 @@ case $choice in
             docker_img="whyour/qinglong:latest"
             docker_port=5700
             docker_rum="docker run -d \
-                      -v /home/docker/qinglong/data:/ql/data \
+                      -v /home/web/docker/qinglong/data:/ql/data \
                       -p 5700:5700 \
                       --name qinglong \
                       --hostname qinglong \
@@ -3725,12 +4193,20 @@ case $choice in
 
               ;;
           13)
+            has_ipv4_has_ipv6
+
             if docker inspect cloudreve &>/dev/null; then
 
                     clear
                     echo "cloudreve已安装，访问地址: "
-                    ip_address
-                    echo "http:$ipv4_address:5212"
+
+                    if $has_ipv4; then
+                        echo "http:$ipv4_address:5212"
+                    fi
+                    if $has_ipv6; then
+                        echo "http:[$ipv6_address]:5212"
+                    fi
+
                     echo ""
 
                     echo "应用操作"
@@ -3749,17 +4225,23 @@ case $choice in
                             docker rm -f aria2
                             docker rmi -f p3terx/aria2-pro
 
-                            cd /home/ && mkdir -p docker/cloud && cd docker/cloud && mkdir temp_data && mkdir -vp cloudreve/{uploads,avatar} && touch cloudreve/conf.ini && touch cloudreve/cloudreve.db && mkdir -p aria2/config && mkdir -p data/aria2 && chmod -R 777 data/aria2
-                            curl -o /home/docker/cloud/docker-compose.yml https://raw.githubusercontent.com/huaniangzi/sh/main/docker/cloudreve-docker-compose.yml
-                            cd /home/docker/cloud/ && docker compose up -d
+                            cd /home/ && mkdir -p web/docker/cloud && cd web/docker/cloud && mkdir temp_data && mkdir -vp cloudreve/{uploads,avatar} && touch cloudreve/conf.ini && touch cloudreve/cloudreve.db && mkdir -p aria2/config && mkdir -p data/aria2 && chmod -R 777 data/aria2
+                            curl -o /home/web/docker/cloud/docker-compose.yml https://raw.githubusercontent.com/siilao/sh/main/docker/cloudreve-docker-compose.yml
+                            cd /home/web/docker/cloud/ && docker compose up -d
 
 
                             clear
                             echo "cloudreve已经安装完成"
                             echo "------------------------"
                             echo "您可以使用以下地址访问cloudreve:"
-                            ip_address
-                            echo "http:$ipv4_address:5212"
+
+                            if $has_ipv4; then
+                                echo "http:$ipv4_address:5212"
+                            fi
+                            if $has_ipv6; then
+                                echo "http:[$ipv6_address]:5212"
+                            fi
+
                             sleep 3
                             docker logs cloudreve
                             echo ""
@@ -3770,7 +4252,7 @@ case $choice in
                             docker rmi -f cloudreve/cloudreve:latest
                             docker rm -f aria2
                             docker rmi -f p3terx/aria2-pro
-                            rm -rf /home/docker/cloud
+                            rm -rf /home/web/docker/cloud
                             echo "应用已卸载"
                             ;;
                         0)
@@ -3793,17 +4275,21 @@ case $choice in
                     [Yy])
                     clear
                     install_docker
-                    cd /home/ && mkdir -p docker/cloud && cd docker/cloud && mkdir temp_data && mkdir -vp cloudreve/{uploads,avatar} && touch cloudreve/conf.ini && touch cloudreve/cloudreve.db && mkdir -p aria2/config && mkdir -p data/aria2 && chmod -R 777 data/aria2
-                    curl -o /home/docker/cloud/docker-compose.yml https://raw.githubusercontent.com/huaniangzi/sh/main/docker/cloudreve-docker-compose.yml
-                    cd /home/docker/cloud/ && docker compose up -d
+                    cd /home/ && mkdir -p web/docker/cloud && cd web/docker/cloud && mkdir temp_data && mkdir -vp cloudreve/{uploads,avatar} && touch cloudreve/conf.ini && touch cloudreve/cloudreve.db && mkdir -p aria2/config && mkdir -p data/aria2 && chmod -R 777 data/aria2
+                    curl -o /home/web/docker/cloud/docker-compose.yml https://raw.githubusercontent.com/siilao/sh/main/docker/cloudreve-docker-compose.yml
+                    cd /home/web/docker/cloud/ && docker compose up -d
 
 
                     clear
                     echo "cloudreve已经安装完成"
                     echo "------------------------"
                     echo "您可以使用以下地址访问cloudreve:"
-                    ip_address
-                    echo "http:$ipv4_address:5212"
+                    if $has_ipv4; then
+                        echo "http:$ipv4_address:5212"
+                    fi
+                    if $has_ipv6; then
+                        echo "http:[$ipv6_address]:5212"
+                    fi
                     sleep 3
                     docker logs cloudreve
                     echo ""
@@ -3828,8 +4314,8 @@ case $choice in
                       -e TZ=Asia/Shanghai \
                       -e PUID=1000 \
                       -e PGID=1000 \
-                      -v /home/docker/easyimage/config:/app/web/config \
-                      -v /home/docker/easyimage/i:/app/web/i \
+                      -v /home/web/docker/easyimage/config:/app/web/config \
+                      -v /home/web/docker/easyimage/i:/app/web/i \
                       --restart unless-stopped \
                       ddsderek/easyimage:latest"
             docker_describe="简单图床是一个简单的图床程序"
@@ -3844,9 +4330,9 @@ case $choice in
             docker_img="linuxserver/emby:latest"
             docker_port=8096
             docker_rum="docker run -d --name=emby --restart=always \
-                        -v /homeo/docker/emby/config:/config \
-                        -v /homeo/docker/emby/share1:/mnt/share1 \
-                        -v /homeo/docker/emby/share2:/mnt/share2 \
+                        -v /homeo/web/docker/emby/config:/config \
+                        -v /homeo/web/docker/emby/share1:/mnt/share1 \
+                        -v /homeo/web/docker/emby/share2:/mnt/share2 \
                         -v /mnt/notify:/mnt/notify \
                         -p 8096:8096 -p 8920:8920 \
                         -e UID=1000 -e GID=100 -e GIDLIST=100 \
@@ -3877,8 +4363,8 @@ case $choice in
             docker_port=3000
             docker_rum="docker run -d \
                             --name adguardhome \
-                            -v /home/docker/adguardhome/work:/opt/adguardhome/work \
-                            -v /home/docker/adguardhome/conf:/opt/adguardhome/conf \
+                            -v /home/web/docker/adguardhome/work:/opt/adguardhome/work \
+                            -v /home/web/docker/adguardhome/conf:/opt/adguardhome/conf \
                             -p 53:53/tcp \
                             -p 53:53/udp \
                             -p 3000:3000/tcp \
@@ -3901,8 +4387,8 @@ case $choice in
             docker_rum="docker run -d -p 8082:80 \
                         --restart=always \
                         --name onlyoffice \
-                        -v /home/docker/onlyoffice/DocumentServer/logs:/var/log/onlyoffice  \
-                        -v /home/docker/onlyoffice/DocumentServer/data:/var/www/onlyoffice/Data  \
+                        -v /home/web/docker/onlyoffice/DocumentServer/logs:/var/log/onlyoffice  \
+                        -v /home/web/docker/onlyoffice/DocumentServer/data:/var/www/onlyoffice/Data  \
                          onlyoffice/documentserver"
             docker_describe="onlyoffice是一款开源的在线office工具，太强大了！"
             docker_url="官网介绍: https://www.onlyoffice.com/"
@@ -3991,7 +4477,7 @@ case $choice in
                     --name portainer \
                     -p 9050:9000 \
                     -v /var/run/docker.sock:/var/run/docker.sock \
-                    -v /home/docker/portainer:/data \
+                    -v /home/web/docker/portainer:/data \
                     --restart always \
                     portainer/portainer"
             docker_describe="portainer是一个轻量级的docker容器管理面板"
@@ -4006,7 +4492,7 @@ case $choice in
             docker_name="vscode-web"
             docker_img="codercom/code-server"
             docker_port=8180
-            docker_rum="docker run -d -p 8180:8080 -v /home/docker/vscode-web:/home/coder/.local/share/code-server --name vscode-web --restart always codercom/code-server"
+            docker_rum="docker run -d -p 8180:8080 -v /home/web/docker/vscode-web:/home/coder/.local/share/code-server --name vscode-web --restart always codercom/code-server"
             docker_describe="VScode是一款强大的在线代码编写工具"
             docker_url="官网介绍: https://github.com/coder/code-server"
             docker_use="sleep 3"
@@ -4020,7 +4506,7 @@ case $choice in
             docker_rum="docker run -d \
                             --name=uptime-kuma \
                             -p 3003:3001 \
-                            -v /home/docker/uptime-kuma/uptime-kuma-data:/app/data \
+                            -v /home/web/docker/uptime-kuma/uptime-kuma-data:/app/data \
                             --restart=always \
                             louislam/uptime-kuma:latest"
             docker_describe="Uptime Kuma 易于使用的自托管监控工具"
@@ -4034,7 +4520,7 @@ case $choice in
             docker_name="memos"
             docker_img="ghcr.io/usememos/memos:latest"
             docker_port=5230
-            docker_rum="docker run -d --name memos -p 5230:5230 -v /home/docker/memos:/var/opt/memos --restart always ghcr.io/usememos/memos:latest"
+            docker_rum="docker run -d --name memos -p 5230:5230 -v /home/web/docker/memos:/var/opt/memos --restart always ghcr.io/usememos/memos:latest"
             docker_describe="Memos是一款轻量级、自托管的备忘录中心"
             docker_url="官网介绍: https://github.com/usememos/memos"
             docker_use=""
@@ -4058,7 +4544,7 @@ case $choice in
                           -e DOCKER_MODS=linuxserver/mods:universal-package-install \
                           -e INSTALL_PACKAGES=font-noto-cjk \
                           -p 3083:3000 \
-                          -v /home/docker/webtop/data:/config \
+                          -v /home/web/docker/webtop/data:/config \
                           -v /var/run/docker.sock:/var/run/docker.sock \
                           --device /dev/dri:/dev/dri \
                           --shm-size="1gb" \
@@ -4077,7 +4563,7 @@ case $choice in
             docker_img="nextcloud:latest"
             docker_port=8989
             rootpasswd=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c16)
-            docker_rum="docker run -d --name nextcloud --restart=always -p 8989:80 -v /home/docker/nextcloud:/var/www/html -e NEXTCLOUD_ADMIN_USER=nextcloud -e NEXTCLOUD_ADMIN_PASSWORD=$rootpasswd nextcloud"
+            docker_rum="docker run -d --name nextcloud --restart=always -p 8989:80 -v /home/web/docker/nextcloud:/var/www/html -e NEXTCLOUD_ADMIN_USER=nextcloud -e NEXTCLOUD_ADMIN_PASSWORD=$rootpasswd nextcloud"
             docker_describe="Nextcloud拥有超过 400,000 个部署，是您可以下载的最受欢迎的本地内容协作平台"
             docker_url="官网介绍: https://nextcloud.com/"
             docker_use="echo \"账号: nextcloud  密码: $rootpasswd\""
@@ -4089,7 +4575,7 @@ case $choice in
             docker_name="qd"
             docker_img="qdtoday/qd:latest"
             docker_port=8923
-            docker_rum="docker run -d --name qd -p 8923:80 -v /home/docker/qd/config:/usr/src/app/config qdtoday/qd"
+            docker_rum="docker run -d --name qd -p 8923:80 -v /home/web/docker/qd/config:/usr/src/app/config qdtoday/qd"
             docker_describe="QD-Today是一个HTTP请求定时任务自动执行框架"
             docker_url="官网介绍: https://qd-today.github.io/qd/zh_CN/"
             docker_use=""
@@ -4100,7 +4586,7 @@ case $choice in
             docker_name="dockge"
             docker_img="louislam/dockge:latest"
             docker_port=5003
-            docker_rum="docker run -d --name dockge --restart unless-stopped -p 5003:5001 -v /var/run/docker.sock:/var/run/docker.sock -v /home/docker/dockge/data:/app/data -v  /home/docker/dockge/stacks:/home/docker/dockge/stacks -e DOCKGE_STACKS_DIR=/home/docker/dockge/stacks louislam/dockge"
+            docker_rum="docker run -d --name dockge --restart unless-stopped -p 5003:5001 -v /var/run/docker.sock:/var/run/docker.sock -v /home/web/docker/dockge/data:/app/data -v  /home/web/docker/dockge/stacks:/home/docker/dockge/stacks -e DOCKGE_STACKS_DIR=/home/docker/dockge/stacks louislam/dockge"
             docker_describe="dockge是一个可视化的docker-compose容器管理面板"
             docker_url="官网介绍: https://github.com/louislam/dockge"
             docker_use=""
@@ -4132,9 +4618,9 @@ case $choice in
             docker_rum="docker run --name=searxng \
                             -d --init \
                             --restart=unless-stopped \
-                            -v /home/docker/searxng/config:/etc/searxng \
-                            -v /home/docker/searxng/templates:/usr/local/searxng/searx/templates/simple \
-                            -v /home/docker/searxng/theme:/usr/local/searxng/searx/static/themes/simple \
+                            -v /home/web/docker/searxng/config:/etc/searxng \
+                            -v /home/web/docker/searxng/templates:/usr/local/searxng/searx/templates/simple \
+                            -v /home/web/docker/searxng/theme:/usr/local/searxng/searx/static/themes/simple \
                             -p 8700:8080/tcp \
                             alandoyle/searxng:latest"
             docker_describe="searxng是一个私有且隐私的搜索引擎站点"
@@ -4157,8 +4643,8 @@ case $choice in
                             -p 2342:2342 \
                             -e PHOTOPRISM_UPLOAD_NSFW="true" \
                             -e PHOTOPRISM_ADMIN_PASSWORD="$rootpasswd" \
-                            -v /home/docker/photoprism/storage:/photoprism/storage \
-                            -v /home/docker/photoprism/Pictures:/photoprism/originals \
+                            -v /home/web/docker/photoprism/storage:/photoprism/storage \
+                            -v /home/web/docker/photoprism/Pictures:/photoprism/originals \
                             photoprism/photoprism"
             docker_describe="photoprism非常强大的私有相册系统"
             docker_url="官网介绍: https://www.photoprism.app/"
@@ -4176,9 +4662,9 @@ case $choice in
                             --name s-pdf \
                             --restart=always \
                              -p 8020:8080 \
-                             -v /home/docker/s-pdf/trainingData:/usr/share/tesseract-ocr/5/tessdata \
-                             -v /home/docker/s-pdf/extraConfigs:/configs \
-                             -v /home/docker/s-pdf/logs:/logs \
+                             -v /home/web/docker/s-pdf/trainingData:/usr/share/tesseract-ocr/5/tessdata \
+                             -v /home/web/docker/s-pdf/extraConfigs:/configs \
+                             -v /home/web/docker/s-pdf/logs:/logs \
                              -e DOCKER_ENABLE_SECURITY=false \
                              frooodle/s-pdf:latest"
             docker_describe="这是一个强大的本地托管基于 Web 的 PDF 操作工具，使用 docker，允许您对 PDF 文件执行各种操作，例如拆分合并、转换、重新组织、添加图像、旋转、压缩等。"
@@ -4192,7 +4678,7 @@ case $choice in
             docker_name="drawio"
             docker_img="jgraph/drawio"
             docker_port=7080
-            docker_rum="docker run -d --restart=always --name drawio -p 7080:8080 -v /home/docker/drawio:/var/lib/drawio jgraph/drawio"
+            docker_rum="docker run -d --restart=always --name drawio -p 7080:8080 -v /home/web/docker/drawio:/var/lib/drawio jgraph/drawio"
             docker_describe="这是一个强大图表绘制软件。思维导图，拓扑图，流程图，都能画"
             docker_url="官网介绍: https://www.drawio.com/"
             docker_use=""
@@ -4205,9 +4691,9 @@ case $choice in
             docker_img="hslr/sun-panel"
             docker_port=3009
             docker_rum="docker run -d --restart=always -p 3009:3002 \
-                            -v /home/docker/sun-panel/conf:/app/conf \
-                            -v /home/docker/sun-panel/uploads:/app/uploads \
-                            -v /home/docker/sun-panel/database:/app/database \
+                            -v /home/web/docker/sun-panel/conf:/app/conf \
+                            -v /home/web/docker/sun-panel/uploads:/app/uploads \
+                            -v /home/web/docker/sun-panel/database:/app/database \
                             --name sun-panel \
                             hslr/sun-panel"
             docker_describe="Sun-Panel服务器、NAS导航面板、Homepage、浏览器首页"
@@ -4225,7 +4711,7 @@ case $choice in
                             --name pingvin-share \
                             --restart always \
                             -p 3060:3000 \
-                            -v /home/docker/pingvin-share/data:/opt/app/backend/data \
+                            -v /home/web/docker/pingvin-share/data:/opt/app/backend/data \
                             stonith404/pingvin-share"
             docker_describe="Pingvin Share 是一个可自建的文件分享平台，是 WeTransfer 的一个替代品"
             docker_url="官网介绍: https://github.com/stonith404/pingvin-share"
@@ -4241,7 +4727,7 @@ case $choice in
             docker_port=8035
             docker_rum="docker run -d --restart unless-stopped \
                             -p 8035:3000 \
-                            -v /home/docker/moments/data:/app/data \
+                            -v /home/web/docker/moments/data:/app/data \
                             -v /etc/localtime:/etc/localtime:ro \
                             -v /etc/timezone:/etc/timezone:ro \
                             --name moments \
@@ -4288,7 +4774,7 @@ case $choice in
           curl -L https://raw.githubusercontent.com/oneclickvirt/pve/main/scripts/install_pve.sh -o install_pve.sh && chmod +x install_pve.sh && bash install_pve.sh
               ;;
           0)
-              huaniangzi
+              siilao
               ;;
           *)
               echo "无效的输入!"
@@ -4303,8 +4789,8 @@ case $choice in
     while true; do
       clear
       echo -e "${hong}▶ 我的工作区${bai}"
-      echo "系统将为你提供5个后台运行的工作区，你可以用来执行长时间的任务"
-      echo "即使你断开SSH，工作区中的任务也不会中断，非常方便！来试试吧！"
+      echo "系统将为你提供可以后台常驻运行的工作区，你可以用来执行长时间的任务"
+      echo "即使你断开SSH，工作区中的任务也不会中断，后台常驻任务。"
       echo -e "${huang}注意: 进入工作区后使用Ctrl+b再单独按d，退出工作区！${bai}"
       echo "------------------------"
       echo "1. 1号工作区"
@@ -4317,10 +4803,9 @@ case $choice in
       echo "8. 8号工作区"
       echo "9. 9号工作区"
       echo "10. 10号工作区"
+      echo "11. 自定义工作区"
       echo "------------------------"
-      echo "99. 工作区状态"
-      echo "------------------------"
-      echo "b. 卸载工作区"
+      echo "99. 工作区状态管理"
       echo "------------------------"
       echo "0. 返回主菜单"
       echo "------------------------"
@@ -4328,10 +4813,6 @@ case $choice in
 
       case $sub_choice in
 
-          b)
-              clear
-              remove tmux
-              ;;
           1)
               clear
               install tmux
@@ -4394,13 +4875,44 @@ case $choice in
               tmux_run
               ;;
 
-          99)
+          11)
               clear
               install tmux
+              clear
+              echo "当前已存在的工作区列表"
+              echo "------------------------"
               tmux list-sessions
+              echo "------------------------"
+              read -p "请输入您自定义的工作区名称，如1001 kj001 work10: " SESSION_NAME
+              tmux_run
+              ;;
+
+          99)
+            while true; do
+              clear
+              echo "当前已存在的工作区列表"
+              echo "------------------------"
+              tmux list-sessions
+              echo "------------------------"
+
+              read -p "1. 删除指定工作区    0. 退出: " gongzuoqu_del
+              case "$gongzuoqu_del" in
+                1)
+                  read -p "请输入要删除的工作区名称: " gongzuoqu_name
+                  tmux kill-window -t $gongzuoqu_name
+                  ;;
+                0)
+                  break
+                  ;;
+                *)
+                  echo "无效的选择，请输入 Y 或 N。"
+                  ;;
+              esac
+            done
+
               ;;
           0)
-              huaniangzi
+              siilao
               ;;
           *)
               echo "无效的输入!"
@@ -4417,7 +4929,7 @@ case $choice in
       echo -e "${hong}▶ 系统工具${bai}"
       echo "------------------------"
       echo "1. 设置脚本启动快捷键                  2. 修改登录密码"
-      echo "3. ROOT密码登录模式                    4. 安装Python最新版"
+      echo "3. ROOT密码登录模式                    4. 安装Python指定版本"
       echo "5. 开放所有端口                        6. 修改SSH连接端口"
       echo "7. 优化DNS地址                         8. 一键重装系统"
       echo "9. 禁用ROOT账户创建新账户              10. 切换优先ipv4/ipv6"
@@ -4443,7 +4955,7 @@ case $choice in
           1)
               clear
               read -p "请输入你的快捷按键: " kuaijiejian
-              echo "alias $kuaijiejian='~/huaniangzi.sh'" >> ~/.bashrc
+              echo "alias $kuaijiejian='~/siilao.sh'" >> ~/.bashrc
               source ~/.bashrc
               echo "快捷键已设置"
               ;;
@@ -4460,81 +4972,72 @@ case $choice in
 
           4)
             root_use
-
-            # 系统检测
-            OS=$(cat /etc/os-release | grep -o -E "Debian|Ubuntu|CentOS" | head -n 1)
-
-            if [[ $OS == "Debian" || $OS == "Ubuntu" || $OS == "CentOS" ]]; then
-                echo -e "检测到你的系统是 ${huang}${OS}${bai}"
-            else
-                echo -e "${hong}很抱歉，你的系统不受支持！${bai}"
-                exit 1
-            fi
-
-            # 检测安装Python3的版本
             VERSION=$(python3 -V 2>&1 | awk '{print $2}')
+            echo -e "当前python版本号: ${huang}$VERSION${bai}"
+            echo "------------"
+            echo "推荐版本:  3.12    3.11    3.10    3.9    3.8    2.7"
+            echo "查询更多版本: https://www.python.org/downloads/"
+            echo "------------"
+            read -p "输入你要安装的python版本号: " py_new_v
 
-            # 获取最新Python3版本
-            PY_VERSION=$(curl -s https://www.python.org/ | grep "downloads/release" | grep -o 'Python [0-9.]*' | grep -o '[0-9.]*')
+            if ! grep -q 'export PYENV_ROOT="\$HOME/.pyenv"' ~/.bashrc; then
+                if command -v yum &>/dev/null; then
+                    yum update -y && yum install git -y
+                    yum groupinstall "Development Tools" -y
+                    yum install openssl-devel bzip2-devel libffi-devel ncurses-devel zlib-devel readline-devel sqlite-devel xz-devel findutils -y
 
-            # 卸载Python3旧版本
-            if [[ $VERSION == "3"* ]]; then
-                echo -e "${huang}你的Python3版本是${bai}${hong}${VERSION}${bai}，${huang}最新版本是${bai}${hong}${PY_VERSION}${bai}"
-                read -p "是否确认升级最新版Python3？默认不升级 [y/N]: " CONFIRM
-                if [[ $CONFIRM == "y" ]]; then
-                    if [[ $OS == "CentOS" ]]; then
-                        echo ""
-                        rm-rf /usr/local/python3* >/dev/null 2>&1
-                    else
-                        apt --purge remove python3 python3-pip -y
-                        rm-rf /usr/local/python3*
-                    fi
+                    curl -O https://www.openssl.org/source/openssl-1.1.1u.tar.gz
+                    tar -xzf openssl-1.1.1u.tar.gz
+                    cd openssl-1.1.1u
+                    ./config --prefix=/usr/local/openssl --openssldir=/usr/local/openssl shared zlib
+                    make
+                    make install
+                    echo "/usr/local/openssl/lib" > /etc/ld.so.conf.d/openssl-1.1.1u.conf
+                    ldconfig -v
+                    cd ..
+
+                    export LDFLAGS="-L/usr/local/openssl/lib"
+                    export CPPFLAGS="-I/usr/local/openssl/include"
+                    export PKG_CONFIG_PATH="/usr/local/openssl/lib/pkgconfig"
+
+                elif command -v apt &>/dev/null; then
+                    apt update -y && apt install git -y
+                    apt install build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev libgdbm-dev libnss3-dev libedit-dev -y
+                elif command -v apk &>/dev/null; then
+                    apk update && apk add git
+                    apk add --no-cache bash gcc musl-dev libffi-dev openssl-dev bzip2-dev zlib-dev readline-dev sqlite-dev libc6-compat linux-headers make xz-dev build-base  ncurses-dev
                 else
-                    echo -e "${huang}已取消升级Python3${bai}"
-                    exit 1
+                    echo "未知的包管理器!"
+                    return 1
                 fi
-            else
-                echo -e "${hong}检测到没有安装Python3。${bai}"
-                read -p "是否确认安装最新版Python3？默认安装 [Y/n]: " CONFIRM
-                if [[ $CONFIRM != "n" ]]; then
-                    echo -e "${lv}开始安装最新版Python3...${bai}"
-                else
-                    echo -e "${huang}已取消安装Python3${bai}"
-                    exit 1
-                fi
+
+                curl https://pyenv.run | bash
+                cat << EOF >> ~/.bashrc
+
+export PYENV_ROOT="\$HOME/.pyenv"
+if [[ -d "\$PYENV_ROOT/bin" ]]; then
+  export PATH="\$PYENV_ROOT/bin:\$PATH"
+fi
+eval "\$(pyenv init --path)"
+eval "\$(pyenv init -)"
+eval "\$(pyenv virtualenv-init -)"
+
+EOF
+
             fi
 
-            # 安装相关依赖
-            if [[ $OS == "CentOS" ]]; then
-                yum update
-                yum groupinstall -y "development tools"
-                yum install wget openssl-devel bzip2-devel libffi-devel zlib-devel -y
-            else
-                apt update
-                apt install wget build-essential libreadline-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev libffi-dev zlib1g-dev -y
-            fi
+            sleep 1
+            source ~/.bashrc
+            sleep 1
+            pyenv install $py_new_v
+            pyenv global $py_new_v
 
-            # 安装python3
-            cd /root/
-            wget https://www.python.org/ftp/python/${PY_VERSION}/Python-"$PY_VERSION".tgz
-            tar -zxf Python-${PY_VERSION}.tgz
-            cd Python-${PY_VERSION}
-            ./configure --prefix=/usr/local/python3
-            make -j $(nproc)
-            make install
-            if [ $? -eq 0 ];then
-                rm -f /usr/local/bin/python3*
-                rm -f /usr/local/bin/pip3*
-                ln -sf /usr/local/python3/bin/python3 /usr/bin/python3
-                ln -sf /usr/local/python3/bin/pip3 /usr/bin/pip3
-                clear
-                echo -e "${huang}Python3安装${lv}成功，${bai}版本为: ${bai}${lv}${PY_VERSION}${bai}"
-            else
-                clear
-                echo -e "${hong}Python3安装失败！${bai}"
-                exit 1
-            fi
-            cd /root/ && rm -rf Python-${PY_VERSION}.tgz && rm -rf Python-${PY_VERSION}
+            rm -rf /tmp/python-build.*
+            rm -rf $(pyenv root)/cache/*
+
+            VERSION=$(python -V 2>&1 | awk '{print $2}')
+            echo -e "当前python版本号: ${huang}$VERSION${bai}"
+
               ;;
 
           5)
@@ -4613,205 +5116,217 @@ case $choice in
 
           8)
 
+          dd_xitong_1() {
+            echo -e "重装后初始用户名: ${huang}root${bai}  初始密码: ${huang}LeitboGi0ro${bai}  初始端口: ${huang}22${bai}"
+            echo -e "按任意键继续..."
+            read -n 1 -s -r -p ""
+            install wget
+            wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh
+          }
+
           dd_xitong_2() {
-            echo -e "任意键继续，重装后初始用户名: ${huang}root${bai}  初始密码: ${huang}LeitboGi0ro${bai}  初始端口: ${huang}22${bai}"
+            echo -e "重装后初始用户名: ${huang}Administrator${bai}  初始密码: ${huang}Teddysun.com${bai}  初始端口: ${huang}3389${bai}"
+            echo -e "按任意键继续..."
             read -n 1 -s -r -p ""
             install wget
             wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh
           }
 
           dd_xitong_3() {
-            echo -e "任意键继续，重装后初始用户名: ${huang}Administrator${bai}  初始密码: ${huang}Teddysun.com${bai}  初始端口: ${huang}3389${bai}"
+            echo -e "重装后初始用户名: ${huang}root${bai}  初始密码: ${huang}123@@@${bai}  初始端口: ${huang}22${bai}"
+            echo -e "按任意键继续..."
             read -n 1 -s -r -p ""
-            install wget
-            wget --no-check-certificate -qO InstallNET.sh 'https://raw.githubusercontent.com/leitbogioro/Tools/master/Linux_reinstall/InstallNET.sh' && chmod a+x InstallNET.sh
+            curl -O https://raw.githubusercontent.com/bin456789/reinstall/main/reinstall.sh
           }
 
           dd_xitong_4() {
-            echo -e "任意键继续，重装后初始用户名: ${huang}Administrator${bai}  初始密码: ${huang}123@@@${bai}  初始端口: ${huang}3389${bai}"
+            echo -e "重装后初始用户名: ${huang}Administrator${bai}  初始密码: ${huang}123@@@${bai}  初始端口: ${huang}3389${bai}"
+            echo -e "按任意键继续..."
             read -n 1 -s -r -p ""
-            install wget
             curl -O https://raw.githubusercontent.com/bin456789/reinstall/main/reinstall.sh
           }
 
 
-          root_use
-          echo "请备份数据，将为你重装系统，预计花费15分钟。"
-          echo -e "${hui}感谢MollyLau大佬和bin456789大佬的脚本支持！${bai} "
-          read -p "确定继续吗？(Y/N): " choice
 
-          case "$choice" in
-            [Yy])
-              while true; do
+            while true; do
+              root_use
+              echo "请备份数据，将为你重装系统，预计花费15分钟。"
+              echo -e "${hui}感谢MollyLau大佬和bin456789大佬的脚本支持！${bai} "
+              echo "------------------------"
+              echo "1. Debian 12"
+              echo "2. Debian 11"
+              echo "3. Debian 10"
+              echo "4. Debian 9"
+              echo "------------------------"
+              echo "11. Ubuntu 24.04"
+              echo "12. Ubuntu 22.04"
+              echo "13. Ubuntu 20.04"
+              echo "14. Ubuntu 18.04"
+              echo "------------------------"
+              echo "21. CentOS 9"
+              echo "22. CentOS 8"
+              echo "23. CentOS 7"
+              echo "------------------------"
+              echo "31. Alpine Linux"
+              echo "------------------------"
+              echo "41. Windows 11"
+              echo "42. Windows 10"
+              echo "43. Windows 7"
+              echo "44. Windows Server 2022"
+              echo "45. Windows Server 2019"
+              echo "46. Windows Server 2016"
+              echo "------------------------"
+              echo "0. 返回上一级选单"
+              echo "------------------------"
+              read -p "请选择要重装的系统: " sys_choice
 
-                echo "------------------------"
-                echo "1. Debian 12"
-                echo "2. Debian 11"
-                echo "3. Debian 10"
-                echo "4. Debian 9"
-                echo "------------------------"
-                echo "11. Ubuntu 24.04"
-                echo "12. Ubuntu 22.04"
-                echo "13. Ubuntu 20.04"
-                echo "14. Ubuntu 18.04"
-                echo "------------------------"
-                echo "21. CentOS 9"
-                echo "22. CentOS 8"
-                echo "23. CentOS 7"
-                echo "------------------------"
-                echo "31. Alpine 3.19"
-                echo "------------------------"
-                echo "41. Windows 11"
-                echo "42. Windows 10"
-                echo "43. Windows 7"
-                echo "44. Windows Server 2022"
-                echo "45. Windows Server 2019"
-                echo "46. Windows Server 2016"
-                echo "------------------------"
-                read -p "请选择要重装的系统: " sys_choice
+              case "$sys_choice" in
+                1)
+                  dd_xitong_1
+                  bash InstallNET.sh -debian 12
+                  reboot
+                  exit
+                  ;;
 
-                case "$sys_choice" in
-                  1)
-                    dd_xitong_2
-                    bash InstallNET.sh -debian 12
-                    reboot
-                    exit
-                    ;;
+                2)
+                  dd_xitong_1
+                  bash InstallNET.sh -debian 11
+                  reboot
+                  exit
+                  ;;
 
-                  2)
-                    dd_xitong_2
-                    bash InstallNET.sh -debian 11
-                    reboot
-                    exit
-                    ;;
+                3)
+                  dd_xitong_1
+                  bash InstallNET.sh -debian 10
+                  reboot
+                  exit
+                  ;;
+                4)
+                  dd_xitong_1
+                  bash InstallNET.sh -debian 9
+                  reboot
+                  exit
+                  ;;
 
-                  3)
-                    dd_xitong_2
-                    bash InstallNET.sh -debian 10
-                    reboot
-                    exit
-                    ;;
-                  4)
-                    dd_xitong_2
-                    bash InstallNET.sh -debian 9
-                    reboot
-                    exit
-                    ;;
+                11)
+                  dd_xitong_1
+                  bash InstallNET.sh -ubuntu 24.04
+                  reboot
+                  exit
+                  ;;
+                12)
+                  dd_xitong_1
+                  bash InstallNET.sh -ubuntu 22.04
+                  reboot
+                  exit
+                  ;;
 
-                  11)
-                    dd_xitong_2
-                    bash InstallNET.sh -ubuntu 24.04
-                    reboot
-                    exit
-                    ;;
-                  12)
-                    dd_xitong_2
-                    bash InstallNET.sh -ubuntu 22.04
-                    reboot
-                    exit
-                    ;;
-
-                  13)
-                    dd_xitong_2
-                    bash InstallNET.sh -ubuntu 20.04
-                    reboot
-                    exit
-                    ;;
-                  14)
-                    dd_xitong_2
-                    bash InstallNET.sh -ubuntu 18.04
-                    reboot
-                    exit
-                    ;;
+                13)
+                  dd_xitong_1
+                  bash InstallNET.sh -ubuntu 20.04
+                  reboot
+                  exit
+                  ;;
+                14)
+                  dd_xitong_1
+                  bash InstallNET.sh -ubuntu 18.04
+                  reboot
+                  exit
+                  ;;
 
 
-                  21)
-                    dd_xitong_2
-                    bash InstallNET.sh -centos 9
-                    reboot
-                    exit
-                    ;;
+                21)
+                  dd_xitong_1
+                  bash InstallNET.sh -centos 9
+                  reboot
+                  exit
+                  ;;
 
 
-                  22)
-                    dd_xitong_2
-                    bash InstallNET.sh -centos 8
-                    reboot
-                    exit
-                    ;;
+                22)
+                  dd_xitong_1
+                  bash InstallNET.sh -centos 8
+                  reboot
+                  exit
+                  ;;
 
-                  23)
-                    dd_xitong_2
-                    bash InstallNET.sh -centos 7
-                    reboot
-                    exit
-                    ;;
+                23)
+                  dd_xitong_1
+                  bash InstallNET.sh -centos 7
+                  reboot
+                  exit
+                  ;;
 
-                  31)
-                    dd_xitong_2
-                    bash InstallNET.sh -alpine
-                    reboot
-                    exit
-                    ;;
+                31)
+                  dd_xitong_1
+                  bash InstallNET.sh -alpine
+                  reboot
+                  exit
+                  ;;
 
-                  41)
-                    dd_xitong_3
-                    bash InstallNET.sh -windows 11 -lang "cn"
-                    reboot
-                    exit
-                    ;;
+                41)
+                  dd_xitong_2
+                  bash InstallNET.sh -windows 11 -lang "cn"
+                  reboot
+                  exit
+                  ;;
 
-                  42)
-                    dd_xitong_3
-                    bash InstallNET.sh -windows 10 -lang "cn"
-                    reboot
-                    exit
-                    ;;
+                42)
+                  dd_xitong_2
+                  bash InstallNET.sh -windows 10 -lang "cn"
+                  reboot
+                  exit
+                  ;;
 
-                  43)
-                    dd_xitong_4
-                    bash reinstall.sh windows --image-name 'Windows 7 Professional' --lang zh-cn
-                    reboot
-                    exit
-                    ;;
+                43)
+                  dd_xitong_4
+                  URL="https://massgrave.dev/windows_7_links"
+                  web_content=$(wget -q -O - "$URL")
+                  iso_link=$(echo "$web_content" | grep -oP '(?<=href=")[^"]*cn[^"]*windows_7[^"]*professional[^"]*x64[^"]*\.iso')
+                  # bash reinstall.sh windows --image-name 'Windows 7 Professional' --lang zh-cn
+                  # bash reinstall.sh windows --iso='$iso_link' --image-name='Windows 7 PROFESSIONAL'
+                  bash reinstall.sh windows --iso="$iso_link" --image-name='Windows 7 PROFESSIONAL'
 
-                  44)
-                    dd_xitong_4
-                    bash reinstall.sh windows --image-name 'Windows Server 2022 SERVERDATACENTER' --lang zh-cn
-                    reboot
-                    exit
-                    ;;
+                  reboot
+                  exit
+                  ;;
 
-                  45)
-                    dd_xitong_3
-                    bash InstallNET.sh -windows 2019 -lang "cn"
-                    reboot
-                    exit
-                    ;;
+                44)
+                  dd_xitong_4
+                  URL="https://massgrave.dev/windows_server_links"
+                  web_content=$(wget -q -O - "$URL")
+                  iso_link=$(echo "$web_content" | grep -oP '(?<=href=")[^"]*cn[^"]*windows_server[^"]*2022[^"]*x64[^"]*\.iso')
+                  bash reinstall.sh windows --iso="$iso_link" --image-name='Windows Server 2022 SERVERDATACENTER'
+                  reboot
+                  exit
+                  ;;
 
-                  46)
-                    dd_xitong_3
-                    bash InstallNET.sh -windows 2016 -lang "cn"
-                    reboot
-                    exit
-                    ;;
+                45)
+                  dd_xitong_2
+                  bash InstallNET.sh -windows 2019 -lang "cn"
+                  reboot
+                  exit
+                  ;;
 
+                46)
+                  dd_xitong_2
+                  bash InstallNET.sh -windows 2016 -lang "cn"
+                  reboot
+                  exit
+                  ;;
 
-                  *)
-                    echo "无效的选择，请重新输入。"
-                    ;;
-                esac
-              done
+                0)
+                  break
+                  ;;
+
+                *)
+                  echo "无效的选择，请重新输入。"
+                  break
+                  ;;
+              esac
+            done
+
               ;;
-            [Nn])
-              echo "已取消"
-              ;;
-            *)
-              echo "无效的选择，请输入 Y 或 N。"
-              ;;
-          esac
-              ;;
-
           9)
             root_use
 
@@ -5129,13 +5644,13 @@ case $choice in
                         update-grub
 
                         # wget -qO - https://dl.xanmod.org/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
-                        wget -qO - https://raw.githubusercontent.com/huaniangzi/sh/main/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
+                        wget -qO - https://raw.githubusercontent.com/siilao/sh/main/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
 
                         # 步骤3：添加存储库
                         echo 'deb [signed-by=/usr/share/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main' | tee /etc/apt/sources.list.d/xanmod-release.list
 
                         # version=$(wget -q https://dl.xanmod.org/check_x86-64_psabi.sh && chmod +x check_x86-64_psabi.sh && ./check_x86-64_psabi.sh | grep -oP 'x86-64-v\K\d+|x86-64-v\d+')
-                        version=$(wget -q https://raw.githubusercontent.com/huaniangzi/sh/main/check_x86-64_psabi.sh && chmod +x check_x86-64_psabi.sh && ./check_x86-64_psabi.sh | grep -oP 'x86-64-v\K\d+|x86-64-v\d+')
+                        version=$(wget -q https://raw.githubusercontent.com/siilao/sh/main/check_x86-64_psabi.sh && chmod +x check_x86-64_psabi.sh && ./check_x86-64_psabi.sh | grep -oP 'x86-64-v\K\d+|x86-64-v\d+')
 
                         apt update -y
                         apt install -y linux-xanmod-x64v$version
@@ -5199,13 +5714,13 @@ case $choice in
             install wget gnupg
 
             # wget -qO - https://dl.xanmod.org/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
-            wget -qO - https://raw.githubusercontent.com/huaniangzi/sh/main/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
+            wget -qO - https://raw.githubusercontent.com/siilao/sh/main/archive.key | gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
 
             # 步骤3：添加存储库
             echo 'deb [signed-by=/usr/share/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main' | tee /etc/apt/sources.list.d/xanmod-release.list
 
             # version=$(wget -q https://dl.xanmod.org/check_x86-64_psabi.sh && chmod +x check_x86-64_psabi.sh && ./check_x86-64_psabi.sh | grep -oP 'x86-64-v\K\d+|x86-64-v\d+')
-            version=$(wget -q https://raw.githubusercontent.com/huaniangzi/sh/main/check_x86-64_psabi.sh && chmod +x check_x86-64_psabi.sh && ./check_x86-64_psabi.sh | grep -oP 'x86-64-v\K\d+|x86-64-v\d+')
+            version=$(wget -q https://raw.githubusercontent.com/siilao/sh/main/check_x86-64_psabi.sh && chmod +x check_x86-64_psabi.sh && ./check_x86-64_psabi.sh | grep -oP 'x86-64-v\K\d+|x86-64-v\d+')
 
             apt update -y
             apt install -y linux-xanmod-x64v$version
@@ -5715,7 +6230,7 @@ EOF
 
                   case $host_dns in
                       1)
-                          read -p "请输入新的解析记录 格式: 110.25.5.33 huaniangzi.pro : " addhost
+                          read -p "请输入新的解析记录 格式: 110.25.5.33 siilao.pro : " addhost
                           echo "$addhost" >> /etc/hosts
 
                           ;;
@@ -5854,7 +6369,7 @@ EOF
                 echo "如果实际服务器就100G流量，可设置阈值为95G，提前关机，以免出现流量误差或溢出."
                 read -p "请输入流量阈值（单位为GB）: " threshold_gb
                 cd ~
-                curl -Ss -O https://raw.githubusercontent.com/huaniangzi/sh/main/Limiting_Shut_down.sh
+                curl -Ss -O https://raw.githubusercontent.com/siilao/sh/main/Limiting_Shut_down.sh
                 chmod +x ~/Limiting_Shut_down.sh
                 sed -i "s/110/$threshold_gb/g" ~/Limiting_Shut_down.sh
                 crontab -l | grep -v '~/Limiting_Shut_down.sh' | crontab -
@@ -5964,6 +6479,7 @@ EOF
                   install_add_docker
                   install wget sudo tar unzip socat btop
                   echo -e "[${lv}OK${bai}] 9/9. 安装常用工具${huang}docker wget sudo tar unzip socat btop${bai}"
+                  echo "------------------------------------------------"
                   echo -e "${lv}一条龙系统调优已完成${bai}"
 
                   ;;
@@ -5982,7 +6498,7 @@ EOF
               server_reboot
               ;;
           0)
-              huaniangzi
+              siilao
 
               ;;
           *)
@@ -6039,7 +6555,7 @@ EOF
                   echo "------------------------"
                   echo "1. 添加服务器                2. 删除服务器             3. 编辑服务器"
                   echo "------------------------"
-                  echo "11. 安装花娘子脚本         12. 更新系统              13. 清理系统"
+                  echo "11. 安装肆佬脚本         12. 更新系统              13. 清理系统"
                   echo "14. 安装docker               15. 安装BBR3              16. 设置1G虚拟内存"
                   echo "17. 设置时区到上海           18. 开放所有端口"
                   echo "------------------------"
@@ -6071,7 +6587,7 @@ EOF
                           nano ~/cluster/servers.py
                           ;;
                       11)
-                          py_task=install_huaniangzi.py
+                          py_task=install_siilao.py
                           cluster_python3
                           ;;
                       12)
@@ -6107,7 +6623,7 @@ EOF
                           read -p "请输入批量执行的命令: " mingling
                           py_task=custom_tasks.py
                           cd ~/cluster/
-                          curl -sS -O https://raw.githubusercontent.com/huaniangzi/python-for-vps/main/cluster/$py_task
+                          curl -sS -O https://raw.githubusercontent.com/siilao/python-for-vps/main/cluster/$py_task
                           sed -i "s#Customtasks#$mingling#g" ~/cluster/$py_task
                           python3 ~/cluster/$py_task
                           ;;
@@ -6161,7 +6677,7 @@ EOF
               ;;
 
           0)
-              huaniangzi
+              siilao
               ;;
           *)
               echo "无效的输入!"
@@ -6178,12 +6694,11 @@ EOF
     clear
     echo "更新日志"
     echo "------------------------"
-    echo "全部日志: https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi_sh_log.txt"
+    echo "全部日志: https://raw.githubusercontent.com/siilao/sh/main/siilao_sh_log.txt"
     echo "------------------------"
-    curl -s https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi_sh_log.txt | tail -n 35
-    echo ""
-    echo ""
-    sh_v_new=$(curl -s https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi.sh | grep -o 'sh_v="[0-9.]*"' | cut -d '"' -f 2)
+    curl -s https://raw.githubusercontent.com/siilao/sh/main/siilao_sh_log.txt | tail -n 35
+
+    sh_v_new=$(curl -s https://raw.githubusercontent.com/siilao/sh/main/siilao.sh | grep -o 'sh_v="[0-9.]*"' | cut -d '"' -f 2)
 
     if [ "$sh_v" = "$sh_v_new" ]; then
         echo -e "${lv}你已经是最新版本！${huang}v$sh_v${bai}"
@@ -6195,10 +6710,11 @@ EOF
         case "$choice" in
             [Yy])
                 clear
-                curl -sS -O https://raw.githubusercontent.com/huaniangzi/sh/main/huaniangzi.sh && chmod +x huaniangzi.sh
+                curl -sS -O https://raw.githubusercontent.com/siilao/sh/main/siilao.sh && chmod +x siilao.sh
+                cp ./siilao.sh /usr/local/bin/s > /dev/null 2>&1
                 echo -e "${lv}脚本已更新到最新版本！${huang}v$sh_v_new${bai}"
                 break_end
-                huaniangzi
+                siilao
                 ;;
             [Nn])
                 echo "已取消"
